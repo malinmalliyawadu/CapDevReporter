@@ -35,24 +35,28 @@ export const epics: Epic[] = [
     key: "PROJ-1",
     name: "User Authentication",
     description: "Implement user authentication system",
+    isCapDev: true,
   },
   {
     id: "2",
     key: "PROJ-2",
     name: "Dashboard",
     description: "Create main dashboard interface",
+    isCapDev: true,
   },
   {
     id: "3",
     key: "PROJ-3",
     name: "API Integration",
     description: "Integrate with external APIs",
+    isCapDev: true,
   },
   {
     id: "4",
     key: "PROJ-4",
     name: "Performance Optimization",
     description: "Optimize application performance",
+    isCapDev: false,
   },
 ];
 
@@ -63,7 +67,7 @@ export const users: {
   id: string;
   name: string;
 }[] = [
-  { email: "a@a.com", password: "a", id: "1", name: "Admin User" },
+  { email: "a@a.com", password: "a", id: "1", name: "Malin Malliya Wadu" },
   {
     email: "john@example.com",
     password: "password",

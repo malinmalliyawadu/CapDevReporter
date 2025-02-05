@@ -240,9 +240,7 @@ function App() {
               </button>
             )}
             <h1 className="text-3xl font-bold text-gray-900">
-              {showEpicAssignments
-                ? "Epic Team Assignments"
-                : "Team Assignments"}
+              {showEpicAssignments ? "Timesheet Report" : "Team Assignments"}
             </h1>
           </div>
           <div className="flex items-center space-x-4">
@@ -260,9 +258,7 @@ function App() {
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
               <Layers className="h-4 w-4 mr-2" />
-              {showEpicAssignments
-                ? "View Team Assignments"
-                : "Manage Epic Teams"}
+              {showEpicAssignments ? "View Team Assignments" : "View report"}
             </button>
             <button
               onClick={handleSignOut}
@@ -320,6 +316,12 @@ function App() {
           </>
         )}
       </div>
+      <iframe
+        src="https://***REMOVED***.atlassian.net/secure/PlanEmbeddedReport.jspa?r=5BgPG"
+        width="1024"
+        height="640"
+        style={{ border: "1px solid #ccc" }}
+      ></iframe>
       <Toaster position="top-right" />
     </div>
   );

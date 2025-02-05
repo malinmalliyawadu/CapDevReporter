@@ -1,6 +1,6 @@
-import { format } from "date-fns";
 import { Pencil, Trash2 } from "lucide-react";
 import { Team, Epic, EpicTeamAssignment } from "../types";
+import { teamAssignments, users } from "../data";
 
 interface EpicAssignmentTableProps {
   assignments: EpicTeamAssignment[];
@@ -12,29 +12,31 @@ interface EpicAssignmentTableProps {
 
 export function EpicAssignmentTable({
   assignments,
-  teams,
   epics,
   onEdit,
   onDelete,
 }: EpicAssignmentTableProps) {
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">Epic Team Assignments</h2>
+      <h2 className="text-xl font-semibold mb-4">This weeks report</h2>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Epic
+                User
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Team
+                Payroll ID
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Start Date
+                Item
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                End Date
+                Percentage
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Cap Dev
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -42,39 +44,47 @@ export function EpicAssignmentTable({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {assignments.map((assignment) => {
-              const team = teams.find((t) => t.id === assignment.teamId);
-              const epic = epics.find((e) => e.id === assignment.epicId);
-              return (
-                <tr key={assignment.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {epic?.key} - {epic?.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {team?.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {format(new Date(assignment.startDate), "PP")}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {format(new Date(assignment.endDate), "PP")}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => onEdit(assignment)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(assignment.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              );
+            {users.map((user) => {
+              const team = teamAssignments.find((x) => x.userId === user.id);
+
+              return assignments
+                .filter((x) => x.teamId === team?.teamId)
+                .map((assignment) => {
+                  const epic = epics.find((e) => e.id === assignment.epicId);
+                  return (
+                    <tr key={assignment.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {user.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {user.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {epic?.id} - {epic?.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        10%
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {epic?.isCapDev ? "Yes" : "No"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => onEdit(assignment)}
+                          className="text-blue-600 hover:text-blue-900 mr-4"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => onDelete(assignment.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                });
             })}
           </tbody>
         </table>

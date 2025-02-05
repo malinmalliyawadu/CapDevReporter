@@ -22,6 +22,7 @@ export interface Epic {
   key: string;
   name: string;
   description: string;
+  isCapDev: boolean;
 }
 
 export interface EpicTeamAssignment {
