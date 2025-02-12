@@ -27,6 +27,21 @@ export const teams: Team[] = [
     name: "QA Team",
     description: "Ensures product quality and testing",
   },
+  {
+    id: "6",
+    name: "Data Science Team",
+    description: "Handles data analytics and machine learning",
+  },
+  {
+    id: "7",
+    name: "Security Team",
+    description: "Manages application and infrastructure security",
+  },
+  {
+    id: "8",
+    name: "Mobile Team",
+    description: "Develops mobile applications",
+  },
 ];
 
 export const epics: Epic[] = [
@@ -58,6 +73,27 @@ export const epics: Epic[] = [
     description: "Optimize application performance",
     isCapDev: false,
   },
+  {
+    id: "5",
+    key: "PROJ-5",
+    name: "Mobile App Launch",
+    description: "Develop and launch mobile application",
+    isCapDev: true,
+  },
+  {
+    id: "6",
+    key: "PROJ-6",
+    name: "Security Audit",
+    description: "Conduct comprehensive security review",
+    isCapDev: false,
+  },
+  {
+    id: "7",
+    key: "PROJ-7",
+    name: "Data Analytics Platform",
+    description: "Build analytics dashboard and reporting",
+    isCapDev: true,
+  },
 ];
 
 // In-memory users store
@@ -79,6 +115,24 @@ export const users: {
     password: "password",
     id: "3",
     name: "Jane Smith",
+  },
+  {
+    email: "sarah@example.com",
+    password: "password",
+    id: "4",
+    name: "Sarah Johnson",
+  },
+  {
+    email: "mike@example.com",
+    password: "password",
+    id: "5",
+    name: "Mike Wilson",
+  },
+  {
+    email: "emma@example.com",
+    password: "password",
+    id: "6",
+    name: "Emma Brown",
   },
 ];
 
@@ -118,6 +172,27 @@ export const epicAssingments = [
     startDate: "2022-05-27",
     endDate: "2026-05-22",
   },
+  {
+    id: "9b4f6d2e-3a1c-4b8d-9c7e-5f2d8e1a3b4c",
+    epicId: "5",
+    teamId: "8",
+    startDate: "2024-06-15",
+    endDate: "2025-12-31",
+  },
+  {
+    id: "8c7b5a4d-2e1f-4c9a-8b7d-6e5f4d3c2b1a",
+    epicId: "6",
+    teamId: "7",
+    startDate: "2024-04-01",
+    endDate: "2024-12-31",
+  },
+  {
+    id: "7d6e5f4c-1b2a-3d4e-9f8g-7h6j5k4l3m2n",
+    epicId: "7",
+    teamId: "6",
+    startDate: "2024-07-01",
+    endDate: "2025-06-30",
+  },
 ];
 
 export const teamAssignments = [
@@ -155,5 +230,26 @@ export const teamAssignments = [
     teamId: "4",
     startDate: "2023-04-18",
     endDate: "2026-03-19",
+  },
+  {
+    id: "9a8b7c6d-5e4f-3g2h-1i9j-8k7l6m5n4o3p",
+    userId: "4",
+    teamId: "6",
+    startDate: "2024-05-01",
+    endDate: "2026-04-30",
+  },
+  {
+    id: "2b3c4d5e-6f7g-8h9i-1j2k-3l4m5n6o7p8q",
+    userId: "5",
+    teamId: "7",
+    startDate: "2024-03-15",
+    endDate: "2025-12-31",
+  },
+  {
+    id: "3c4d5e6f-7g8h-9i1j-2k3l-4m5n6o7p8q9r",
+    userId: "6",
+    teamId: "8",
+    startDate: "2024-06-01",
+    endDate: "2026-05-31",
   },
 ];

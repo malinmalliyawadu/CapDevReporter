@@ -1,25 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import { LogIn, Users } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
-interface LoginFormProps {
-  email: string;
-  setEmail: (email: string) => void;
-  password: string;
-  setPassword: (password: string) => void;
-  loading: boolean;
-  handleSignIn: (e: React.FormEvent) => void;
-  handleSignUp: (e: React.FormEvent) => void;
-}
+export function LoginForm() {
+  const { signIn } = useAuth();
+  const [email, setEmail] = useState("a@a.com");
+  const [password, setPassword] = useState("a");
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-export function LoginForm({
-  email,
-  setEmail,
-  password,
-  setPassword,
-  loading,
-  handleSignIn,
-  handleSignUp,
-}: LoginFormProps) {
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await signIn(email, password);
+    } catch (_error) {
+      toast({ description: "Invalid credentials" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -63,16 +65,6 @@ export function LoginForm({
             >
               <LogIn className="h-4 w-4 mr-2" />
               Sign in
-            </button>
-          </div>
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={handleSignUp}
-              disabled={loading}
-              className="text-sm text-blue-600 hover:text-blue-500"
-            >
-              Create an account
             </button>
           </div>
         </form>
