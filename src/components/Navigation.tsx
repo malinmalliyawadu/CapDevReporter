@@ -55,11 +55,13 @@ const assignments: { title: string; href: string; description: string }[] = [
 
 export function Navigation() {
   return (
-    <header className="bg-white shadow">
+    <header className="bg-gradient-to-r from-zinc-50 to-zinc-100 border-b border-zinc-200">
       <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex">
-        <div className="flex items-center justify-between mr-8 gap-2 text-cyan-600">
-          <TimerReset />
-          <h1 className="text-2xl font-bold tracking-tight">***REMOVED*** Timesheet</h1>
+        <div className="flex items-center justify-between mr-8 gap-2 text-cyan-800">
+          <TimerReset className="animate-spin-once" />
+          <h1 className="text-2xl font-bold tracking-tight animate-slide-down">
+            ***REMOVED*** Timesheet
+          </h1>
         </div>
         <NavigationMenu>
           <NavigationMenuList>
