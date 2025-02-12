@@ -29,6 +29,14 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ArrowUp, ArrowDown, Download } from "lucide-react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 
 // Define the type for our data
 type TimeReport = {
@@ -244,13 +252,101 @@ export function ReportsPage() {
     },
   });
 
+  // Calculate totals and percentages for the pie chart from filtered data
+  const filteredData = table
+    .getFilteredRowModel()
+    .rows.map((row) => row.original);
+  const totalCapdev = filteredData.reduce(
+    (sum, row) => sum + row.capdevTime,
+    0
+  );
+  const totalNonCapdev = filteredData.reduce(
+    (sum, row) => sum + row.nonCapdevTime,
+    0
+  );
+  const totalTime = totalCapdev + totalNonCapdev;
+
+  const capdevPercentage = totalTime > 0 ? (totalCapdev / totalTime) * 100 : 0;
+  const nonCapdevPercentage =
+    totalTime > 0 ? (totalNonCapdev / totalTime) * 100 : 0;
+
+  const chartData = [
+    { name: "CapDev Time", value: capdevPercentage, color: "#0ea5e9" }, // sky-500
+    { name: "Non-CapDev Time", value: nonCapdevPercentage, color: "#f43f5e" }, // rose-500
+  ];
+
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Time Reports</h1>
+        <h1 className="text-2xl font-bold tracking-tight animate-slide-down">
+          Time Reports
+        </h1>
         <p className="text-muted-foreground">
           View and analyze time tracking reports.
         </p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Time Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number) => `${value.toFixed(1)}%`}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-sky-500" />
+                  <span className="text-sm font-medium">CapDev Time</span>
+                </div>
+                <div className="text-right">
+                  <span className="font-medium">
+                    {capdevPercentage.toFixed(1)}%
+                  </span>
+                  <span className="text-sm text-muted-foreground ml-2">
+                    ({totalCapdev.toFixed(1)} hours)
+                  </span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-rose-500" />
+                  <span className="text-sm font-medium">Non-CapDev Time</span>
+                </div>
+                <div className="text-right">
+                  <span className="font-medium">
+                    {nonCapdevPercentage.toFixed(1)}%
+                  </span>
+                  <span className="text-sm text-muted-foreground ml-2">
+                    ({totalNonCapdev.toFixed(1)} hours)
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
