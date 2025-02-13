@@ -37,46 +37,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-
-// Define the type for our data
-type TimeReport = {
-  id: string;
-  user: string;
-  week: string;
-  payrollId: string;
-  fullHours: number;
-  capdevTime: number;
-  nonCapdevTime: number;
-  team: string;
-  role: string;
-};
-
-// Sample data
-const data: TimeReport[] = [
-  {
-    id: "1",
-    user: "John Doe",
-    week: "2024-03-11",
-    payrollId: "EMP001",
-    fullHours: 40,
-    capdevTime: 32,
-    nonCapdevTime: 8,
-    team: "Engineering",
-    role: "Software Engineer",
-  },
-  {
-    id: "2",
-    user: "Jane Smith",
-    week: "2024-W10",
-    payrollId: "EMP002",
-    fullHours: 40,
-    capdevTime: 24,
-    nonCapdevTime: 16,
-    team: "Design",
-    role: "UX Designer",
-  },
-  // Add more dummy data as needed
-];
+import { timeReports } from "@/data/timeReports";
+import type { TimeReport } from "@/types/timeReport";
 
 // Add this function before the component
 const exportToCsv = (data: TimeReport[]) => {
@@ -278,7 +240,7 @@ export function ReportsPage() {
   ];
 
   const table = useReactTable({
-    data,
+    data: timeReports,
     columns,
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
