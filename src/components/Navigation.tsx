@@ -16,37 +16,37 @@ const data: { title: string; href: string; description: string }[] = [
   {
     title: "Teams",
     href: "/data/teams",
-    description: "Manage teams.",
+    description: "Manage teams",
   },
   {
     title: "Employees",
     href: "/data/employees",
-    description: "Manage employees.",
+    description: "Manage employees",
   },
   {
     title: "Roles",
     href: "/data/roles",
-    description: "Manage roles.",
+    description: "Manage roles",
   },
   {
     title: "General Time Types",
     href: "/data/general-time-types",
-    description: "Manage general time types.",
+    description: "Manage general time types",
   },
   {
     title: "Projects",
     href: "/data/projects",
-    description: "Manage projects.",
+    description: "View and sync projects",
   },
   {
     title: "Holidays",
     href: "/data/holidays",
-    description: "View public holidays.",
+    description: "View public holidays",
   },
   {
     title: "Leave",
     href: "/data/leave",
-    description: "View leave balances.",
+    description: "View and sync leave",
   },
 ];
 
@@ -54,12 +54,12 @@ const assignments: { title: string; href: string; description: string }[] = [
   {
     title: "Teams",
     href: "/teams",
-    description: "Assign employees to teams.",
+    description: "Assign employees to teams",
   },
   {
     title: "General Time",
     href: "/general-time",
-    description: "Manage general time hours per week based on role.",
+    description: "Manage general time hours per week based on role",
   },
 ];
 

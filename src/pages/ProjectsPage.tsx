@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -31,6 +31,9 @@ import {
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
+import { DateRange } from "react-day-picker";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { addYears, isWithinInterval, parseISO, subYears } from "date-fns";
 
 interface Project {
   issueKey: string;
@@ -47,6 +50,10 @@ export function ProjectsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subYears(new Date(), 2),
+    to: new Date(),
+  });
 
   const [projects, setProjects] = useState<Project[]>([
     {
@@ -245,8 +252,14 @@ export function ProjectsPage() {
           )}
         </Button>
       ),
-      cell: ({ row }) =>
-        new Date(row.getValue("lastUpdated")).toLocaleDateString("en-NZ"),
+      filterFn: (row) => {
+        if (!dateRange?.from) return true;
+        const date = parseISO(row.getValue("lastUpdated"));
+        return isWithinInterval(date, {
+          start: dateRange.from,
+          end: dateRange.to || new Date(),
+        });
+      },
     },
   ];
 
@@ -263,6 +276,12 @@ export function ProjectsPage() {
       columnFilters,
     },
   });
+
+  useEffect(() => {
+    if (dateRange?.from) {
+      table.getColumn("lastUpdated")?.setFilterValue(dateRange);
+    }
+  }, [dateRange, table]);
 
   const handleSync = async () => {
     setIsLoading(true);
@@ -354,11 +373,24 @@ export function ProjectsPage() {
             <SelectItem value="false">BAU</SelectItem>
           </SelectContent>
         </Select>
+
+        <DateRangePicker
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+        />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Project List</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Project List</CardTitle>
+            <Button onClick={handleSync} disabled={isLoading}>
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+              />
+              Sync with Jira
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
