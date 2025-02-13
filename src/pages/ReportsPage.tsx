@@ -132,19 +132,16 @@ export function ReportsPage() {
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className={
-              column.getIsSorted()
-                ? "bg-muted hover:bg-muted"
-                : "hover:bg-muted/50"
-            }
+            className="group"
           >
             User
-            {column.getIsSorted() &&
-              (column.getIsSorted() === "asc" ? (
-                <ArrowUp className="ml-2 h-4 w-4" />
-              ) : (
-                <ArrowDown className="ml-2 h-4 w-4" />
-              ))}
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            )}
           </Button>
         );
       },
@@ -156,19 +153,16 @@ export function ReportsPage() {
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className={
-              column.getIsSorted()
-                ? "bg-muted hover:bg-muted"
-                : "hover:bg-muted/50"
-            }
+            className="group"
           >
             Week
-            {column.getIsSorted() &&
-              (column.getIsSorted() === "asc" ? (
-                <ArrowUp className="ml-2 h-4 w-4" />
-              ) : (
-                <ArrowDown className="ml-2 h-4 w-4" />
-              ))}
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            )}
           </Button>
         );
       },
@@ -196,19 +190,16 @@ export function ReportsPage() {
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className={
-              column.getIsSorted()
-                ? "bg-muted hover:bg-muted"
-                : "hover:bg-muted/50"
-            }
+            className="group"
           >
             Team
-            {column.getIsSorted() &&
-              (column.getIsSorted() === "asc" ? (
-                <ArrowUp className="ml-2 h-4 w-4" />
-              ) : (
-                <ArrowDown className="ml-2 h-4 w-4" />
-              ))}
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            )}
           </Button>
         );
       },
@@ -220,19 +211,16 @@ export function ReportsPage() {
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className={
-              column.getIsSorted()
-                ? "bg-muted hover:bg-muted"
-                : "hover:bg-muted/50"
-            }
+            className="group"
           >
             Role
-            {column.getIsSorted() &&
-              (column.getIsSorted() === "asc" ? (
-                <ArrowUp className="ml-2 h-4 w-4" />
-              ) : (
-                <ArrowDown className="ml-2 h-4 w-4" />
-              ))}
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            )}
           </Button>
         );
       },
