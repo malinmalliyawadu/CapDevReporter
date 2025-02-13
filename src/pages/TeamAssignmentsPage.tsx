@@ -24,16 +24,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { DialogHeader } from "@/components/ui/dialog";
-
+import { PageHeader } from "@/components/ui/page-header";
 export function TeamAssignmentsPage() {
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Team Assignments</h1>
-        <p className="text-muted-foreground">
-          Assign employees to teamssdafsdf.
-        </p>
-      </div>
+      <PageHeader
+        title="Team Assignments"
+        description="Assign employees to teams."
+      />
 
       <Card className="mb-8">
         <CardHeader>

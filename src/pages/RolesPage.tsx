@@ -19,14 +19,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/ui/page-header";
 
 export function RolesPage() {
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Roles</h1>
-        <p className="text-muted-foreground">Manage your roles.</p>
-      </div>
+      <PageHeader title="Roles" description="Manage your roles." />
 
       <Card className="mb-8">
         <CardHeader>

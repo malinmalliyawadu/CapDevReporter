@@ -30,6 +30,7 @@ import {
 } from "@tanstack/react-table";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface Project {
   issueKey: string;
@@ -281,25 +282,7 @@ export function ProjectsPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground">Project tracking from Jira</p>
-        </div>
-        <div className="flex items-center gap-4">
-          {lastSynced && (
-            <span className="text-sm text-muted-foreground">
-              Last synced: {lastSynced.toLocaleString("en-NZ")}
-            </span>
-          )}
-          <Button onClick={handleSync} disabled={isLoading}>
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
-            />
-            Sync with Jira
-          </Button>
-        </div>
-      </div>
+      <PageHeader title="Projects" description="Project tracking from Jira" />
 
       <div className="mb-4 flex gap-4">
         <Input

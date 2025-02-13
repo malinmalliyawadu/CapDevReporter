@@ -37,7 +37,6 @@ function App() {
             element={user ? <Navigate to="/teams" /> : <LoginForm />}
           />
           <Route path="/teams" element={<TeamAssignmentsPage />} />
-          <Route path="/epics" element={<EpicAssignmentsPage />} />
           <Route
             path="/general-time"
             element={<GeneralTimeAssignmentsPage />}

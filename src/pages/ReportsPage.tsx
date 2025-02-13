@@ -39,6 +39,7 @@ import {
 } from "recharts";
 import { timeReports } from "@/data/timeReports";
 import type { TimeReport } from "@/types/timeReport";
+import { PageHeader } from "@/components/ui/page-header";
 
 // Add this function before the component
 const exportToCsv = (data: TimeReport[]) => {
@@ -270,14 +271,10 @@ export function ReportsPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight animate-slide-down">
-          Time Reports
-        </h1>
-        <p className="text-muted-foreground">
-          View and analyze time tracking reports.
-        </p>
-      </div>
+      <PageHeader
+        title="Time Reports"
+        description="View and analyze time tracking reports."
+      />
 
       <div className="grid gap-6 md:grid-cols-2 mb-6">
         <Card>

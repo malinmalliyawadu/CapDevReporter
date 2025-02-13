@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface LeaveDay {
   employeeName: string;
@@ -80,12 +81,11 @@ export function LeavePage() {
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Leave Days</h1>
-          <p className="text-muted-foreground">
-            Employee leave records from iPayroll
-          </p>
-        </div>
+        <PageHeader
+          title="Leave Days"
+          description="Employee leave records from iPayroll."
+        />
+
         <div className="flex items-center gap-4">
           {lastSynced && (
             <span className="text-sm text-muted-foreground">

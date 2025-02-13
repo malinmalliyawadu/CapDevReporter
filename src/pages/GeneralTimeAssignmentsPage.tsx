@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Clock, LogOut, ListTodo, Trash2 } from "lucide-react";
+import { Clock, Trash2 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-
+import { PageHeader } from "@/components/ui/page-header";
 interface AdminTimeAssignment {
   id: string;
   roleId: string;
@@ -131,12 +131,10 @@ export function GeneralTimeAssignmentsPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">General Time</h1>
-        <p className="text-muted-foreground">
-          Manage general time hours per week based on role.
-        </p>
-      </div>
+      <PageHeader
+        title="General Time Assignments"
+        description="Manage general time hours per week based on role."
+      />
 
       {/* Add new assignment form */}
       <Card className="mb-8">

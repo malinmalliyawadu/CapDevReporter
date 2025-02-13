@@ -19,14 +19,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/ui/page-header";
 
 export function TimeTypesPage() {
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Time Types</h1>
-        <p className="text-muted-foreground">Manage your time entry types.</p>
-      </div>
+      <PageHeader
+        title="Time Types"
+        description="Manage your time entry types."
+      />
 
       <Card className="mb-8">
         <CardHeader>

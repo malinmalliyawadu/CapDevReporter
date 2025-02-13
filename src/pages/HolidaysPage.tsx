@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import Holidays from "date-holidays";
 import { useEffect, useState } from "react";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface Holiday {
   date: string;
@@ -41,12 +42,10 @@ export function HolidaysPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Public Holidays</h1>
-        <p className="text-muted-foreground">
-          Wellington, New Zealand public holidays for {new Date().getFullYear()}
-        </p>
-      </div>
+      <PageHeader
+        title="Public Holidays"
+        description={`Wellington, New Zealand public holidays for ${new Date().getFullYear()}`}
+      />
 
       <Card>
         <CardHeader>

@@ -19,14 +19,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
+import { PageHeader } from "@/components/ui/page-header";
 export function EmployeesPage() {
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Employees</h1>
-        <p className="text-muted-foreground">Manage your employees.</p>
-      </div>
+      <PageHeader title="Employees" description="Manage your employees." />
 
       <Card className="mb-8">
         <CardHeader>
