@@ -10,16 +10,23 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+interface DatePreset {
+  label: string;
+  value: DateRange;
+}
+
 interface DateRangePickerProps {
   dateRange: DateRange | undefined;
   onDateRangeChange: (range: DateRange | undefined) => void;
   className?: string;
+  presets?: DatePreset[];
 }
 
 export function DateRangePicker({
   dateRange,
   onDateRangeChange,
   className,
+  presets,
 }: DateRangePickerProps) {
   return (
     <div className={cn("grid gap-2", className)}>
@@ -49,6 +56,21 @@ export function DateRangePicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
+          <div className="border-b border-border p-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {presets?.map((preset) => (
+                <Button
+                  key={preset.label}
+                  onClick={() => onDateRangeChange(preset.value)}
+                  variant="outline"
+                  size="sm"
+                  className="text-sm"
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+          </div>
           <Calendar
             initialFocus
             mode="range"

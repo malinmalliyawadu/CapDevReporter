@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { addYears, isWithinInterval, parseISO, subYears } from "date-fns";
+import { addYears, isWithinInterval, parseISO, subYears, addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -41,6 +41,44 @@ export function HolidaysPage() {
     from: subYears(new Date(), 2),
     to: new Date(),
   });
+
+  const datePresets = [
+    {
+      label: 'This Week',
+      value: {
+        from: startOfWeek(new Date(), { weekStartsOn: 1 }),
+        to: endOfWeek(new Date(), { weekStartsOn: 1 })
+      }
+    },
+    {
+      label: 'Last Two Weeks',
+      value: {
+        from: startOfWeek(addDays(new Date(), -14), { weekStartsOn: 1 }),
+        to: endOfWeek(new Date(), { weekStartsOn: 1 })
+      }
+    },
+    {
+      label: 'This Month',
+      value: {
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date())
+      }
+    },
+    {
+      label: 'This Year',
+      value: {
+        from: startOfYear(new Date()),
+        to: endOfYear(new Date())
+      }
+    },
+    {
+      label: 'Last 2 Years',
+      value: {
+        from: startOfYear(subYears(new Date(), 1)),
+        to: endOfYear(new Date())
+      }
+    }
+  ];
 
   useEffect(() => {
     const hd = new Holidays("NZ", "WGN");
@@ -167,6 +205,7 @@ export function HolidaysPage() {
             <DateRangePicker
               dateRange={dateRange}
               onDateRangeChange={setDateRange}
+              presets={datePresets}
             />
           </div>
         </CardHeader>
