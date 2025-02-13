@@ -20,8 +20,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function TeamsPage() {
+  const dummyJiraBoards = [
+    { id: "ENG-1", name: "Engineering Board" },
+    { id: "DEV-1", name: "Development Board" },
+    { id: "PROD-1", name: "Product Board" },
+    { id: "QA-1", name: "Quality Assurance Board" },
+    { id: "OPS-1", name: "Operations Board" },
+  ];
+
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <PageHeader title="Teams" description="Manage your teams." />
@@ -40,6 +49,21 @@ export function TeamsPage() {
                 placeholder="Engineering Team"
               />
             </div>
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="jira-board">Jira Board</Label>
+              <Select>
+                <SelectTrigger id="jira-board">
+                  <SelectValue placeholder="Select a board" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dummyJiraBoards.map((board) => (
+                    <SelectItem key={board.id} value={board.id}>
+                      {board.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <Button className="mt-4">Add Team</Button>
         </CardContent>
@@ -55,12 +79,14 @@ export function TeamsPage() {
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>Team Name</TableHead>
+                <TableHead>Jira Board</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableRow>
               <TableCell>1</TableCell>
               <TableCell>Engineering Team</TableCell>
+              <TableCell>Engineering Board (ENG-1)</TableCell>
               <TableCell>
                 <Dialog>
                   <DialogTrigger>

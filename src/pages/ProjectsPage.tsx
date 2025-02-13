@@ -43,9 +43,18 @@ interface Project {
   isCapDev: boolean;
   assignee?: string;
   lastUpdated: string;
+  jiraBoard: string;
 }
 
 export function ProjectsPage() {
+  const dummyJiraBoards = [
+    { id: "ENG-1", name: "Engineering Board" },
+    { id: "DEV-1", name: "Development Board" },
+    { id: "PROD-1", name: "Product Board" },
+    { id: "QA-1", name: "Quality Assurance Board" },
+    { id: "OPS-1", name: "Operations Board" },
+  ];
+
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -64,6 +73,7 @@ export function ProjectsPage() {
       isCapDev: true,
       assignee: "John Doe",
       lastUpdated: "2024-03-15T10:30:00Z",
+      jiraBoard: "ENG-1"
     },
     {
       issueKey: "PROJ-124",
@@ -73,6 +83,7 @@ export function ProjectsPage() {
       isCapDev: false,
       assignee: "Jane Smith",
       lastUpdated: "2024-03-14T15:45:00Z",
+      jiraBoard: "DEV-1"
     },
     {
       issueKey: "PROJ-125",
@@ -82,6 +93,7 @@ export function ProjectsPage() {
       isCapDev: true,
       assignee: "Alice Johnson",
       lastUpdated: "2024-03-13T09:20:00Z",
+      jiraBoard: "ENG-1"
     },
     {
       issueKey: "PROJ-126",
@@ -91,6 +103,7 @@ export function ProjectsPage() {
       isCapDev: false,
       assignee: "Bob Wilson",
       lastUpdated: "2024-03-12T16:15:00Z",
+      jiraBoard: "PROD-1"
     },
   ]);
 
@@ -233,6 +246,30 @@ export function ProjectsPage() {
           {row.getValue("isCapDev") ? "CapDev" : "BAU"}
         </Badge>
       ),
+    },
+    {
+      accessorKey: "jiraBoard",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="group"
+        >
+          Jira Board
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+          )}
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const boardId = row.getValue("jiraBoard") as string;
+        const board = dummyJiraBoards.find(b => b.id === boardId);
+        return board ? board.name : boardId;
+      },
     },
     {
       accessorKey: "lastUpdated",
