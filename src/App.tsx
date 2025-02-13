@@ -18,6 +18,7 @@ import { ReportsPage } from "./pages/ReportsPage";
 import { Toaster } from "./components/ui/toaster";
 import { HolidaysPage } from "./pages/HolidaysPage";
 import { LeavePage } from "./pages/LeavePage";
+import { ProjectsPage } from "./pages/ProjectsPage";
 
 function App() {
   const { user } = useAuth();
@@ -47,6 +48,7 @@ function App() {
           <Route path="/data/general-time-types" element={<TimeTypesPage />} />
           <Route path="/data/holidays" element={<HolidaysPage />} />
           <Route path="/data/leave" element={<LeavePage />} />
+          <Route path="/data/projects" element={<ProjectsPage />} />
           <Route path="/capdev-report" element={<ReportsPage />} />
           <Route path="/" element={<Navigate to="/teams" />} />
         </Routes>
