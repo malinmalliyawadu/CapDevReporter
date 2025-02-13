@@ -38,6 +38,11 @@ const data: { title: string; href: string; description: string }[] = [
     href: "/data/projects",
     description: "Manage projects.",
   },
+  {
+    title: "Holidays",
+    href: "/data/holidays",
+    description: "View public holidays.",
+  },
 ];
 
 const assignments: { title: string; href: string; description: string }[] = [
