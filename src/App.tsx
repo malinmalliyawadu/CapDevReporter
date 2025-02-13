@@ -17,6 +17,7 @@ import { TeamsPage } from "./pages/TeamsPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { Toaster } from "./components/ui/toaster";
 import { HolidaysPage } from "./pages/HolidaysPage";
+import { LeavePage } from "./pages/LeavePage";
 
 function App() {
   const { user } = useAuth();
@@ -45,6 +46,7 @@ function App() {
           <Route path="/data/roles" element={<RolesPage />} />
           <Route path="/data/general-time-types" element={<TimeTypesPage />} />
           <Route path="/data/holidays" element={<HolidaysPage />} />
+          <Route path="/data/leave" element={<LeavePage />} />
           <Route path="/capdev-report" element={<ReportsPage />} />
           <Route path="/" element={<Navigate to="/teams" />} />
         </Routes>

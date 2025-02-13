@@ -43,6 +43,11 @@ const data: { title: string; href: string; description: string }[] = [
     href: "/data/holidays",
     description: "View public holidays.",
   },
+  {
+    title: "Leave",
+    href: "/data/leave",
+    description: "View leave balances.",
+  },
 ];
 
 const assignments: { title: string; href: string; description: string }[] = [
