@@ -1,6 +1,4 @@
-import { useNavigate } from "react-router-dom";
-import { Layers, LogOut, Trash2 } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { Trash2 } from "lucide-react";
 import { CardHeader } from "@/components/ui/card";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,14 +26,13 @@ import {
 import { DialogHeader } from "@/components/ui/dialog";
 
 export function TeamAssignmentsPage() {
-  const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Team Assignments</h1>
-        <p className="text-muted-foreground">Assign employees to teams.</p>
+        <p className="text-muted-foreground">
+          Assign employees to teamssdafsdf.
+        </p>
       </div>
 
       <Card className="mb-8">
