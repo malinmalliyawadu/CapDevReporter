@@ -37,6 +37,7 @@ import {
   Download,
   ChevronDown,
   ChevronRight,
+  BarChart,
 } from "lucide-react";
 import {
   PieChart,
@@ -45,7 +46,7 @@ import {
   Legend,
   ResponsiveContainer,
   Tooltip,
-  BarChart,
+  BarChart as RechartsBarChart,
   Bar,
   YAxis,
 } from "recharts";
@@ -416,7 +417,12 @@ export function ReportsPage() {
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <PageHeader
-        title="Time Reports"
+        title={
+          <span className="flex items-center gap-2">
+            <BarChart className="h-6 w-6 text-rose-500" />
+            Time Reports
+          </span>
+        }
         description="View and analyze time tracking reports."
       />
 

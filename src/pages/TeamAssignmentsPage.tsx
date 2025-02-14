@@ -31,6 +31,7 @@ import { employees } from "@/data/employees";
 import { teamAssignments } from "@/data/teamAssignments";
 import { format } from "date-fns";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+import { LayoutGrid } from "lucide-react";
 
 export function TeamAssignmentsPage() {
   const [assignments, setAssignments] = useState(teamAssignments);
@@ -38,8 +39,13 @@ export function TeamAssignmentsPage() {
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <PageHeader
-        title="Team Assignments"
-        description="Assign employees to teams."
+        title={
+          <span className="flex items-center gap-2">
+            <LayoutGrid className="h-6 w-6 text-orange-500" />
+            Team Assignments
+          </span>
+        }
+        description="Manage team memberships and assignments."
       />
 
       <Card className="mb-8">

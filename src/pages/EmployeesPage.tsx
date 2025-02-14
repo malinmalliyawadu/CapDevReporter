@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { Trash2, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -79,7 +79,15 @@ export function EmployeesPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <PageHeader title="Employees" description="Manage your employees." />
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <User className="h-6 w-6 text-green-500" />
+            Employees
+          </span>
+        }
+        description="Manage your employee directory."
+      />
 
       <Card className="mb-8">
         <CardHeader>

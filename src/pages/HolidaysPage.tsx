@@ -12,7 +12,19 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { addYears, isWithinInterval, parseISO, subYears, addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
+import {
+  addYears,
+  isWithinInterval,
+  parseISO,
+  subYears,
+  addDays,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+} from "date-fns";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -23,7 +35,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, PartyPopper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -44,40 +56,40 @@ export function HolidaysPage() {
 
   const datePresets = [
     {
-      label: 'This Week',
+      label: "This Week",
       value: {
         from: startOfWeek(new Date(), { weekStartsOn: 1 }),
-        to: endOfWeek(new Date(), { weekStartsOn: 1 })
-      }
+        to: endOfWeek(new Date(), { weekStartsOn: 1 }),
+      },
     },
     {
-      label: 'Last Two Weeks',
+      label: "Last Two Weeks",
       value: {
         from: startOfWeek(addDays(new Date(), -14), { weekStartsOn: 1 }),
-        to: endOfWeek(new Date(), { weekStartsOn: 1 })
-      }
+        to: endOfWeek(new Date(), { weekStartsOn: 1 }),
+      },
     },
     {
-      label: 'This Month',
+      label: "This Month",
       value: {
         from: startOfMonth(new Date()),
-        to: endOfMonth(new Date())
-      }
+        to: endOfMonth(new Date()),
+      },
     },
     {
-      label: 'This Year',
+      label: "This Year",
       value: {
         from: startOfYear(new Date()),
-        to: endOfYear(new Date())
-      }
+        to: endOfYear(new Date()),
+      },
     },
     {
-      label: 'Last 2 Years',
+      label: "Last 2 Years",
       value: {
         from: startOfYear(subYears(new Date(), 1)),
-        to: endOfYear(new Date())
-      }
-    }
+        to: endOfYear(new Date()),
+      },
+    },
   ];
 
   useEffect(() => {
@@ -184,8 +196,13 @@ export function HolidaysPage() {
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <PageHeader
-        title="Public Holidays"
-        description={`Wellington, New Zealand public holidays for ${new Date().getFullYear()}`}
+        title={
+          <span className="flex items-center gap-2">
+            <PartyPopper className="h-6 w-6 text-pink-500" />
+            Holidays
+          </span>
+        }
+        description="View and manage public holidays."
       />
 
       <Card>

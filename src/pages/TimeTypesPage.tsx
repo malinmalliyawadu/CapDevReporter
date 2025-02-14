@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -132,7 +132,15 @@ export function TimeTypesPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <PageHeader title="Time Types" description="Manage your time types." />
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Clock className="h-6 w-6 text-amber-500" />
+            Time Types
+          </span>
+        }
+        description="Manage your time tracking categories."
+      />
 
       <Card className="mb-8">
         <CardHeader>

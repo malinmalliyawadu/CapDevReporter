@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
+import { Palmtree } from "lucide-react";
 
 interface LeaveDay {
   employeeName: string;
@@ -80,12 +81,17 @@ export function LeavePage() {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8 flex justify-between items-center">
-        <PageHeader
-          title="Leave Days"
-          description="Employee leave records from iPayroll."
-        />
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Palmtree className="h-6 w-6 text-teal-500" />
+            Leave
+          </span>
+        }
+        description="View and manage employee leave."
+      />
 
+      <div className="mb-8 flex justify-between items-center">
         <div className="flex items-center gap-4">
           {lastSynced && (
             <span className="text-sm text-muted-foreground">

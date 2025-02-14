@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Drama } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { roles } from "@/data/roles";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
@@ -52,7 +51,15 @@ export function RolesPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <PageHeader title="Roles" description="Manage your roles." />
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Drama className="h-6 w-6 text-purple-500" />
+            Roles
+          </span>
+        }
+        description="Manage employee roles and responsibilities."
+      />
 
       <Card className="mb-8">
         <CardHeader>

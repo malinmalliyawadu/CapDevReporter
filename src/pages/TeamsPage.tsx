@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -73,7 +73,15 @@ export function TeamsPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <PageHeader title="Teams" description="Manage your teams." />
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Users className="h-6 w-6 text-blue-500" />
+            Teams
+          </span>
+        }
+        description="Manage your teams and their configurations."
+      />
 
       <Card className="mb-8">
         <CardHeader>

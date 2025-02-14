@@ -10,55 +10,114 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { Link } from "react-router-dom";
-import { TimerReset } from "lucide-react";
+import {
+  Users,
+  User,
+  Clock,
+  ClipboardList,
+  PartyPopper,
+  Palmtree,
+  Timer,
+  LayoutGrid,
+  Drama,
+} from "lucide-react";
 import { ModeToggle } from "./ModeToggle";
 
-const data: { title: string; href: string; description: string }[] = [
+const data: { title: React.ReactNode; href: string; description: string }[] = [
   {
-    title: "Teams",
+    title: (
+      <span className="flex items-center gap-2">
+        <Users className="h-4 w-4 text-blue-500" />
+        Teams
+      </span>
+    ),
     href: "/data/teams",
     description: "Manage teams",
   },
   {
-    title: "Employees",
+    title: (
+      <span className="flex items-center gap-2">
+        <User className="h-4 w-4 text-green-500" />
+        Employees
+      </span>
+    ),
     href: "/data/employees",
     description: "Manage employees",
   },
   {
-    title: "Roles",
+    title: (
+      <span className="flex items-center gap-2">
+        <Drama className="h-4 w-4 text-purple-500" />
+        Roles
+      </span>
+    ),
     href: "/data/roles",
     description: "Manage roles",
   },
   {
-    title: "General Time Types",
+    title: (
+      <span className="flex items-center gap-2">
+        <Clock className="h-4 w-4 text-amber-500" />
+        General Time Types
+      </span>
+    ),
     href: "/data/general-time-types",
     description: "Manage general time types",
   },
   {
-    title: "Projects",
+    title: (
+      <span className="flex items-center gap-2">
+        <ClipboardList className="h-4 w-4 text-indigo-500" />
+        Projects
+      </span>
+    ),
     href: "/data/projects",
     description: "View and sync projects",
   },
   {
-    title: "Holidays",
+    title: (
+      <span className="flex items-center gap-2">
+        <PartyPopper className="h-4 w-4 text-pink-500" />
+        Holidays
+      </span>
+    ),
     href: "/data/holidays",
     description: "View public holidays",
   },
   {
-    title: "Leave",
+    title: (
+      <span className="flex items-center gap-2">
+        <Palmtree className="h-4 w-4 text-teal-500" />
+        Leave
+      </span>
+    ),
     href: "/data/leave",
     description: "View and sync leave",
   },
 ];
 
-const assignments: { title: string; href: string; description: string }[] = [
+const assignments: {
+  title: React.ReactNode;
+  href: string;
+  description: string;
+}[] = [
   {
-    title: "Teams",
+    title: (
+      <span className="flex items-center gap-2">
+        <LayoutGrid className="h-4 w-4 text-orange-500" />
+        Team Assignments
+      </span>
+    ),
     href: "/teams",
     description: "Assign employees to teams",
   },
   {
-    title: "General Time",
+    title: (
+      <span className="flex items-center gap-2">
+        <Timer className="h-4 w-4 text-rose-500" />
+        General Time
+      </span>
+    ),
     href: "/general-time",
     description: "Manage general time hours per week based on role",
   },
@@ -70,7 +129,7 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-2 text-cyan-800 dark:text-white">
-            <TimerReset className="animate-spin-once" />
+            <Timer className="animate-spin-once" />
             <h1 className="text-2xl font-bold tracking-tight animate-slide-down">
               ***REMOVED*** Timesheet
             </h1>

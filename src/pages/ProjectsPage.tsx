@@ -37,6 +37,7 @@ import { addYears, isWithinInterval, parseISO, subYears } from "date-fns";
 import { Project } from "@/types/project";
 import { projects as baseProjects } from "@/data/projects";
 import { jiraBoards } from "@/data/jiraBoards";
+import { ClipboardList } from "lucide-react";
 
 export function ProjectsPage() {
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
@@ -281,7 +282,15 @@ export function ProjectsPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <PageHeader title="Projects" description="Project tracking from Jira" />
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <ClipboardList className="h-6 w-6 text-indigo-500" />
+            Projects
+          </span>
+        }
+        description="View and manage project information."
+      />
 
       <div className="mb-4 flex gap-4">
         <Input
