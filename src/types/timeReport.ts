@@ -1,11 +1,16 @@
-export type TimeReport = {
+export interface TimeEntry {
+  timeTypeId: number;
+  hours: number;
+  isCapDev: boolean;
+}
+
+export interface TimeReport {
   id: string;
   user: string;
   week: string;
   payrollId: string;
   fullHours: number;
-  capdevTime: number;
-  nonCapdevTime: number;
+  timeEntries: TimeEntry[];
   team: string;
   role: string;
-};
+}

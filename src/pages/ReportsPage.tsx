@@ -36,10 +36,15 @@ import {
   Legend,
   ResponsiveContainer,
   Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
 } from "recharts";
 import { timeReports } from "@/data/timeReports";
 import type { TimeReport } from "@/types/timeReport";
 import { PageHeader } from "@/components/ui/page-header";
+import { timeTypes } from "@/data/timeTypes";
 
 // Add this function before the component
 const exportToCsv = (data: TimeReport[]) => {
@@ -59,8 +64,12 @@ const exportToCsv = (data: TimeReport[]) => {
     row.week,
     row.payrollId,
     row.fullHours,
-    row.capdevTime,
-    row.nonCapdevTime,
+    row.timeEntries
+      .filter((entry) => entry.isCapDev)
+      .reduce((sum, entry) => sum + entry.hours, 0),
+    row.timeEntries
+      .filter((entry) => !entry.isCapDev)
+      .reduce((sum, entry) => sum + entry.hours, 0),
     row.team,
     row.role,
   ]);
@@ -109,6 +118,25 @@ const getLastTwoYearsWeeks = () => {
 
   return [...new Set(weeks)].sort().reverse(); // Remove duplicates and sort descending
 };
+
+// Add this color palette for the detailed chart
+const timeTypeColors = [
+  "#2563eb", // blue-600
+  "#db2777", // pink-600
+  "#16a34a", // green-600
+  "#9333ea", // purple-600
+  "#ea580c", // orange-600
+  "#0891b2", // cyan-600
+  "#4f46e5", // indigo-600
+  "#be123c", // rose-600
+  "#15803d", // green-700
+  "#7c3aed", // violet-600
+  "#c2410c", // orange-700
+  "#0369a1", // sky-700
+  "#6d28d9", // purple-700
+  "#be185d", // pink-700
+  "#1d4ed8", // blue-700
+];
 
 export function ReportsPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -179,10 +207,22 @@ export function ReportsPage() {
     {
       accessorKey: "capdevTime",
       header: "CapDev Time",
+      cell: ({ row }) => {
+        const capdevHours = row.original.timeEntries
+          .filter((entry) => entry.isCapDev)
+          .reduce((sum, entry) => sum + entry.hours, 0);
+        return capdevHours.toFixed(1);
+      },
     },
     {
       accessorKey: "nonCapdevTime",
       header: "Non-CapDev Time",
+      cell: ({ row }) => {
+        const nonCapdevHours = row.original.timeEntries
+          .filter((entry) => !entry.isCapDev)
+          .reduce((sum, entry) => sum + entry.hours, 0);
+        return nonCapdevHours.toFixed(1);
+      },
     },
     {
       accessorKey: "team",
@@ -243,28 +283,57 @@ export function ReportsPage() {
     },
   });
 
-  // Calculate totals and percentages for the pie chart from filtered data
   const filteredData = table
     .getFilteredRowModel()
     .rows.map((row) => row.original);
-  const totalCapdev = filteredData.reduce(
-    (sum, row) => sum + row.capdevTime,
-    0
-  );
-  const totalNonCapdev = filteredData.reduce(
-    (sum, row) => sum + row.nonCapdevTime,
-    0
-  );
-  const totalTime = totalCapdev + totalNonCapdev;
 
-  const capdevPercentage = totalTime > 0 ? (totalCapdev / totalTime) * 100 : 0;
-  const nonCapdevPercentage =
-    totalTime > 0 ? (totalNonCapdev / totalTime) * 100 : 0;
+  // Calculate detailed time type data
+  const timeTypeHours = new Map<
+    number,
+    { hours: number; isCapDev: boolean; name: string }
+  >();
 
-  const chartData = [
-    { name: "CapDev Time", value: capdevPercentage, color: "#0ea5e9" }, // sky-500
-    { name: "Non-CapDev Time", value: nonCapdevPercentage, color: "#f43f5e" }, // rose-500
+  filteredData.forEach((report) => {
+    report.timeEntries.forEach((entry) => {
+      const current = timeTypeHours.get(entry.timeTypeId) || {
+        hours: 0,
+        isCapDev: entry.isCapDev,
+        name:
+          timeTypes.find((t) => t.id === entry.timeTypeId)?.name || "Unknown",
+      };
+      current.hours += entry.hours;
+      timeTypeHours.set(entry.timeTypeId, current);
+    });
+  });
+
+  // Calculate rolled up CapDev data
+  const totalCapDevHours = Array.from(timeTypeHours.values())
+    .filter((data) => data.isCapDev)
+    .reduce((sum, data) => sum + data.hours, 0);
+
+  const totalNonCapDevHours = Array.from(timeTypeHours.values())
+    .filter((data) => !data.isCapDev)
+    .reduce((sum, data) => sum + data.hours, 0);
+
+  const rolledUpData = [
+    { name: "CapDev", value: totalCapDevHours, color: "#0ea5e9" },
+    { name: "Non-CapDev", value: totalNonCapDevHours, color: "#f43f5e" },
   ];
+
+  const detailedChartData = Array.from(timeTypeHours.entries()).map(
+    ([id, data], index) => ({
+      name: data.name,
+      value: data.hours,
+      color: timeTypeColors[index % timeTypeColors.length],
+      isCapDev: data.isCapDev, // Keep this for the indicator
+    })
+  );
+
+  const totalTime = rolledUpData.reduce((sum, item) => sum + item.value, 0);
+  const totalDetailedTime = detailedChartData.reduce(
+    (sum, item) => sum + item.value,
+    0
+  );
 
   // Get the weeks once when component mounts
   const availableWeeks = getLastTwoYearsWeeks();
@@ -279,14 +348,14 @@ export function ReportsPage() {
       <div className="grid gap-6 md:grid-cols-2 mb-6">
         <Card>
           <CardHeader>
-            <CardTitle>Time Distribution</CardTitle>
+            <CardTitle>Rolled Up Time Distribution</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={chartData}
+                    data={rolledUpData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -294,46 +363,106 @@ export function ReportsPage() {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {chartData.map((entry, index) => (
+                    {rolledUpData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number) => `${value.toFixed(1)}%`}
+                    formatter={(value: number) =>
+                      `${value.toFixed(1)} hours (${(
+                        (value / totalTime) *
+                        100
+                      ).toFixed(1)}%)`
+                    }
                   />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <div className="mt-4 space-y-2">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-sky-500" />
-                  <span className="text-sm font-medium">CapDev Time</span>
+              {rolledUpData.map((item, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-medium">
+                      {((item.value / totalTime) * 100).toFixed(1)}%
+                    </span>
+                    <span className="text-sm text-muted-foreground ml-2">
+                      ({item.value.toFixed(1)} hours)
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="font-medium">
-                    {capdevPercentage.toFixed(1)}%
-                  </span>
-                  <span className="text-sm text-muted-foreground ml-2">
-                    ({totalCapdev.toFixed(1)} hours)
-                  </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Detailed Time Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={detailedChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {detailedChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number) =>
+                      `${value.toFixed(1)} hours (${(
+                        (value / totalDetailedTime) *
+                        100
+                      ).toFixed(1)}%)`
+                    }
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 space-y-2">
+              {detailedChartData.map((item, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      {item.name}
+                      {item.isCapDev && (
+                        <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
+                          CapDev
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-medium">
+                      {((item.value / totalDetailedTime) * 100).toFixed(1)}%
+                    </span>
+                    <span className="text-sm text-muted-foreground ml-2">
+                      ({item.value.toFixed(1)} hours)
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-rose-500" />
-                  <span className="text-sm font-medium">Non-CapDev Time</span>
-                </div>
-                <div className="text-right">
-                  <span className="font-medium">
-                    {nonCapdevPercentage.toFixed(1)}%
-                  </span>
-                  <span className="text-sm text-muted-foreground ml-2">
-                    ({totalNonCapdev.toFixed(1)} hours)
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
