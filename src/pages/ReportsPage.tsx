@@ -46,14 +46,13 @@ import {
   Legend,
   ResponsiveContainer,
   Tooltip,
-  BarChart as RechartsBarChart,
-  Bar,
-  YAxis,
 } from "recharts";
 import { timeReports } from "@/data/timeReports";
 import type { TimeReport } from "@/types/timeReport";
 import { PageHeader } from "@/components/ui/page-header";
 import { timeTypes } from "@/data/timeTypes";
+import { teams } from "@/data/teams";
+import { roles } from "@/data/roles";
 
 // Add this function before the component
 const exportToCsv = (data: TimeReport[]) => {
@@ -472,8 +471,11 @@ export function ReportsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Teams</SelectItem>
-                  <SelectItem value="Engineering">Engineering</SelectItem>
-                  <SelectItem value="Design">Design</SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.name}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select
@@ -487,13 +489,11 @@ export function ReportsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Roles</SelectItem>
-                  <SelectItem value="Software Engineer">
-                    Software Engineer
-                  </SelectItem>
-                  <SelectItem value="UX Designer">UX Designer</SelectItem>
-                  <SelectItem value="Project Manager">
-                    Project Manager
-                  </SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
