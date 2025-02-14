@@ -74,7 +74,7 @@ export function Navigation() {
           </h1>
         </div>
         <NavigationMenu>
-          <NavigationMenuList>
+          <NavigationMenuList className="gap-2">
             <NavigationMenuItem>
               <NavigationMenuTrigger>Data</NavigationMenuTrigger>
               <NavigationMenuContent>
@@ -110,7 +110,7 @@ export function Navigation() {
             <NavigationMenuItem>
               <Link to="/capdev-report">
                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  CapDev Report
+                  Report
                 </NavigationMenuLink>
               </Link>
             </NavigationMenuItem>
