@@ -6,7 +6,6 @@ import {
 } from "react-router-dom";
 import { LoginForm } from "./components/LoginForm";
 import { TeamAssignmentsPage } from "./pages/TeamAssignmentsPage";
-import { EpicAssignmentsPage } from "./pages/EpicAssignmentsPage";
 import { GeneralTimeAssignmentsPage } from "./pages/GeneralTimeAssignmentsPage";
 import { useAuth } from "./hooks/useAuth";
 import { Navigation } from "./components/Navigation";

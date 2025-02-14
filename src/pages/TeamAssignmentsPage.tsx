@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
 import { CardHeader } from "@/components/ui/card";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -16,15 +14,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectValue } from "@/components/ui/select";
 import { SelectItem, SelectTrigger } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/datepicker";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { DialogHeader } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { teams } from "@/data/teams";
 import { employees } from "@/data/employees";
