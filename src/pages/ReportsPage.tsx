@@ -16,6 +16,8 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   useReactTable,
+  getExpandedRowModel,
+  ExpandedState,
 } from "@tanstack/react-table";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +30,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, ArrowUp, ArrowDown, Download } from "lucide-react";
+import {
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Download,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -38,7 +47,6 @@ import {
   Tooltip,
   BarChart,
   Bar,
-  XAxis,
   YAxis,
 } from "recharts";
 import { timeReports } from "@/data/timeReports";
@@ -146,6 +154,7 @@ export function ReportsPage() {
       value: getCurrentWeek(),
     },
   ]);
+  const [expanded, setExpanded] = useState<ExpandedState>({});
 
   // Add this handler function
   const handleFilterChange = (columnId: string, value: string) => {
@@ -154,6 +163,28 @@ export function ReportsPage() {
   };
 
   const columns: ColumnDef<TimeReport>[] = [
+    {
+      id: "expander",
+      header: () => null,
+      cell: ({ row }) => {
+        return (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => {
+              row.toggleExpanded();
+            }}
+          >
+            {row.getIsExpanded() ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </Button>
+        );
+      },
+    },
     {
       accessorKey: "user",
       header: ({ column }) => {
@@ -268,6 +299,47 @@ export function ReportsPage() {
     },
   ];
 
+  const renderSubRow = (row: TimeReport) => {
+    return (
+      <TableRow key={`${row.id}-expanded`} className="bg-muted/50">
+        <TableCell colSpan={columns.length} className="p-4">
+          <div className="rounded-md border">
+            <div className="bg-muted px-4 py-2 font-medium border-b">
+              Time Entries
+            </div>
+            <div className="divide-y">
+              {row.timeEntries.map((entry, index) => {
+                const timeType = timeTypes.find(
+                  (t) => t.id === entry.timeTypeId
+                );
+                return (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">
+                        {timeType?.name || "Unknown"}
+                      </span>
+                      {entry.isCapDev && (
+                        <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
+                          CapDev
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-medium">
+                      {entry.hours.toFixed(1)} hours
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   const table = useReactTable({
     data: timeReports,
     columns,
@@ -277,9 +349,12 @@ export function ReportsPage() {
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    onExpandedChange: setExpanded,
     state: {
       sorting,
       columnFilters,
+      expanded,
     },
   });
 
@@ -572,16 +647,22 @@ export function ReportsPage() {
               <TableBody>
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
+                    <>
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                      {row.getIsExpanded() && renderSubRow(row.original)}
+                    </>
                   ))
                 ) : (
                   <TableRow>
