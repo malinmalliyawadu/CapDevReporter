@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Link } from "react-router-dom";
 import { TimerReset } from "lucide-react";
+import { ModeToggle } from "./ModeToggle";
 
 const data: { title: string; href: string; description: string }[] = [
   {
@@ -65,57 +66,62 @@ const assignments: { title: string; href: string; description: string }[] = [
 
 export function Navigation() {
   return (
-    <header className="bg-gradient-to-r from-zinc-50 to-zinc-100 border-b border-zinc-200">
-      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex">
-        <div className="flex items-center justify-between mr-8 gap-2 text-cyan-800">
-          <TimerReset className="animate-spin-once" />
-          <h1 className="text-2xl font-bold tracking-tight animate-slide-down">
-            ***REMOVED*** Timesheet
-          </h1>
+    <header className="bg-gradient-to-r from-zinc-50 to-zinc-100 border-b border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800 dark:text-white dark:from-blue-800 dark:to-blue-900">
+      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between">
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-2 text-cyan-800 dark:text-white">
+            <TimerReset className="animate-spin-once" />
+            <h1 className="text-2xl font-bold tracking-tight animate-slide-down">
+              ***REMOVED*** Timesheet
+            </h1>
+          </div>
+
+          <NavigationMenu>
+            <NavigationMenuList className="gap-2">
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Data</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                    {data.map((component) => (
+                      <ListItem
+                        key={component.title}
+                        title={component.title}
+                        href={component.href}
+                      >
+                        {component.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Assignments</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+                    {assignments.map((component) => (
+                      <ListItem
+                        key={component.title}
+                        title={component.title}
+                        href={component.href}
+                      >
+                        {component.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/capdev-report">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Report
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
-        <NavigationMenu>
-          <NavigationMenuList className="gap-2">
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Data</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                  {data.map((component) => (
-                    <ListItem
-                      key={component.title}
-                      title={component.title}
-                      href={component.href}
-                    >
-                      {component.description}
-                    </ListItem>
-                  ))}
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Assignments</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
-                  {assignments.map((component) => (
-                    <ListItem
-                      key={component.title}
-                      title={component.title}
-                      href={component.href}
-                    >
-                      {component.description}
-                    </ListItem>
-                  ))}
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link to="/capdev-report">
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Report
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
+
+        <ModeToggle />
       </div>
     </header>
   );
