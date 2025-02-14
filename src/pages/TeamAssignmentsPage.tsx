@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { CardHeader } from "@/components/ui/card";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
+  TableBody,
   TableCell,
   TableHead,
   TableHeader,
@@ -25,7 +27,14 @@ import {
 import { DialogHeader } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { teams } from "@/data/teams";
+import { employees } from "@/data/employees";
+import { teamAssignments } from "@/data/teamAssignments";
+import { format } from "date-fns";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+
 export function TeamAssignmentsPage() {
+  const [assignments, setAssignments] = useState(teamAssignments);
+
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <PageHeader
@@ -40,12 +49,19 @@ export function TeamAssignmentsPage() {
         <CardContent>
           <div className="flex items-center gap-4">
             <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Label htmlFor="employee-name">Employee Name</Label>
-              <Input
-                id="employee-name"
-                type="text"
-                placeholder="Employee Name"
-              />
+              <Label htmlFor="employee">Employee</Label>
+              <Select>
+                <SelectTrigger id="employee">
+                  <SelectValue placeholder="Select Employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.id} value={String(employee.id)}>
+                      {employee.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid w-full max-w-sm items-center gap-1.5">
@@ -74,6 +90,7 @@ export function TeamAssignmentsPage() {
               </Select>
             </div>
           </div>
+          <Button className="mt-4">Add Assignment</Button>
         </CardContent>
       </Card>
 
@@ -86,47 +103,35 @@ export function TeamAssignmentsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Employee</TableHead>
-                <TableHead>Payroll ID</TableHead>
                 <TableHead>Team</TableHead>
-                <TableHead className="w-[160px]">Hours per week</TableHead>
+                <TableHead>Start Date</TableHead>
+                <TableHead>End Date</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
-              <TableRow>
-                <TableCell>John Doe</TableCell>
-                <TableCell>123456</TableCell>
-                <TableCell>Team A</TableCell>
-                <TableCell>40</TableCell>
-                <TableCell>
-                  <Dialog>
-                    <DialogTrigger>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        // onClick={() => handleDelete(assignment.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Are you absolutely sure?</DialogTitle>
-                        <DialogDescription>
-                          This action cannot be undone. This will permanently
-                          delete your account and remove your data from our
-                          servers.
-                        </DialogDescription>
-                        <div className="flex gap-2 mt-24 justify-end">
-                          <Button variant="destructive">Delete</Button>
-                          <DialogClose asChild>
-                            <Button variant="outline">Cancel</Button>
-                          </DialogClose>
-                        </div>
-                      </DialogHeader>
-                    </DialogContent>
-                  </Dialog>
-                </TableCell>
-              </TableRow>
             </TableHeader>
+            <TableBody>
+              {assignments.map((assignment) => {
+                const employee = employees.find(
+                  (e) => e.id === assignment.employeeId
+                );
+                const team = teams.find((t) => t.id === assignment.teamId);
+                return (
+                  <TableRow key={assignment.id}>
+                    <TableCell>{employee?.name}</TableCell>
+                    <TableCell>{team?.name}</TableCell>
+                    <TableCell>
+                      {format(new Date(assignment.startDate), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(assignment.endDate), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <ConfirmDeleteButton />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
           </Table>
         </CardContent>
       </Card>

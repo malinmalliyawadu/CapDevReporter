@@ -1,0 +1,58 @@
+export const teamAssignments = [
+  {
+    id: 1,
+    employeeId: 1,
+    teamId: 2,
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+  },
+  {
+    id: 2,
+    employeeId: 2,
+    teamId: 1,
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+  },
+  {
+    id: 3,
+    employeeId: 3,
+    teamId: 2,
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+  },
+  {
+    id: 4,
+    employeeId: 4,
+    teamId: 4,
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+  },
+  {
+    id: 5,
+    employeeId: 5,
+    teamId: 2,
+    startDate: "2024-02-01",
+    endDate: "2024-12-31",
+  },
+  {
+    id: 6,
+    employeeId: 5,
+    teamId: 1,
+    startDate: "2024-02-01",
+    endDate: "2024-12-31",
+  },
+  {
+    id: 7,
+    employeeId: 6,
+    teamId: 1,
+    startDate: "2024-01-15",
+    endDate: "2024-06-30",
+  },
+  {
+    id: 8,
+    employeeId: 7,
+    teamId: 2,
+    startDate: "2024-03-01",
+    endDate: "2024-12-31",
+  },
+];

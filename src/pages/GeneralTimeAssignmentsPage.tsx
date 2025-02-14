@@ -22,37 +22,13 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/ui/page-header";
-interface AdminTimeAssignment {
-  id: string;
-  roleId: string;
-  userId: string;
-  hoursPerWeek: number;
-  timeType: string;
-}
-
-interface Role {
-  id: string;
-  name: string;
-}
-
-// Mock data - replace with your actual data source
-const roles: Role[] = [
-  { id: "0", name: "All" },
-  { id: "1", name: "Developer" },
-  { id: "2", name: "Designer" },
-  { id: "3", name: "Product Manager" },
-];
-
-// Add time type options after the roles array
-const timeTypes = [
-  { id: "admin", name: "Admin" },
-  { id: "friday-update", name: "Friday Update" },
-  { id: "learning-and-development", name: "Learning and Development" },
-];
+import { AdminTimeAssignment } from "@/types/adminTimeAssignment";
+import { generalTimeAssignments } from "@/data/generalTimeAssignments";
+import { roles } from "@/data/roles";
+import { timeTypes } from "@/data/timeTypes";
 
 export function GeneralTimeAssignmentsPage() {
-  const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [assignments, setAssignments] = useState<AdminTimeAssignment[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newAssignment, setNewAssignment] = useState({
@@ -64,31 +40,7 @@ export function GeneralTimeAssignmentsPage() {
 
   // Load assignments (replace with your actual data fetching)
   useEffect(() => {
-    // Mock data - replace with actual API call
-    const mockAssignments: AdminTimeAssignment[] = [
-      {
-        id: "1",
-        roleId: "1",
-        userId: user!.id,
-        hoursPerWeek: 20,
-        timeType: "admin",
-      },
-      {
-        id: "2",
-        roleId: "0",
-        userId: user!.id,
-        hoursPerWeek: 10,
-        timeType: "friday-update",
-      },
-      {
-        id: "3",
-        roleId: "0",
-        userId: user!.id,
-        hoursPerWeek: 10,
-        timeType: "learning-and-development",
-      },
-    ];
-    setAssignments(mockAssignments);
+    setAssignments(generalTimeAssignments);
   }, [user]);
 
   const handleAdd = () => {
@@ -102,7 +54,7 @@ export function GeneralTimeAssignmentsPage() {
     }
 
     const assignment: AdminTimeAssignment = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: assignments.length + 1,
       userId: user!.id,
       roleId: newAssignment.roleId,
       hoursPerWeek: newAssignment.hoursPerWeek,
@@ -114,17 +66,7 @@ export function GeneralTimeAssignmentsPage() {
     toast({ description: "Assignment added successfully" });
   };
 
-  const handleUpdate = (id: string, hoursPerWeek: number) => {
-    setAssignments(
-      assignments.map((assignment) =>
-        assignment.id === id ? { ...assignment, hoursPerWeek } : assignment
-      )
-    );
-    setEditingId(null);
-    toast({ description: "Assignment updated successfully" });
-  };
-
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     setAssignments(assignments.filter((assignment) => assignment.id !== id));
     toast({ description: "Assignment deleted successfully" });
   };
@@ -154,7 +96,7 @@ export function GeneralTimeAssignmentsPage() {
               </SelectTrigger>
               <SelectContent>
                 {roles.map((role) => (
-                  <SelectItem key={role.id} value={role.id}>
+                  <SelectItem key={role.id} value={String(role.id)}>
                     {role.name}
                   </SelectItem>
                 ))}
@@ -172,7 +114,7 @@ export function GeneralTimeAssignmentsPage() {
               </SelectTrigger>
               <SelectContent>
                 {timeTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
+                  <SelectItem key={type.id} value={String(type.id)}>
                     {type.name}
                   </SelectItem>
                 ))}
@@ -222,8 +164,9 @@ export function GeneralTimeAssignmentsPage() {
                   </TableCell>
                   <TableCell>
                     {
-                      timeTypes.find((type) => type.id === assignment.timeType)
-                        ?.name
+                      timeTypes.find(
+                        (type) => type.id === assignment.timeTypeId
+                      )?.name
                     }
                   </TableCell>
                   <TableCell>{assignment.hoursPerWeek}</TableCell>
