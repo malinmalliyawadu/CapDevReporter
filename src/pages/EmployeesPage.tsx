@@ -10,17 +10,73 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
+import { employees } from "@/data/employees";
+import {
+  Select,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+} from "@/components/ui/select";
+import { roles } from "@/data/roles";
+import { teams } from "@/data/teams";
+import { useState } from "react";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+
+interface NewEmployee {
+  name: string;
+  payrollId: string;
+  roleId: string;
+  hoursPerWeek: string;
+}
+
 export function EmployeesPage() {
+  const [employeesList, setEmployeesList] = useState(employees);
+  const [newEmployee, setNewEmployee] = useState<NewEmployee>({
+    name: "",
+    payrollId: "",
+    roleId: "",
+    hoursPerWeek: "40",
+  });
+
+  const handleInputChange = (field: keyof NewEmployee, value: string) => {
+    setNewEmployee((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleAddEmployee = () => {
+    // Validate required fields
+    if (!newEmployee.name || !newEmployee.payrollId || !newEmployee.roleId) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    // Create new employee object
+    const employee = {
+      id: employeesList.length + 1,
+      name: newEmployee.name,
+      payrollId: newEmployee.payrollId,
+      roleId: parseInt(newEmployee.roleId),
+      hoursPerWeek: parseInt(newEmployee.hoursPerWeek) || 40,
+      teamId: 1, // Default team, you might want to make this selectable too
+    };
+
+    // Add to list
+    setEmployeesList((prev) => [...prev, employee]);
+
+    // Reset form
+    setNewEmployee({
+      name: "",
+      payrollId: "",
+      roleId: "",
+      hoursPerWeek: "40",
+    });
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <PageHeader title="Employees" description="Manage your employees." />
@@ -33,21 +89,43 @@ export function EmployeesPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="grid w-full items-center gap-1.5">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" type="text" placeholder="John Doe" />
-            </div>
-
-            <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="email">Email</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="john.doe@example.com"
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                value={newEmployee.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
               />
             </div>
 
             <div className="grid w-full items-center gap-1.5">
               <Label htmlFor="payroll-id">Payroll ID</Label>
-              <Input id="payroll-id" type="text" placeholder="123456" />
+              <Input
+                id="payroll-id"
+                type="text"
+                placeholder="123456"
+                value={newEmployee.payrollId}
+                onChange={(e) => handleInputChange("payrollId", e.target.value)}
+              />
+            </div>
+
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="role">Role</Label>
+              <Select
+                value={newEmployee.roleId}
+                onValueChange={(value) => handleInputChange("roleId", value)}
+              >
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id.toString()}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid w-full items-center gap-1.5">
@@ -58,10 +136,16 @@ export function EmployeesPage() {
                 placeholder="40"
                 min="0"
                 max="168"
+                value={newEmployee.hoursPerWeek}
+                onChange={(e) =>
+                  handleInputChange("hoursPerWeek", e.target.value)
+                }
               />
             </div>
           </div>
-          <Button className="mt-4">Add Employee</Button>
+          <Button className="mt-4" onClick={handleAddEmployee}>
+            Add Employee
+          </Button>
         </CardContent>
       </Card>
 
@@ -74,42 +158,29 @@ export function EmployeesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead>Payroll ID</TableHead>
-                <TableHead>Hours per Week</TableHead>
+                <TableHead>Team</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead className="w-[150px]">Hours per Week</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableRow>
-              <TableCell>John Doe</TableCell>
-              <TableCell>john.doe@example.com</TableCell>
-              <TableCell>123456</TableCell>
-              <TableCell>40</TableCell>
-              <TableCell>
-                <Dialog>
-                  <DialogTrigger>
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Are you absolutely sure?</DialogTitle>
-                      <DialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete this employee from the system.
-                      </DialogDescription>
-                      <div className="flex gap-2 mt-24 justify-end">
-                        <Button variant="destructive">Delete</Button>
-                        <DialogClose asChild>
-                          <Button variant="outline">Cancel</Button>
-                        </DialogClose>
-                      </div>
-                    </DialogHeader>
-                  </DialogContent>
-                </Dialog>
-              </TableCell>
-            </TableRow>
+            {employeesList.map((employee) => (
+              <TableRow key={employee.id}>
+                <TableCell>{employee.name}</TableCell>
+                <TableCell>{employee.payrollId}</TableCell>
+                <TableCell>
+                  {teams.find((t) => t.id === employee.teamId)?.name}
+                </TableCell>
+                <TableCell>
+                  {roles.find((r) => r.id === employee.roleId)?.name}
+                </TableCell>
+                <TableCell>{employee.hoursPerWeek}</TableCell>
+                <TableCell>
+                  <ConfirmDeleteButton />
+                </TableCell>
+              </TableRow>
+            ))}
           </Table>
         </CardContent>
       </Card>

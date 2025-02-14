@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,18 +11,46 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
+import { timeTypes } from "@/data/timeTypes";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 
 export function TimeTypesPage() {
+  const [timeTypesList, setTimeTypesList] = useState(timeTypes);
+  const [newTimeTypeName, setNewTimeTypeName] = useState("");
+
+  const handleAddTimeType = () => {
+    // Validate time type name
+    if (!newTimeTypeName.trim()) {
+      alert("Please enter a time type name");
+      return;
+    }
+
+    // Check for duplicate time type names
+    if (
+      timeTypesList.some(
+        (type) =>
+          type.name.toLowerCase() === newTimeTypeName.trim().toLowerCase()
+      )
+    ) {
+      alert("This time type already exists");
+      return;
+    }
+
+    // Create new time type
+    const newTimeType = {
+      id: Math.max(...timeTypesList.map((type) => type.id)) + 1,
+      name: newTimeTypeName.trim(),
+    };
+
+    // Add to list
+    setTimeTypesList((prev) => [...prev, newTimeType]);
+
+    // Reset input
+    setNewTimeTypeName("");
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <PageHeader
@@ -41,10 +70,18 @@ export function TimeTypesPage() {
                 id="time-type-name"
                 type="text"
                 placeholder="Paid Time Off (PTO)"
+                value={newTimeTypeName}
+                onChange={(e) => setNewTimeTypeName(e.target.value)}
               />
             </div>
           </div>
-          <Button className="mt-4">Add Time Type</Button>
+          <Button
+            className="mt-4"
+            onClick={handleAddTimeType}
+            disabled={!newTimeTypeName.trim()}
+          >
+            Add Time Type
+          </Button>
         </CardContent>
       </Card>
 
@@ -61,62 +98,15 @@ export function TimeTypesPage() {
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableRow>
-              <TableCell>1</TableCell>
-              <TableCell>Regular Hours</TableCell>
-              <TableCell>
-                <Dialog>
-                  <DialogTrigger>
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Are you absolutely sure?</DialogTitle>
-                      <DialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete this time type from the system.
-                      </DialogDescription>
-                      <div className="flex gap-2 mt-24 justify-end">
-                        <Button variant="destructive">Delete</Button>
-                        <DialogClose asChild>
-                          <Button variant="outline">Cancel</Button>
-                        </DialogClose>
-                      </div>
-                    </DialogHeader>
-                  </DialogContent>
-                </Dialog>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>2</TableCell>
-              <TableCell>Paid Time Off (PTO)</TableCell>
-              <TableCell>
-                <Dialog>
-                  <DialogTrigger>
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Are you absolutely sure?</DialogTitle>
-                      <DialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete this time type from the system.
-                      </DialogDescription>
-                      <div className="flex gap-2 mt-24 justify-end">
-                        <Button variant="destructive">Delete</Button>
-                        <DialogClose asChild>
-                          <Button variant="outline">Cancel</Button>
-                        </DialogClose>
-                      </div>
-                    </DialogHeader>
-                  </DialogContent>
-                </Dialog>
-              </TableCell>
-            </TableRow>
+            {timeTypesList.map((timeType) => (
+              <TableRow key={timeType.id}>
+                <TableCell>{timeType.id}</TableCell>
+                <TableCell>{timeType.name}</TableCell>
+                <TableCell>
+                  <ConfirmDeleteButton />
+                </TableCell>
+              </TableRow>
+            ))}
           </Table>
         </CardContent>
       </Card>

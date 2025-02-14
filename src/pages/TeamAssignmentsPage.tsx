@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectValue } from "@/components/ui/select";
 import { SelectItem, SelectTrigger } from "@/components/ui/select";
-import { teams } from "@/data";
 import { DatePicker } from "@/components/ui/datepicker";
 import {
   Dialog,
@@ -25,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { DialogHeader } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
+import { teams } from "@/data/teams";
 export function TeamAssignmentsPage() {
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -66,7 +66,7 @@ export function TeamAssignmentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {teams.map((team) => (
-                    <SelectItem key={team.id} value={team.id}>
+                    <SelectItem key={team.id} value={String(team.id)}>
                       {team.name}
                     </SelectItem>
                   ))}

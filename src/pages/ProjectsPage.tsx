@@ -34,27 +34,11 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { addYears, isWithinInterval, parseISO, subYears } from "date-fns";
-
-interface Project {
-  issueKey: string;
-  name: string;
-  team: string;
-  status: "To Do" | "In Progress" | "In Review" | "Done";
-  isCapDev: boolean;
-  assignee?: string;
-  lastUpdated: string;
-  jiraBoard: string;
-}
+import { Project } from "@/types/project";
+import { projects as baseProjects } from "@/data/projects";
+import { jiraBoards } from "@/data/jiraBoards";
 
 export function ProjectsPage() {
-  const dummyJiraBoards = [
-    { id: "ENG-1", name: "Engineering Board" },
-    { id: "DEV-1", name: "Development Board" },
-    { id: "PROD-1", name: "Product Board" },
-    { id: "QA-1", name: "Quality Assurance Board" },
-    { id: "OPS-1", name: "Operations Board" },
-  ];
-
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -64,48 +48,7 @@ export function ProjectsPage() {
     to: new Date(),
   });
 
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      issueKey: "PROJ-123",
-      name: "Implement SSO Authentication",
-      team: "Engineering",
-      status: "In Progress",
-      isCapDev: true,
-      assignee: "John Doe",
-      lastUpdated: "2024-03-15T10:30:00Z",
-      jiraBoard: "ENG-1"
-    },
-    {
-      issueKey: "PROJ-124",
-      name: "Dashboard Redesign",
-      team: "Design",
-      status: "In Review",
-      isCapDev: false,
-      assignee: "Jane Smith",
-      lastUpdated: "2024-03-14T15:45:00Z",
-      jiraBoard: "DEV-1"
-    },
-    {
-      issueKey: "PROJ-125",
-      name: "API Performance Optimization",
-      team: "Engineering",
-      status: "To Do",
-      isCapDev: true,
-      assignee: "Alice Johnson",
-      lastUpdated: "2024-03-13T09:20:00Z",
-      jiraBoard: "ENG-1"
-    },
-    {
-      issueKey: "PROJ-126",
-      name: "User Onboarding Flow",
-      team: "Product",
-      status: "Done",
-      isCapDev: false,
-      assignee: "Bob Wilson",
-      lastUpdated: "2024-03-12T16:15:00Z",
-      jiraBoard: "PROD-1"
-    },
-  ]);
+  const [projects, setProjects] = useState<Project[]>(baseProjects);
 
   const getStatusColor = (status: Project["status"]) => {
     const colors = {
@@ -267,7 +210,7 @@ export function ProjectsPage() {
       ),
       cell: ({ row }) => {
         const boardId = row.getValue("jiraBoard") as string;
-        const board = dummyJiraBoards.find(b => b.id === boardId);
+        const board = jiraBoards.find((b) => b.id === boardId);
         return board ? board.name : boardId;
       },
     },

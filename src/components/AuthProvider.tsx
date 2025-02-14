@@ -1,8 +1,8 @@
 import { AuthContext } from "../contexts/AuthContext";
-import { users } from "../data";
 import { useState } from "react";
-import { User } from "../types";
 import { useToast } from "@/hooks/use-toast";
+import { users } from "@/data/users";
+import { User } from "@/types/user";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);

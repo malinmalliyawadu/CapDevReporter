@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,16 +21,69 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { teams } from "@/data/teams";
+import { jiraBoards } from "@/data/jiraBoards";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
+
+interface NewTeam {
+  name: string;
+  jiraBoard: string;
+}
 
 export function TeamsPage() {
-  const dummyJiraBoards = [
-    { id: "ENG-1", name: "Engineering Board" },
-    { id: "DEV-1", name: "Development Board" },
-    { id: "PROD-1", name: "Product Board" },
-    { id: "QA-1", name: "Quality Assurance Board" },
-    { id: "OPS-1", name: "Operations Board" },
-  ];
+  const [teamsList, setTeamsList] = useState(teams);
+  const [newTeam, setNewTeam] = useState<NewTeam>({
+    name: "",
+    jiraBoard: "",
+  });
+
+  const handleInputChange = (field: keyof NewTeam, value: string) => {
+    setNewTeam((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleAddTeam = () => {
+    // Validate required fields
+    if (!newTeam.name || !newTeam.jiraBoard) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    // Check for duplicate team names
+    if (
+      teamsList.some(
+        (team) => team.name.toLowerCase() === newTeam.name.trim().toLowerCase()
+      )
+    ) {
+      alert("This team name already exists");
+      return;
+    }
+
+    // Create new team
+    const team = {
+      id: Math.max(...teamsList.map((team) => team.id)) + 1,
+      name: newTeam.name.trim(),
+      jiraBoard: newTeam.jiraBoard,
+    };
+
+    // Add to list
+    setTeamsList((prev) => [...prev, team]);
+
+    // Reset form
+    setNewTeam({
+      name: "",
+      jiraBoard: "",
+    });
+  };
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -47,16 +101,21 @@ export function TeamsPage() {
                 id="team-name"
                 type="text"
                 placeholder="Engineering Team"
+                value={newTeam.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
               />
             </div>
             <div className="grid w-full items-center gap-1.5">
               <Label htmlFor="jira-board">Jira Board</Label>
-              <Select>
+              <Select
+                value={newTeam.jiraBoard}
+                onValueChange={(value) => handleInputChange("jiraBoard", value)}
+              >
                 <SelectTrigger id="jira-board">
                   <SelectValue placeholder="Select a board" />
                 </SelectTrigger>
                 <SelectContent>
-                  {dummyJiraBoards.map((board) => (
+                  {jiraBoards.map((board) => (
                     <SelectItem key={board.id} value={board.id}>
                       {board.name}
                     </SelectItem>
@@ -65,7 +124,13 @@ export function TeamsPage() {
               </Select>
             </div>
           </div>
-          <Button className="mt-4">Add Team</Button>
+          <Button
+            className="mt-4"
+            onClick={handleAddTeam}
+            disabled={!newTeam.name.trim() || !newTeam.jiraBoard}
+          >
+            Add Team
+          </Button>
         </CardContent>
       </Card>
 
@@ -83,35 +148,21 @@ export function TeamsPage() {
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableRow>
-              <TableCell>1</TableCell>
-              <TableCell>Engineering Team</TableCell>
-              <TableCell>Engineering Board (ENG-1)</TableCell>
-              <TableCell>
-                <Dialog>
-                  <DialogTrigger>
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Are you absolutely sure?</DialogTitle>
-                      <DialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete this team from the system.
-                      </DialogDescription>
-                      <div className="flex gap-2 mt-24 justify-end">
-                        <Button variant="destructive">Delete</Button>
-                        <DialogClose asChild>
-                          <Button variant="outline">Cancel</Button>
-                        </DialogClose>
-                      </div>
-                    </DialogHeader>
-                  </DialogContent>
-                </Dialog>
-              </TableCell>
-            </TableRow>
+            {teamsList.map((team) => (
+              <TableRow key={team.id}>
+                <TableCell>{team.id}</TableCell>
+                <TableCell>{team.name}</TableCell>
+                <TableCell>
+                  {
+                    jiraBoards.find((board) => board.id === team.jiraBoard)
+                      ?.name
+                  }
+                </TableCell>
+                <TableCell>
+                  <ConfirmDeleteButton />
+                </TableCell>
+              </TableRow>
+            ))}
           </Table>
         </CardContent>
       </Card>

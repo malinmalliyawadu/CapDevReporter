@@ -1,4 +1,7 @@
 import { TimeReport } from "@/types/timeReport";
+import { employees } from "./employees";
+import { teams } from "./teams";
+import { roles } from "./roles";
 
 // Helper function to generate a random number between min and max
 const random = (min: number, max: number) =>
@@ -20,67 +23,16 @@ const generateWeeks = () => {
   return weeks.sort().reverse();
 };
 
-// Sample users data
-const users = [
-  {
-    name: "John Doe",
-    payrollId: "EMP001",
-    team: "Engineering",
-    role: "Software Engineer",
-  },
-  {
-    name: "Jane Smith",
-    payrollId: "EMP002",
-    team: "Design",
-    role: "UX Designer",
-  },
-  {
-    name: "Mike Johnson",
-    payrollId: "EMP003",
-    team: "Engineering",
-    role: "Software Engineer",
-  },
-  {
-    name: "Sarah Williams",
-    payrollId: "EMP004",
-    team: "Product",
-    role: "Product Manager",
-  },
-  {
-    name: "Alex Brown",
-    payrollId: "EMP005",
-    team: "Engineering",
-    role: "DevOps Engineer",
-  },
-  {
-    name: "Emily Davis",
-    payrollId: "EMP006",
-    team: "Design",
-    role: "UI Designer",
-  },
-  {
-    name: "Chris Wilson",
-    payrollId: "EMP007",
-    team: "Engineering",
-    role: "Software Engineer",
-  },
-  {
-    name: "Lisa Anderson",
-    payrollId: "EMP008",
-    team: "Product",
-    role: "Product Manager",
-  },
-];
 
 // Generate data
 export const timeReports: TimeReport[] = [];
 const weeks = generateWeeks();
 
 weeks.forEach((week) => {
-  users.forEach((user) => {
+  employees.forEach((employee) => {
     // Generate more realistic data patterns
-    const isEngineer = user.role.includes("Engineer");
-    const isDesigner = user.role.includes("Designer");
+    const isEngineer = roles.find((r) => r.id === employee.roleId)?.name?.includes("Engineer");
+    const isDesigner = roles.find((r) => r.id === employee.roleId)?.name?.includes("Designer");
 
     // Engineers tend to have more CapDev time
     const baseCapdevPercentage = isEngineer ? 0.8 : isDesigner ? 0.6 : 0.4;
@@ -97,15 +49,15 @@ weeks.forEach((week) => {
     const nonCapdevTime = fullHours - capdevTime;
 
     timeReports.push({
-      id: `${user.payrollId}-${week}`,
-      user: user.name,
+      id: `${employee.payrollId}-${week}`,
+      user: employee.name,
       week,
-      payrollId: user.payrollId,
+      payrollId: employee.payrollId,
       fullHours,
       capdevTime,
       nonCapdevTime,
-      team: user.team,
-      role: user.role,
+      team: teams.find((t) => t.id === employee.teamId)?.name || "Unknown",
+      role: roles.find((r) => r.id === employee.roleId)?.name || "Unknown",
     });
   });
 });
