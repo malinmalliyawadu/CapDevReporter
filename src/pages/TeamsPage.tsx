@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,15 +11,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   Select,
@@ -30,21 +21,19 @@ import {
 } from "@/components/ui/select";
 import { teams } from "@/data/teams";
 import { jiraBoards } from "@/data/jiraBoards";
+import { Team } from "@/types/team";
+import { EditTeamDialog } from "@/components/dialogs/EditTeamDialog";
 import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
-
-interface NewTeam {
-  name: string;
-  jiraBoard: string;
-}
 
 export function TeamsPage() {
   const [teamsList, setTeamsList] = useState(teams);
-  const [newTeam, setNewTeam] = useState<NewTeam>({
+  const [newTeam, setNewTeam] = useState<Omit<Team, "id">>({
     name: "",
     jiraBoard: "",
   });
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
 
-  const handleInputChange = (field: keyof NewTeam, value: string) => {
+  const handleInputChange = (field: keyof Omit<Team, "id">, value: string) => {
     setNewTeam((prev) => ({
       ...prev,
       [field]: value,
@@ -52,13 +41,11 @@ export function TeamsPage() {
   };
 
   const handleAddTeam = () => {
-    // Validate required fields
     if (!newTeam.name || !newTeam.jiraBoard) {
       alert("Please fill in all required fields");
       return;
     }
 
-    // Check for duplicate team names
     if (
       teamsList.some(
         (team) => team.name.toLowerCase() === newTeam.name.trim().toLowerCase()
@@ -68,21 +55,20 @@ export function TeamsPage() {
       return;
     }
 
-    // Create new team
     const team = {
       id: Math.max(...teamsList.map((team) => team.id)) + 1,
       name: newTeam.name.trim(),
       jiraBoard: newTeam.jiraBoard,
     };
 
-    // Add to list
     setTeamsList((prev) => [...prev, team]);
+    setNewTeam({ name: "", jiraBoard: "" });
+  };
 
-    // Reset form
-    setNewTeam({
-      name: "",
-      jiraBoard: "",
-    });
+  const handleEditTeam = (editedTeam: Team) => {
+    setTeamsList((prev) =>
+      prev.map((team) => (team.id === editedTeam.id ? editedTeam : team))
+    );
   };
 
   return (
@@ -145,7 +131,7 @@ export function TeamsPage() {
                 <TableHead>ID</TableHead>
                 <TableHead>Team Name</TableHead>
                 <TableHead>Jira Board</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
+                <TableHead className="w-[150px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             {teamsList.map((team) => (
@@ -159,13 +145,31 @@ export function TeamsPage() {
                   }
                 </TableCell>
                 <TableCell>
-                  <ConfirmDeleteButton />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingTeam(team)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <ConfirmDeleteButton />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </Table>
         </CardContent>
       </Card>
+
+      {editingTeam && (
+        <EditTeamDialog
+          team={editingTeam}
+          onSave={handleEditTeam}
+          open={!!editingTeam}
+          onOpenChange={(open) => !open && setEditingTeam(null)}
+        />
+      )}
     </div>
   );
 }
