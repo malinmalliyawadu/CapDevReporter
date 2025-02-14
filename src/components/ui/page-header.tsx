@@ -9,7 +9,9 @@ export function PageHeader({ title, description }: PageHeaderProps) {
       <h1 className="text-2xl font-bold tracking-tight animate-slide-down">
         {title}
       </h1>
-      <p className="text-muted-foreground">{description}</p>
+      <p className="text-muted-foreground animate-slide-down [animation-delay:200ms]">
+        {description}
+      </p>
     </div>
   );
 }
