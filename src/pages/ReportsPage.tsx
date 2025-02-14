@@ -426,8 +426,79 @@ export function ReportsPage() {
         description="View and analyze time tracking reports."
       />
 
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <Input
+              placeholder="Filter users..."
+              value={
+                (table.getColumn("user")?.getFilterValue() as string) ?? ""
+              }
+              onChange={(event) =>
+                table.getColumn("user")?.setFilterValue(event.target.value)
+              }
+              className="max-w-sm"
+            />
+            <Select
+              value={
+                (table.getColumn("week")?.getFilterValue() as string) ?? ""
+              }
+              onValueChange={(value) => handleFilterChange("week", value)}
+            >
+              <SelectTrigger className="max-w-sm">
+                <SelectValue placeholder="Filter by week" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">Last Two Years</SelectItem>
+                {availableWeeks.map((week) => (
+                  <SelectItem key={week} value={week}>
+                    {week}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={
+                (table.getColumn("team")?.getFilterValue() as string) ?? ""
+              }
+              onValueChange={(value) => handleFilterChange("team", value)}
+            >
+              <SelectTrigger className="max-w-sm">
+                <SelectValue placeholder="Filter by team" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Teams</SelectItem>
+                <SelectItem value="Engineering">Engineering</SelectItem>
+                <SelectItem value="Design">Design</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={
+                (table.getColumn("role")?.getFilterValue() as string) ?? ""
+              }
+              onValueChange={(value) => handleFilterChange("role", value)}
+            >
+              <SelectTrigger className="max-w-sm">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Roles</SelectItem>
+                <SelectItem value="Software Engineer">
+                  Software Engineer
+                </SelectItem>
+                <SelectItem value="UX Designer">UX Designer</SelectItem>
+                <SelectItem value="Project Manager">Project Manager</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 md:grid-cols-2 mb-6">
-        <Card>
+        <Card className="h-fit">
           <CardHeader>
             <CardTitle>Rolled Up Time Distribution</CardTitle>
           </CardHeader>
@@ -484,7 +555,7 @@ export function ReportsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="h-fit">
           <CardHeader>
             <CardTitle>Detailed Time Distribution</CardTitle>
           </CardHeader>
@@ -566,69 +637,6 @@ export function ReportsPage() {
               <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>
-          </div>
-          <div className="flex items-center gap-4 py-4">
-            <Input
-              placeholder="Filter users..."
-              value={
-                (table.getColumn("user")?.getFilterValue() as string) ?? ""
-              }
-              onChange={(event) =>
-                table.getColumn("user")?.setFilterValue(event.target.value)
-              }
-              className="max-w-sm"
-            />
-            <Select
-              value={
-                (table.getColumn("week")?.getFilterValue() as string) ?? ""
-              }
-              onValueChange={(value) => handleFilterChange("week", value)}
-            >
-              <SelectTrigger className="max-w-sm">
-                <SelectValue placeholder="Filter by week" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">Last Two Years</SelectItem>
-                {availableWeeks.map((week) => (
-                  <SelectItem key={week} value={week}>
-                    {week}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={
-                (table.getColumn("team")?.getFilterValue() as string) ?? ""
-              }
-              onValueChange={(value) => handleFilterChange("team", value)}
-            >
-              <SelectTrigger className="max-w-sm">
-                <SelectValue placeholder="Filter by team" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Teams</SelectItem>
-                <SelectItem value="Engineering">Engineering</SelectItem>
-                <SelectItem value="Design">Design</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={
-                (table.getColumn("role")?.getFilterValue() as string) ?? ""
-              }
-              onValueChange={(value) => handleFilterChange("role", value)}
-            >
-              <SelectTrigger className="max-w-sm">
-                <SelectValue placeholder="Filter by role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Roles</SelectItem>
-                <SelectItem value="Software Engineer">
-                  Software Engineer
-                </SelectItem>
-                <SelectItem value="UX Designer">UX Designer</SelectItem>
-                <SelectItem value="Project Manager">Project Manager</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </CardHeader>
         <CardContent>
