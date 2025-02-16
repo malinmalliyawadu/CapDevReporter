@@ -19,7 +19,7 @@ import {
   getExpandedRowModel,
   ExpandedState,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -53,6 +53,21 @@ import { PageHeader } from "@/components/ui/page-header";
 import { timeTypes } from "@/data/timeTypes";
 import { teams } from "@/data/teams";
 import { roles } from "@/data/roles";
+import { DateRange } from "react-day-picker";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import {
+  startOfWeek,
+  endOfWeek,
+  isWithinInterval,
+  parseISO,
+  subYears,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  subWeeks,
+  subMonths,
+} from "date-fns";
 
 // Add this function before the component
 const exportToCsv = (data: TimeReport[]) => {
@@ -148,13 +163,57 @@ const timeTypeColors = [
 
 export function ReportsPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
-    {
-      id: "week",
-      value: getCurrentWeek(),
-    },
-  ]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: startOfYear(subYears(new Date(), 1)),
+    to: endOfYear(new Date()),
+  });
   const [expanded, setExpanded] = useState<ExpandedState>({});
+
+  const datePresets = [
+    {
+      label: "This Week",
+      value: {
+        from: startOfWeek(new Date(), { weekStartsOn: 1 }),
+        to: endOfWeek(new Date(), { weekStartsOn: 1 }),
+      },
+    },
+    {
+      label: "Last Week",
+      value: {
+        from: startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }),
+        to: endOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }),
+      },
+    },
+    {
+      label: "This Month",
+      value: {
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date()),
+      },
+    },
+    {
+      label: "Last Month",
+      value: {
+        from: startOfMonth(subMonths(new Date(), 1)),
+        to: endOfMonth(subMonths(new Date(), 1)),
+      },
+    },
+    {
+      label: "This Year",
+      value: {
+        from: startOfYear(new Date()),
+        to: endOfYear(new Date()),
+      },
+    },
+    {
+      label: "Last 2 Years",
+      value: {
+        from: startOfYear(subYears(new Date(), 1)),
+        to: endOfYear(new Date()),
+      },
+    },
+  ];
 
   // Add this handler function
   const handleFilterChange = (columnId: string, value: string) => {
@@ -225,6 +284,14 @@ export function ReportsPage() {
             )}
           </Button>
         );
+      },
+      filterFn: (row) => {
+        if (!dateRange?.from) return true;
+        const date = parseISO(row.getValue("week"));
+        return isWithinInterval(date, {
+          start: dateRange.from,
+          end: dateRange.to || new Date(),
+        });
       },
     },
     {
@@ -358,6 +425,12 @@ export function ReportsPage() {
     },
   });
 
+  useEffect(() => {
+    if (dateRange?.from) {
+      table.getColumn("week")?.setFilterValue(dateRange);
+    }
+  }, [dateRange, table]);
+
   const filteredData = table
     .getFilteredRowModel()
     .rows.map((row) => row.original);
@@ -442,24 +515,11 @@ export function ReportsPage() {
                 }
                 className="max-w-sm"
               />
-              <Select
-                value={
-                  (table.getColumn("week")?.getFilterValue() as string) ?? ""
-                }
-                onValueChange={(value) => handleFilterChange("week", value)}
-              >
-                <SelectTrigger className="max-w-sm">
-                  <SelectValue placeholder="Filter by week" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">Last Two Years</SelectItem>
-                  {availableWeeks.map((week) => (
-                    <SelectItem key={week} value={week}>
-                      {week}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <DateRangePicker
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+                presets={datePresets}
+              />
               <Select
                 value={
                   (table.getColumn("team")?.getFilterValue() as string) ?? ""
