@@ -2,7 +2,7 @@
 
 import { trpc } from "@/utils/trpc";
 import { useState } from "react";
-import { Pencil, Trash2, ClipboardList } from "lucide-react";
+import { Pencil, Trash2, ClipboardList, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -93,6 +93,49 @@ function EditProjectDialog({
             />
           </div>
           <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="edit-project-jira">Jira ID</Label>
+            <div className="flex gap-2 items-center">
+              <Input
+                id="edit-project-jira"
+                value={editedProject.jiraId}
+                onChange={(e) =>
+                  setEditedProject({
+                    ...editedProject,
+                    jiraId: e.target.value,
+                  })
+                }
+              />
+              <a
+                href={`${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${editedProject.jiraId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:text-blue-700 hover:underline whitespace-nowrap"
+              >
+                Open in Jira
+              </a>
+            </div>
+          </div>
+          <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="edit-project-capdev">CapDev Status</Label>
+            <Select
+              value={editedProject.isCapDev.toString()}
+              onValueChange={(value) =>
+                setEditedProject({
+                  ...editedProject,
+                  isCapDev: value === "true",
+                })
+              }
+            >
+              <SelectTrigger id="edit-project-capdev">
+                <SelectValue placeholder="Select CapDev status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">CapDev</SelectItem>
+                <SelectItem value="false">Non-CapDev</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid w-full items-center gap-1.5">
             <Label htmlFor="edit-project-team">Team</Label>
             <Select
               value={editedProject.teamId}
@@ -136,14 +179,24 @@ export default function ProjectsPage() {
     name: "",
     description: null as string | null,
     teamId: "",
+    jiraId: "",
+    isCapDev: false,
   });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const createProject = trpc.project.create.useMutation({
     onSuccess: () => {
       utils.project.getAll.invalidate();
       setIsAddDialogOpen(false);
-      setNewProject({ name: "", description: null, teamId: "" });
+      setNewProject({
+        name: "",
+        description: null,
+        teamId: "",
+        jiraId: "",
+        isCapDev: false,
+      });
       toast({
         title: "Success",
         description: "Project created successfully",
@@ -172,11 +225,31 @@ export default function ProjectsPage() {
     },
   });
 
-  const handleCreateProject = () => {
-    if (!newProject.name.trim() || !newProject.teamId) {
+  const syncProjects = trpc.project.sync.useMutation({
+    onSuccess: (data) => {
+      utils.project.getAll.invalidate();
+      setLastSynced(new Date(data.timestamp));
+      setIsSyncing(false);
+      toast({
+        title: "Success",
+        description: "Projects synced with Jira",
+      });
+    },
+    onError: () => {
+      setIsSyncing(false);
       toast({
         title: "Error",
-        description: "Project name and team are required",
+        description: "Failed to sync projects with Jira",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateProject = () => {
+    if (!newProject.name.trim() || !newProject.teamId || !newProject.jiraId) {
+      toast({
+        title: "Error",
+        description: "Project name, team, and Jira ID are required",
         variant: "destructive",
       });
       return;
@@ -191,7 +264,14 @@ export default function ProjectsPage() {
       name: project.name,
       description: project.description,
       teamId: project.teamId,
+      jiraId: project.jiraId,
+      isCapDev: project.isCapDev,
     });
+  };
+
+  const handleSync = () => {
+    setIsSyncing(true);
+    syncProjects.mutate();
   };
 
   if (isLoadingProjects || isLoadingTeams) {
@@ -214,7 +294,20 @@ export default function ProjectsPage() {
         description="Manage your projects and their assignments."
       />
 
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6 flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          {lastSynced && (
+            <span className="text-sm text-muted-foreground">
+              Last synced: {lastSynced.toLocaleString("en-NZ")}
+            </span>
+          )}
+          <Button onClick={handleSync} disabled={isSyncing}>
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
+            />
+            Sync with Jira
+          </Button>
+        </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>Add Project</Button>
@@ -248,6 +341,52 @@ export default function ProjectsPage() {
                   }
                   placeholder="Enter project description"
                 />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="project-jira">Jira ID</Label>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    id="project-jira"
+                    value={newProject.jiraId}
+                    onChange={(e) =>
+                      setNewProject({
+                        ...newProject,
+                        jiraId: e.target.value,
+                      })
+                    }
+                    placeholder="Enter Jira ID"
+                  />
+                  {newProject.jiraId && (
+                    <a
+                      href={`${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${newProject.jiraId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-700 hover:underline whitespace-nowrap"
+                    >
+                      Open in Jira
+                    </a>
+                  )}
+                </div>
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="project-capdev">CapDev Status</Label>
+                <Select
+                  value={newProject.isCapDev.toString()}
+                  onValueChange={(value) =>
+                    setNewProject({
+                      ...newProject,
+                      isCapDev: value === "true",
+                    })
+                  }
+                >
+                  <SelectTrigger id="project-capdev">
+                    <SelectValue placeholder="Select CapDev status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">CapDev</SelectItem>
+                    <SelectItem value="false">Non-CapDev</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid w-full items-center gap-1.5">
                 <Label htmlFor="project-team">Team</Label>
@@ -293,6 +432,8 @@ export default function ProjectsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Team</TableHead>
+                <TableHead>Jira ID</TableHead>
+                <TableHead>CapDev</TableHead>
                 <TableHead>Time Entries</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
@@ -303,6 +444,25 @@ export default function ProjectsPage() {
                   <TableCell>{project.name}</TableCell>
                   <TableCell>{project.description}</TableCell>
                   <TableCell>{project.team.name}</TableCell>
+                  <TableCell>
+                    <a
+                      href={`${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${project.jiraId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-700 hover:underline"
+                    >
+                      {project.jiraId}
+                    </a>
+                  </TableCell>
+                  <TableCell>
+                    {project.isCapDev ? (
+                      <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
+                        CapDev
+                      </span>
+                    ) : (
+                      ""
+                    )}
+                  </TableCell>
                   <TableCell>{project.timeEntries.length}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">

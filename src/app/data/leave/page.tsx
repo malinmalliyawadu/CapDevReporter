@@ -23,29 +23,31 @@ export default function LeavePage() {
   const { data: leaveRecords, isLoading } = trpc.leave.getAll.useQuery();
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  const handleSync = async () => {
-    setIsSyncing(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      // TODO: Add actual iPayroll sync logic here
-      await utils.leave.getAll.invalidate();
+  const syncMutation = trpc.leave.sync.useMutation({
+    onSuccess: () => {
+      utils.leave.getAll.invalidate();
       setLastSynced(new Date());
       toast({
         title: "Success",
         description: "Leave data synced successfully",
       });
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error("Failed to sync leave data:", error);
       toast({
         title: "Error",
         description: "Failed to sync leave data",
         variant: "destructive",
       });
-    } finally {
+    },
+    onSettled: () => {
       setIsSyncing(false);
-    }
+    },
+  });
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    syncMutation.mutate();
   };
 
   if (isLoading) {

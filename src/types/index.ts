@@ -24,6 +24,8 @@ export interface Project {
   id: string;
   name: string;
   description: string | null;
+  jiraId: string;
+  isCapDev: boolean;
   team: Team;
   teamId: string;
   timeEntries: TimeEntry[];

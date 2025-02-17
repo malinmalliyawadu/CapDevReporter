@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc";
+import { jiraClient, isCapDevProject } from "@/utils/jira";
+import type { JiraProject } from "@/utils/jira";
 
 export const projectRouter = router({
   getAll: publicProcedure.query(async ({ ctx }) => {
@@ -37,6 +39,8 @@ export const projectRouter = router({
         name: z.string(),
         description: z.string().nullable(),
         teamId: z.string(),
+        jiraId: z.string(),
+        isCapDev: z.boolean().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -55,6 +59,8 @@ export const projectRouter = router({
         name: z.string().optional(),
         description: z.string().nullable().optional(),
         teamId: z.string().optional(),
+        jiraId: z.string().optional(),
+        isCapDev: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -72,5 +78,83 @@ export const projectRouter = router({
     return ctx.prisma.project.delete({
       where: { id: input },
     });
+  }),
+
+  sync: publicProcedure.mutation(async ({ ctx }) => {
+    try {
+      // 1. Fetch all projects from Jira
+      const jiraProjects = (await jiraClient.listProjects()) as JiraProject[];
+
+      // 2. Get all existing projects from our database
+      const existingProjects = await ctx.prisma.project.findMany({
+        select: {
+          id: true,
+          jiraId: true,
+        },
+      });
+
+      // Create a map for faster lookups
+      const existingProjectMap = new Map(
+        existingProjects.map((p) => [p.jiraId, p.id])
+      );
+      const processedJiraIds = new Set();
+
+      // 3. Process each Jira project
+      for (const jiraProject of jiraProjects) {
+        processedJiraIds.add(jiraProject.key);
+
+        // Get detailed project information including description and category
+        const projectDetails = (await jiraClient.getProject(
+          jiraProject.key
+        )) as JiraProject;
+
+        if (existingProjectMap.has(jiraProject.key)) {
+          // Update existing project
+          await ctx.prisma.project.update({
+            where: { id: existingProjectMap.get(jiraProject.key) },
+            data: {
+              name: projectDetails.name,
+              description: projectDetails.description || null,
+              isCapDev: isCapDevProject(projectDetails),
+              // Note: We don't update teamId here as it's managed locally
+            },
+          });
+        } else {
+          // Create new project
+          // Note: Assigning to the first team for demo purposes
+          // In real implementation, you'd need to map Jira projects to teams
+          const firstTeam = await ctx.prisma.team.findFirst();
+          if (!firstTeam) throw new Error("No teams found");
+
+          await ctx.prisma.project.create({
+            data: {
+              name: projectDetails.name,
+              description: projectDetails.description || null,
+              jiraId: projectDetails.key,
+              isCapDev: isCapDevProject(projectDetails),
+              teamId: firstTeam.id,
+            },
+          });
+        }
+      }
+
+      // 4. Delete projects that no longer exist in Jira
+      for (const [jiraId, projectId] of existingProjectMap.entries()) {
+        if (!processedJiraIds.has(jiraId)) {
+          await ctx.prisma.project.delete({
+            where: { id: projectId },
+          });
+        }
+      }
+
+      return {
+        success: true,
+        message: "Projects synced with Jira",
+        timestamp: new Date(),
+      };
+    } catch (error) {
+      console.error("Failed to sync with Jira:", error);
+      throw new Error("Failed to sync with Jira");
+    }
   }),
 });

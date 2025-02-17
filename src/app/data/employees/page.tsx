@@ -24,8 +24,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { toast } from "sonner";
-import { type TRPCClientError } from "@trpc/client";
-import { type AppRouter } from "@/server/routers/_app";
 import {
   Dialog,
   DialogContent,

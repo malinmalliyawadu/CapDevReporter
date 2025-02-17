@@ -89,12 +89,14 @@ async function main() {
     },
   });
 
-  // Create projects
+  // Create projects with jiraId and isCapDev fields
   const webApp = await prisma.project.create({
     data: {
       name: "Web Application",
       description: "Main web application project",
       teamId: frontendTeam.id,
+      jiraId: "WEB-001",
+      isCapDev: true,
     },
   });
 
@@ -103,6 +105,8 @@ async function main() {
       name: "API Development",
       description: "RESTful API development project",
       teamId: backendTeam.id,
+      jiraId: "API-001",
+      isCapDev: true,
     },
   });
 
@@ -111,6 +115,8 @@ async function main() {
       name: "Design System",
       description: "Company-wide design system",
       teamId: designTeam.id,
+      jiraId: "DES-001",
+      isCapDev: false,
     },
   });
 

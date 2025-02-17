@@ -24,6 +24,8 @@ model Project {
   id          String   @id @default(cuid())
   name        String
   description String?
+  jiraId      String   @unique
+  isCapDev    Boolean  @default(false)
   team        Team     @relation(fields: [teamId], references: [id])
   teamId      String
   timeEntries TimeEntry[]

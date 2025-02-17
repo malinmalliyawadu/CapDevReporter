@@ -1,11 +1,15 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc";
+import { fetchLeaveRecords } from "@/utils/ipayroll";
 
 export const leaveRouter = router({
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.leave.findMany({
       include: {
         employee: true,
+      },
+      orderBy: {
+        date: "desc",
       },
     });
   }),
@@ -66,5 +70,69 @@ export const leaveRouter = router({
     return ctx.prisma.leave.delete({
       where: { id: input },
     });
+  }),
+
+  sync: publicProcedure.mutation(async ({ ctx }) => {
+    try {
+      // Fetch leave records from iPayroll
+      const ipayrollLeaves = await fetchLeaveRecords();
+
+      // Get all employees to map payrollId to employeeId
+      const employees = await ctx.prisma.employee.findMany();
+      const employeeMap = new Map(
+        employees.map((emp) => [emp.payrollId, emp.id])
+      );
+
+      // Process each leave record
+      const createOrUpdatePromises = ipayrollLeaves.map(async (leave) => {
+        const employeeId = employeeMap.get(leave.employeeId);
+        if (!employeeId) {
+          console.warn(`No employee found for payroll ID: ${leave.employeeId}`);
+          return null;
+        }
+
+        // Try to find existing leave record
+        const existingLeave = await ctx.prisma.leave.findFirst({
+          where: {
+            employeeId,
+            date: new Date(leave.date),
+            type: leave.type,
+          },
+        });
+
+        if (existingLeave) {
+          // Update existing record
+          return ctx.prisma.leave.update({
+            where: { id: existingLeave.id },
+            data: {
+              status: leave.status,
+              duration: leave.duration,
+            },
+          });
+        } else {
+          // Create new record
+          return ctx.prisma.leave.create({
+            data: {
+              employeeId,
+              date: new Date(leave.date),
+              type: leave.type,
+              status: leave.status,
+              duration: leave.duration,
+            },
+          });
+        }
+      });
+
+      // Wait for all operations to complete
+      await Promise.all(createOrUpdatePromises);
+
+      return {
+        success: true,
+        message: "Leave records synced successfully",
+      };
+    } catch (error) {
+      console.error("Failed to sync leave records:", error);
+      throw error;
+    }
   }),
 });
