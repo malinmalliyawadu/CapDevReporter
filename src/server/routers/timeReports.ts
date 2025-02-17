@@ -237,25 +237,58 @@ export const timeReportsRouter = router({
             availableHours - totalAssignedHours
           );
 
-          // If there are remaining hours, distribute them among team projects
+          // If there are remaining hours, distribute them among team projects with jitter
           if (remainingHours > 0 && employee.team.projects.length > 0) {
-            const hoursPerProject =
-              remainingHours / employee.team.projects.length;
-            employee.team.projects.forEach((project) => {
-              report.timeEntries.push({
-                id: `${employee.id}-${weekKey}-${project.id}`,
-                hours: hoursPerProject,
-                timeTypeId: project.isCapDev
-                  ? timeTypes.find((t) => t.name === "Development")?.id
-                  : timeTypes.find((t) => t.name === "Maintenance")?.id,
-                isCapDev: project.isCapDev,
-                projectId: project.id,
-                projectName: project.name,
-                jiraId: project.jiraId,
-                jiraUrl: `${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${project.jiraId}`,
-                date: weekKey,
-              });
-              report.fullHours += hoursPerProject;
+            const projects = employee.team.projects;
+            let remainingToDistribute = remainingHours;
+
+            // Calculate base hours per project
+            const baseHoursPerProject = remainingHours / projects.length;
+
+            // Distribute hours with jitter for all but the last project
+            projects.forEach((project, index) => {
+              // For the last project, use all remaining hours to ensure total adds up
+              if (index === projects.length - 1) {
+                report.timeEntries.push({
+                  id: `${employee.id}-${weekKey}-${project.id}`,
+                  hours: remainingToDistribute,
+                  timeTypeId: project.isCapDev
+                    ? timeTypes.find((t) => t.name === "Development")?.id
+                    : timeTypes.find((t) => t.name === "Maintenance")?.id,
+                  isCapDev: project.isCapDev,
+                  projectId: project.id,
+                  projectName: project.name,
+                  jiraId: project.jiraId,
+                  jiraUrl: `${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${project.jiraId}`,
+                  date: weekKey,
+                });
+                report.fullHours += remainingToDistribute;
+              } else {
+                // Add random variation of ±20% to base hours
+                const jitterFactor = 0.8 + Math.random() * 0.4; // Random between 0.8 and 1.2
+                const jitteredHours = Math.min(
+                  remainingToDistribute,
+                  baseHoursPerProject * jitterFactor
+                );
+                const roundedHours = Math.round(jitteredHours * 4) / 4; // Round to nearest quarter hour
+
+                report.timeEntries.push({
+                  id: `${employee.id}-${weekKey}-${project.id}`,
+                  hours: roundedHours,
+                  timeTypeId: project.isCapDev
+                    ? timeTypes.find((t) => t.name === "Development")?.id
+                    : timeTypes.find((t) => t.name === "Maintenance")?.id,
+                  isCapDev: project.isCapDev,
+                  projectId: project.id,
+                  projectName: project.name,
+                  jiraId: project.jiraId,
+                  jiraUrl: `${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${project.jiraId}`,
+                  date: weekKey,
+                });
+
+                remainingToDistribute -= roundedHours;
+                report.fullHours += roundedHours;
+              }
             });
           }
         });

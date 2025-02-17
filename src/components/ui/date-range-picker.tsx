@@ -61,7 +61,10 @@ export function DateRangePicker({
               {presets?.map((preset) => (
                 <Button
                   key={preset.label}
-                  onClick={() => onDateRangeChange(preset.value)}
+                  onClick={() => {
+                    alert(preset.value.from?.toDateString());
+                    onDateRangeChange(preset.value);
+                  }}
                   variant="outline"
                   size="sm"
                   className="text-sm"

@@ -447,7 +447,7 @@ export default function ReportsPage() {
                         </>
                       ) : (
                         <span className="font-medium">
-                          {timeType?.name || "Unknown"}
+                          {timeType?.name || "Projects"}
                         </span>
                       )}
                       {entry.isCapDev && (
@@ -513,7 +513,8 @@ export default function ReportsPage() {
         isCapDev: entry.isCapDev,
         name: entry.isLeave
           ? "Leave"
-          : timeTypes.find((t) => t.id === entry.timeTypeId)?.name || "Unknown",
+          : timeTypes.find((t) => t.id === entry.timeTypeId)?.name ||
+            "Projects",
         isLeave: entry.isLeave,
       };
       current.hours += Math.abs(entry.hours); // Use absolute value for leave hours
