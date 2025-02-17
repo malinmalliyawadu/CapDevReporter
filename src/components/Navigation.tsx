@@ -145,7 +145,7 @@ export function Navigation() {
                   <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
                     {data.map((component) => (
                       <ListItem
-                        key={component.title?.toString()}
+                        key={component.href}
                         title={component.title}
                         href={component.href}
                       >
@@ -161,7 +161,7 @@ export function Navigation() {
                   <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
                     {assignments.map((component) => (
                       <ListItem
-                        key={component.title?.toString()}
+                        key={component.href}
                         title={component.title}
                         href={component.href}
                       >

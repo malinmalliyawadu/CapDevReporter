@@ -10,23 +10,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      String   @default("USER")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  teams     Team[]   @relation("TeamMembers")
-  timeEntries TimeEntry[]
-  leaveRequests LeaveRequest[]
-}
-
 model Team {
   id          String   @id @default(cuid())
   name        String   @unique
   description String?
-  members     User[]   @relation("TeamMembers")
   projects    Project[]
   employees   Employee[]
   createdAt   DateTime @default(now())
@@ -49,8 +36,8 @@ model TimeEntry {
   date        DateTime
   hours       Float
   description String?
-  user        User     @relation(fields: [userId], references: [id])
-  userId      String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  employeeId  String
   project     Project  @relation(fields: [projectId], references: [id])
   projectId   String
   timeType    TimeType @relation(fields: [timeTypeId], references: [id])
@@ -68,19 +55,6 @@ model TimeType {
   generalAssignments GeneralTimeAssignment[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-}
-
-model LeaveRequest {
-  id          String   @id @default(cuid())
-  startDate   DateTime
-  endDate     DateTime
-  status      String   @default("PENDING")
-  type        String
-  description String?
-  user        User     @relation(fields: [userId], references: [id])
-  userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model Role {
@@ -105,6 +79,7 @@ model Employee {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   leave        Leave[]
+  timeEntries  TimeEntry[]
 }
 
 model Leave {

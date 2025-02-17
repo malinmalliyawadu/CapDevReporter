@@ -102,7 +102,7 @@ export default function TeamsPage() {
     updateTeam.mutate({
       id: selectedTeam.id,
       name: selectedTeam.name,
-      description: selectedTeam.description,
+      description: selectedTeam.description ?? undefined,
     });
   };
 
@@ -190,7 +190,7 @@ export default function TeamsPage() {
                 <TableRow key={team.id}>
                   <TableCell>{team.name}</TableCell>
                   <TableCell>{team.description}</TableCell>
-                  <TableCell>{team.members.length}</TableCell>
+                  <TableCell>{team.employees.length}</TableCell>
                   <TableCell>{team.projects.length}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">

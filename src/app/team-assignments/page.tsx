@@ -22,54 +22,35 @@ import {
 import { DatePicker } from "@/components/ui/datepicker";
 import { PageHeader } from "@/components/ui/page-header";
 import { LayoutGrid } from "lucide-react";
-import { format } from "date-fns";
 import { toast } from "sonner";
-
-interface Employee {
-  id: string;
-  name: string;
-  team: {
-    id: string;
-    name: string;
-  };
-  role: {
-    id: string;
-    name: string;
-  };
-}
-
-interface Team {
-  id: string;
-  name: string;
-  description: string;
-}
+import { api } from "@/trpc/react";
 
 export default function TeamAssignmentsPage() {
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("");
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { data, isLoading, refetch } = api.employee.getAll.useQuery();
+  const { data: teamsData } = api.team.getAll.useQuery();
+  const updateTeamMutation = api.employee.update.useMutation({
+    onSuccess: () => {
+      refetch();
+      toast.success("Team assignment updated successfully");
+      setSelectedEmployee("");
+      setSelectedTeam("");
+      setStartDate(undefined);
+      setEndDate(undefined);
+    },
+    onError: (error) => {
+      console.error("Failed to update team assignment:", error);
+      toast.error("Failed to update team assignment");
+    },
+  });
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch("/api/team-assignments");
-      const data = await response.json();
-      setEmployees(data.employees);
-      setTeams(data.teams);
-      setLoading(false);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-      toast.error("Failed to load team assignments");
-      setLoading(false);
-    }
-  };
+  const employees = data ?? [];
+  const teams = teamsData ?? [];
 
   const handleSubmit = async () => {
     if (!selectedEmployee || !selectedTeam) {
@@ -77,35 +58,13 @@ export default function TeamAssignmentsPage() {
       return;
     }
 
-    try {
-      const response = await fetch("/api/team-assignments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          employeeId: selectedEmployee,
-          teamId: selectedTeam,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update team assignment");
-      }
-
-      await fetchData();
-      toast.success("Team assignment updated successfully");
-      setSelectedEmployee("");
-      setSelectedTeam("");
-      setStartDate(undefined);
-      setEndDate(undefined);
-    } catch (error) {
-      console.error("Failed to update team assignment:", error);
-      toast.error("Failed to update team assignment");
-    }
+    updateTeamMutation.mutate({
+      id: selectedEmployee,
+      teamId: selectedTeam,
+    });
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 

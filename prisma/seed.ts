@@ -48,46 +48,44 @@ async function main() {
     },
   });
 
-  // Create users with their teams
-  const johnDoe = await prisma.user.create({
+  // Create employees with their teams and roles
+  const johnDoe = await prisma.employee.create({
     data: {
       name: "John Doe",
-      email: "john.doe@example.com",
-      role: "USER",
-      teams: {
-        connect: { id: frontendTeam.id },
-      },
-    },
-    include: {
-      teams: true,
+      payrollId: "EMP001",
+      teamId: frontendTeam.id,
+      roleId: developerRole.id,
+      hoursPerWeek: 40,
     },
   });
 
-  const janeSmith = await prisma.user.create({
+  const janeSmith = await prisma.employee.create({
     data: {
       name: "Jane Smith",
-      email: "jane.smith@example.com",
-      role: "USER",
-      teams: {
-        connect: { id: backendTeam.id },
-      },
-    },
-    include: {
-      teams: true,
+      payrollId: "EMP002",
+      teamId: backendTeam.id,
+      roleId: developerRole.id,
+      hoursPerWeek: 40,
     },
   });
 
-  const aliceJohnson = await prisma.user.create({
+  const aliceJohnson = await prisma.employee.create({
     data: {
       name: "Alice Johnson",
-      email: "alice.johnson@example.com",
-      role: "USER",
-      teams: {
-        connect: { id: designTeam.id },
-      },
+      payrollId: "EMP003",
+      teamId: designTeam.id,
+      roleId: designerRole.id,
+      hoursPerWeek: 40,
     },
-    include: {
-      teams: true,
+  });
+
+  const bobWilson = await prisma.employee.create({
+    data: {
+      name: "Bob Wilson",
+      payrollId: "EMP004",
+      teamId: frontendTeam.id,
+      roleId: managerRole.id,
+      hoursPerWeek: 40,
     },
   });
 
@@ -150,23 +148,22 @@ async function main() {
   });
 
   // Create time entries for the last 4 weeks
-  const users = [johnDoe, janeSmith, aliceJohnson];
+  const employees = [johnDoe, janeSmith, aliceJohnson, bobWilson];
   const projects = [webApp, apiProject, designSystem];
   const timeTypes = [developmentType, maintenanceType, meetingType, designType];
 
   for (let weekOffset = 0; weekOffset < 4; weekOffset++) {
     const weekStart = startOfWeek(subWeeks(new Date(), weekOffset));
 
-    for (const user of users) {
-      // Determine relevant projects and time types based on user's team
+    for (const employee of employees) {
+      // Determine relevant projects and time types based on employee's team
       let relevantProjects = projects;
       let relevantTimeTypes = timeTypes;
 
-      const userTeam = user.teams[0];
-      if (userTeam.id === frontendTeam.id) {
+      if (employee.teamId === frontendTeam.id) {
         relevantProjects = [webApp];
         relevantTimeTypes = [developmentType, maintenanceType, meetingType];
-      } else if (userTeam.id === backendTeam.id) {
+      } else if (employee.teamId === backendTeam.id) {
         relevantProjects = [apiProject];
         relevantTimeTypes = [developmentType, maintenanceType, meetingType];
       } else {
@@ -197,7 +194,7 @@ async function main() {
               date,
               hours,
               description: `Work on ${project.name}`,
-              userId: user.id,
+              employeeId: employee.id,
               projectId: project.id,
               timeTypeId: timeType.id,
             },

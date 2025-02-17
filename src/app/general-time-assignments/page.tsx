@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Timer, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,9 @@ import {
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/ui/page-header";
 import { toast } from "sonner";
+import { api } from "@/trpc/react";
+import { type TRPCClientError } from "@trpc/client";
+import { type AppRouter } from "@/server/routers/_app";
 
 interface Role {
   id: string;
@@ -46,34 +49,40 @@ interface GeneralTimeAssignment {
 }
 
 export default function GeneralTimeAssignmentsPage() {
-  const [assignments, setAssignments] = useState<GeneralTimeAssignment[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [timeTypes, setTimeTypes] = useState<TimeType[]>([]);
   const [newAssignment, setNewAssignment] = useState({
     roleId: "",
     timeTypeId: "",
     hoursPerWeek: 0,
   });
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { data, isLoading, refetch } =
+    api.generalTimeAssignments.getAll.useQuery();
+  const createMutation = api.generalTimeAssignments.create.useMutation({
+    onSuccess: () => {
+      refetch();
+      setNewAssignment({ roleId: "", timeTypeId: "", hoursPerWeek: 0 });
+      toast.success("Assignment added successfully");
+    },
+    onError: (error) => {
+      console.error("Failed to add assignment:", error);
+      toast.error("Failed to add assignment");
+    },
+  });
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch("/api/general-time-assignments");
-      const data = await response.json();
-      setAssignments(data.assignments);
-      setRoles(data.roles);
-      setTimeTypes(data.timeTypes);
-      setLoading(false);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-      toast.error("Failed to load general time assignments");
-      setLoading(false);
-    }
-  };
+  const deleteMutation = api.generalTimeAssignments.delete.useMutation({
+    onSuccess: () => {
+      refetch();
+      toast.success("Assignment deleted successfully");
+    },
+    onError: (error) => {
+      console.error("Failed to delete assignment:", error);
+      toast.error("Failed to delete assignment");
+    },
+  });
+
+  const assignments = data?.assignments ?? [];
+  const roles = data?.roles ?? [];
+  const timeTypes = data?.timeTypes ?? [];
 
   const handleAdd = async () => {
     if (
@@ -85,51 +94,14 @@ export default function GeneralTimeAssignmentsPage() {
       return;
     }
 
-    try {
-      const response = await fetch("/api/general-time-assignments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newAssignment),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create assignment");
-      }
-
-      await fetchData();
-      setNewAssignment({ roleId: "", timeTypeId: "", hoursPerWeek: 0 });
-      toast.success("Assignment added successfully");
-    } catch (error) {
-      console.error("Failed to add assignment:", error);
-      toast.error("Failed to add assignment");
-    }
+    createMutation.mutate(newAssignment);
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      const response = await fetch("/api/general-time-assignments", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete assignment");
-      }
-
-      await fetchData();
-      toast.success("Assignment deleted successfully");
-    } catch (error) {
-      console.error("Failed to delete assignment:", error);
-      toast.error("Failed to delete assignment");
-    }
+    deleteMutation.mutate({ id });
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
@@ -161,7 +133,7 @@ export default function GeneralTimeAssignmentsPage() {
                 <SelectValue placeholder="Select Role" />
               </SelectTrigger>
               <SelectContent>
-                {roles.map((role) => (
+                {roles.map((role: Role) => (
                   <SelectItem key={role.id} value={role.id}>
                     {role.name}
                   </SelectItem>
@@ -179,7 +151,7 @@ export default function GeneralTimeAssignmentsPage() {
                 <SelectValue placeholder="Select Time Type" />
               </SelectTrigger>
               <SelectContent>
-                {timeTypes.map((type) => (
+                {timeTypes.map((type: TimeType) => (
                   <SelectItem key={type.id} value={type.id}>
                     {type.name}
                   </SelectItem>
@@ -223,7 +195,7 @@ export default function GeneralTimeAssignmentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {assignments.map((assignment) => (
+              {assignments.map((assignment: GeneralTimeAssignment) => (
                 <TableRow key={assignment.id}>
                   <TableCell>{assignment.role.name}</TableCell>
                   <TableCell>{assignment.timeType.name}</TableCell>

@@ -78,6 +78,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { api } from "@/trpc/react";
 
 // Add color palette for the detailed chart
 const timeTypeColors = [
@@ -101,7 +102,7 @@ const timeTypeColors = [
 // Add this function before the component
 const exportToCsv = (data: TimeReport[]) => {
   const headers = [
-    "User",
+    "Employee",
     "Week",
     "Payroll ID",
     "Full Hours",
@@ -112,7 +113,7 @@ const exportToCsv = (data: TimeReport[]) => {
   ];
 
   const csvData = data.map((row) => [
-    row.user,
+    row.employeeName,
     row.week,
     row.payrollId,
     row.fullHours,
@@ -150,36 +151,13 @@ export default function ReportsPage() {
     to: endOfYear(new Date()),
   });
   const [expanded, setExpanded] = useState<ExpandedState>({});
-  const [timeReport, setTimeReport] = useState<TimeReport[]>([]);
-  const [timeTypes, setTimeTypes] = useState<TimeType[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { data, isLoading } = api.timeReports.getAll.useQuery();
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch("/api/time-reports");
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch data");
-      }
-
-      setTimeReport(data.timeReports);
-      setTimeTypes(data.timeTypes);
-      setTeams(data.teams);
-      setRoles(data.roles);
-      setLoading(false);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-      toast.error("Failed to load time reports");
-      setLoading(false);
-    }
-  };
+  const timeReport = data?.timeReports ?? [];
+  const timeTypes = data?.timeTypes ?? [];
+  const teams = data?.teams ?? [];
+  const roles = data?.roles ?? [];
 
   const datePresets = [
     {
@@ -256,7 +234,7 @@ export default function ReportsPage() {
       },
     },
     {
-      accessorKey: "user",
+      accessorKey: "employeeName",
       header: ({ column }) => {
         return (
           <Button
@@ -264,7 +242,7 @@ export default function ReportsPage() {
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="group"
           >
-            User
+            Employee
             {column.getIsSorted() === "asc" ? (
               <ArrowUp className="ml-2 h-4 w-4" />
             ) : column.getIsSorted() === "desc" ? (
@@ -496,7 +474,7 @@ export default function ReportsPage() {
     0
   );
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
@@ -520,12 +498,16 @@ export default function ReportsPage() {
           <CardContent>
             <div className="flex items-center gap-4">
               <Input
-                placeholder="Filter users..."
+                placeholder="Filter employees..."
                 value={
-                  (table.getColumn("user")?.getFilterValue() as string) ?? ""
+                  (table
+                    .getColumn("employeeName")
+                    ?.getFilterValue() as string) ?? ""
                 }
                 onChange={(event) =>
-                  table.getColumn("user")?.setFilterValue(event.target.value)
+                  table
+                    .getColumn("employeeName")
+                    ?.setFilterValue(event.target.value)
                 }
                 className="max-w-sm"
               />

@@ -5,7 +5,7 @@ export const teamRouter = router({
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.team.findMany({
       include: {
-        members: true,
+        employees: true,
         projects: true,
       },
     });
@@ -15,7 +15,7 @@ export const teamRouter = router({
     return ctx.prisma.team.findUnique({
       where: { id: input },
       include: {
-        members: true,
+        employees: true,
         projects: true,
       },
     });
@@ -26,22 +26,22 @@ export const teamRouter = router({
       z.object({
         name: z.string(),
         description: z.string().optional(),
-        memberIds: z.array(z.string()).optional(),
+        employeeIds: z.array(z.string()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { memberIds, ...data } = input;
+      const { employeeIds, ...data } = input;
       return ctx.prisma.team.create({
         data: {
           ...data,
-          members: memberIds
+          employees: employeeIds
             ? {
-                connect: memberIds.map((id) => ({ id })),
+                connect: employeeIds.map((id) => ({ id })),
               }
             : undefined,
         },
         include: {
-          members: true,
+          employees: true,
         },
       });
     }),
@@ -52,23 +52,23 @@ export const teamRouter = router({
         id: z.string(),
         name: z.string().optional(),
         description: z.string().optional(),
-        memberIds: z.array(z.string()).optional(),
+        employeeIds: z.array(z.string()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, memberIds, ...data } = input;
+      const { id, employeeIds, ...data } = input;
       return ctx.prisma.team.update({
         where: { id },
         data: {
           ...data,
-          members: memberIds
+          employees: employeeIds
             ? {
-                set: memberIds.map((id) => ({ id })),
+                set: employeeIds.map((id) => ({ id })),
               }
             : undefined,
         },
         include: {
-          members: true,
+          employees: true,
         },
       });
     }),

@@ -8,6 +8,9 @@ import { leaveRequestRouter } from "./leaveRequest";
 import { employeeRouter } from "./employee";
 import { roleRouter } from "./role";
 import { leaveRouter } from "./leave";
+import { timeReportsRouter } from "./timeReports";
+import { employeesRouter } from "./employees";
+import { generalTimeAssignmentsRouter } from "./generalTimeAssignments";
 
 export const appRouter = router({
   user: userRouter,
@@ -17,8 +20,11 @@ export const appRouter = router({
   timeType: timeTypeRouter,
   leaveRequest: leaveRequestRouter,
   employee: employeeRouter,
+  employees: employeesRouter,
   role: roleRouter,
   leave: leaveRouter,
+  timeReports: timeReportsRouter,
+  generalTimeAssignments: generalTimeAssignmentsRouter,
 });
 
 export type AppRouter = typeof appRouter;

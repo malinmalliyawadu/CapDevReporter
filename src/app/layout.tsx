@@ -1,9 +1,9 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { TRPCProvider } from "@/components/TRPCProvider";
+import { TRPCProvider } from "@/trpc/provider";
 import { Navigation } from "@/components/Navigation";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 

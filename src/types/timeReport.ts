@@ -7,14 +7,14 @@ export interface TimeEntry {
 
 export interface TimeReport {
   id: string;
-  userId: string;
-  user: string;
+  employeeId: string;
+  employeeName: string;
   week: string;
   payrollId: string;
   fullHours: number;
   team: string;
   role: string;
-  timeEntries: TimeEntry[];
+  timeEntries: TimeReportEntry[];
 }
 
 export interface TimeType {
@@ -34,4 +34,11 @@ export interface Role {
   id: string;
   name: string;
   description: string | null;
+}
+
+export interface TimeReportEntry {
+  id: string;
+  hours: number;
+  timeTypeId: string;
+  isCapDev: boolean;
 }

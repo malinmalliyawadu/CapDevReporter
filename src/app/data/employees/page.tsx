@@ -84,8 +84,8 @@ export default function EmployeesPage() {
     createEmployee({
       name: newEmployee.name,
       payrollId: newEmployee.payrollId,
-      roleId: parseInt(newEmployee.roleId),
-      teamId: parseInt(newEmployee.teamId),
+      roleId: newEmployee.roleId,
+      teamId: newEmployee.teamId,
       hoursPerWeek: parseInt(newEmployee.hoursPerWeek) || 40,
     });
   };

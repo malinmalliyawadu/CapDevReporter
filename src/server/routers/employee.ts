@@ -26,8 +26,8 @@ export const employeeRouter = router({
       z.object({
         name: z.string(),
         payrollId: z.string(),
-        roleId: z.number(),
-        teamId: z.number(),
+        roleId: z.string(),
+        teamId: z.string(),
         hoursPerWeek: z.number(),
       })
     )
@@ -47,8 +47,8 @@ export const employeeRouter = router({
         id: z.string(),
         name: z.string().optional(),
         payrollId: z.string().optional(),
-        roleId: z.number().optional(),
-        teamId: z.number().optional(),
+        roleId: z.string().optional(),
+        teamId: z.string().optional(),
         hoursPerWeek: z.number().optional(),
       })
     )
