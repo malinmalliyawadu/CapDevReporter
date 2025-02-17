@@ -17,7 +17,7 @@ model User {
   role      String   @default("USER")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  teams     Team[]
+  teams     Team[]   @relation("TeamMembers")
   timeEntries TimeEntry[]
   leaveRequests LeaveRequest[]
 }
@@ -26,7 +26,7 @@ model Team {
   id          String   @id @default(cuid())
   name        String   @unique
   description String?
-  members     User[]
+  members     User[]   @relation("TeamMembers")
   projects    Project[]
   employees   Employee[]
   createdAt   DateTime @default(now())

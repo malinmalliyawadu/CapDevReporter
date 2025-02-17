@@ -172,7 +172,7 @@ export function Navigation() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/capdev-report">
+                <Link href="/reports">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     Report
                   </NavigationMenuLink>
