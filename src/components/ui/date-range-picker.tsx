@@ -62,7 +62,6 @@ export function DateRangePicker({
                 <Button
                   key={preset.label}
                   onClick={() => {
-                    alert(preset.value.from?.toDateString());
                     onDateRangeChange(preset.value);
                   }}
                   variant="outline"

@@ -140,7 +140,7 @@ export default function ReportsPage() {
   });
   const [expanded, setExpanded] = useState<ExpandedState>({});
 
-  const { data, isLoading } = trpc.timeReports.getAll.useQuery({
+  const [data] = trpc.timeReports.getAll.useSuspenseQuery({
     dateRange: {
       from: (dateRange.from ?? new Date()).toDateString(),
       to: (dateRange.to ?? new Date()).toDateString(),
@@ -540,10 +540,6 @@ export default function ReportsPage() {
     (sum, item) => sum + item.value,
     0
   );
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="">
