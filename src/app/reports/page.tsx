@@ -479,7 +479,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    <div className="">
       <PageHeader
         title={
           <span className="flex items-center gap-2">

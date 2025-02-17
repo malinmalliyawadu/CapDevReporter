@@ -24,7 +24,7 @@ export default function RootLayout({
           <TRPCProvider>
             <div className="min-h-screen">
               <Navigation />
-              <main className="container mx-auto px-4 py-8">{children}</main>
+              <main className="container mx-auto px-8 py-12">{children}</main>
               <Toaster />
             </div>
           </TRPCProvider>

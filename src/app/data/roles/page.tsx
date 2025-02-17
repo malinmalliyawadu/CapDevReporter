@@ -55,7 +55,7 @@ export default function RolesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="">
       <PageHeader
         title={
           <span className="flex items-center gap-2">
