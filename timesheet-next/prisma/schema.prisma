@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("USER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  teams     Team[]
+  timeEntries TimeEntry[]
+  leaveRequests LeaveRequest[]
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  members     User[]
+  projects    Project[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  team        Team     @relation(fields: [teamId], references: [id])
+  teamId      String
+  timeEntries TimeEntry[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TimeEntry {
+  id          String   @id @default(cuid())
+  date        DateTime
+  hours       Float
+  description String?
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  timeType    TimeType @relation(fields: [timeTypeId], references: [id])
+  timeTypeId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TimeType {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  timeEntries TimeEntry[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model LeaveRequest {
+  id          String   @id @default(cuid())
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("PENDING")
+  type        String
+  description String?
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+} 
