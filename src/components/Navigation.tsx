@@ -1,25 +1,27 @@
-import * as React from "react";
+"use client";
+
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import React from "react";
 import {
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
+  navigationMenuTriggerStyle,
   NavigationMenuLink,
+  NavigationMenuContent,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import { Link } from "react-router-dom";
+} from "./ui/navigation-menu";
 import {
-  Users,
-  User,
-  Clock,
   ClipboardList,
-  PartyPopper,
-  Palmtree,
-  Timer,
-  LayoutGrid,
+  Clock,
   Drama,
+  LayoutGrid,
+  Palmtree,
+  PartyPopper,
+  Timer,
+  User,
+  Users,
 } from "lucide-react";
 import { ModeToggle } from "./ModeToggle";
 
@@ -108,7 +110,7 @@ const assignments: {
         Team Assignments
       </span>
     ),
-    href: "/teams",
+    href: "/team-assignments",
     description: "Assign employees to teams",
   },
   {
@@ -118,7 +120,7 @@ const assignments: {
         General Time
       </span>
     ),
-    href: "/general-time",
+    href: "/general-time-assignments",
     description: "Manage general time hours per week based on role",
   },
 ];
@@ -143,7 +145,7 @@ export function Navigation() {
                   <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
                     {data.map((component) => (
                       <ListItem
-                        key={component.title}
+                        key={component.title?.toString()}
                         title={component.title}
                         href={component.href}
                       >
@@ -159,7 +161,7 @@ export function Navigation() {
                   <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
                     {assignments.map((component) => (
                       <ListItem
-                        key={component.title}
+                        key={component.title?.toString()}
                         title={component.title}
                         href={component.href}
                       >
@@ -170,7 +172,7 @@ export function Navigation() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/capdev-report">
+                <Link href="/reports">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     Report
                   </NavigationMenuLink>
@@ -183,23 +185,73 @@ export function Navigation() {
         <ModeToggle />
       </div>
     </header>
+
+    // <nav className="bg-white shadow">
+    //   <div className="container mx-auto px-4">
+    //     <div className="flex h-16 justify-between items-center">
+    //       <div className="flex items-center">
+    //         <Link href="/" className="text-xl font-bold text-gray-800">
+    //           Timesheet
+    //         </Link>
+    //       </div>
+    //       <div className="flex space-x-4">
+    //         <Link
+    //           href="/timesheet"
+    //           className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+    //         >
+    //           Timesheet
+    //         </Link>
+    //         <Link
+    //           href="/projects"
+    //           className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+    //         >
+    //           Projects
+    //         </Link>
+    //         <Link
+    //           href="/teams"
+    //           className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+    //         >
+    //           Teams
+    //         </Link>
+    //         <Link
+    //           href="/leave"
+    //           className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+    //         >
+    //           Leave
+    //         </Link>
+    //         <Link
+    //           href="/reports"
+    //           className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+    //         >
+    //           Reports
+    //         </Link>
+    //       </div>
+    //     </div>
+    //   </div>
+    // </nav>
   );
 }
 
-const ListItem = React.forwardRef<
-  React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, href }, ref) => {
+const ListItem = ({
+  className,
+  title,
+  children,
+  href,
+}: {
+  className?: string;
+  title: React.ReactNode;
+  children: string;
+  href: string;
+}) => {
   return (
     <li>
       <NavigationMenuLink asChild>
         <Link
-          ref={ref}
           className={cn(
             "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
             className
           )}
-          to={href ?? ""}
+          href={href ?? ""}
         >
           <div className="text-sm font-medium leading-none">{title}</div>
           <p className="line-clamp-2 text-sm leading-snug text-gray-500">
@@ -209,5 +261,5 @@ const ListItem = React.forwardRef<
       </NavigationMenuLink>
     </li>
   );
-});
+};
 ListItem.displayName = "ListItem";
