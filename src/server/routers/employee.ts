@@ -71,4 +71,16 @@ export const employeeRouter = router({
         where: { id: input.id },
       });
     }),
+
+  sync: publicProcedure.mutation(async ({ ctx }) => {
+    // TODO: Add actual iPayroll API integration
+    // For now, we'll simulate the API call
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    // Return success response
+    return {
+      success: true,
+      message: "Employees synced with iPayroll",
+    };
+  }),
 });
