@@ -24,10 +24,11 @@ model User {
 
 model Team {
   id          String   @id @default(cuid())
-  name        String
+  name        String   @unique
   description String?
   members     User[]
   projects    Project[]
+  employees   Employee[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -60,8 +61,9 @@ model TimeEntry {
 
 model TimeType {
   id          String   @id @default(cuid())
-  name        String
+  name        String   @unique
   description String?
+  isCapDev    Boolean  @default(false)
   timeEntries TimeEntry[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -78,4 +80,39 @@ model LeaveRequest {
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Role {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  employees   Employee[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Employee {
+  id           String   @id @default(cuid())
+  name         String
+  payrollId    String   @unique
+  hoursPerWeek Int      @default(40)
+  team         Team     @relation(fields: [teamId], references: [id])
+  teamId       String
+  role         Role     @relation(fields: [roleId], references: [id])
+  roleId       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  leave        Leave[]
+}
+
+model Leave {
+  id           String   @id @default(cuid())
+  date         DateTime
+  type         String   // "Annual Leave" | "Sick Leave" | "Bereavement Leave" | "Other"
+  status       String   @default("PENDING") // "Approved" | "Pending" | "Taken"
+  duration     Float    // in days
+  employee     Employee @relation(fields: [employeeId], references: [id])
+  employeeId   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 } 

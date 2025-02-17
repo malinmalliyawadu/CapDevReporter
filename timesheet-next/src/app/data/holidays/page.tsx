@@ -1,4 +1,9 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { PartyPopper } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -7,16 +12,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Holidays from "date-holidays";
-import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
-  addYears,
-  isWithinInterval,
-  parseISO,
-  subYears,
   addDays,
   startOfWeek,
   endOfWeek,
@@ -24,6 +24,8 @@ import {
   endOfMonth,
   startOfYear,
   endOfYear,
+  subYears,
+  isWithinInterval,
 } from "date-fns";
 import {
   ColumnDef,
@@ -35,10 +37,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ArrowUp, ArrowDown, PartyPopper } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { GetServerSideProps } from "next";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import Holidays from "date-holidays";
 
 interface Holiday {
   date: string;
@@ -46,13 +46,35 @@ interface Holiday {
   type: string;
 }
 
-export function HolidaysPage({ holidays }: { holidays: Holiday[] }) {
+function getHolidays(): Holiday[] {
+  const hd = new Holidays("NZ", "WGN");
+  const currentYear = new Date().getFullYear();
+  const lastYear = currentYear - 2;
+  const holidayList: Holiday[] = [];
+
+  for (let year = lastYear; year <= currentYear; year++) {
+    const yearHolidays = hd
+      .getHolidays(year)
+      .filter((h) => h.type === "public")
+      .map((h) => ({
+        date: h.date,
+        name: h.name,
+        type: h.type,
+      }));
+    holidayList.push(...yearHolidays);
+  }
+
+  return holidayList;
+}
+
+export default function HolidaysPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subYears(new Date(), 2),
     to: new Date(),
   });
+  const [holidays] = useState<Holiday[]>(getHolidays());
 
   const datePresets = [
     {
@@ -254,28 +276,3 @@ export function HolidaysPage({ holidays }: { holidays: Holiday[] }) {
     </div>
   );
 }
-
-export const getServerSideProps: GetServerSideProps = async () => {
-  const hd = new Holidays("NZ", "WGN");
-  const currentYear = new Date().getFullYear();
-  const lastYear = currentYear - 2;
-  const holidayList: Holiday[] = [];
-
-  for (let year = lastYear; year <= currentYear; year++) {
-    const yearHolidays = hd
-      .getHolidays(year)
-      .filter((h) => h.type === "public")
-      .map((h) => ({
-        date: h.date,
-        name: h.name,
-        type: h.type,
-      }));
-    holidayList.push(...yearHolidays);
-  }
-
-  return {
-    props: {
-      holidays: holidayList,
-    },
-  };
-};

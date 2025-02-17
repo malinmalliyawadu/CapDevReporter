@@ -1,32 +1,22 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc";
 
-export const projectRouter = router({
+export const employeeRouter = router({
   getAll: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.project.findMany({
+    return ctx.prisma.employee.findMany({
       include: {
         team: true,
-        timeEntries: true,
+        role: true,
       },
     });
   }),
 
   getById: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
-    return ctx.prisma.project.findUnique({
+    return ctx.prisma.employee.findUnique({
       where: { id: input },
       include: {
         team: true,
-        timeEntries: true,
-      },
-    });
-  }),
-
-  getByTeam: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
-    return ctx.prisma.project.findMany({
-      where: { teamId: input },
-      include: {
-        team: true,
-        timeEntries: true,
+        role: true,
       },
     });
   }),
@@ -35,15 +25,18 @@ export const projectRouter = router({
     .input(
       z.object({
         name: z.string(),
-        description: z.string().nullable(),
-        teamId: z.string(),
+        payrollId: z.string(),
+        roleId: z.number(),
+        teamId: z.number(),
+        hoursPerWeek: z.number(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.project.create({
+      return ctx.prisma.employee.create({
         data: input,
         include: {
           team: true,
+          role: true,
         },
       });
     }),
@@ -53,24 +46,29 @@ export const projectRouter = router({
       z.object({
         id: z.string(),
         name: z.string().optional(),
-        description: z.string().nullable().optional(),
-        teamId: z.string().optional(),
+        payrollId: z.string().optional(),
+        roleId: z.number().optional(),
+        teamId: z.number().optional(),
+        hoursPerWeek: z.number().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
-      return ctx.prisma.project.update({
+      return ctx.prisma.employee.update({
         where: { id },
         data,
         include: {
           team: true,
+          role: true,
         },
       });
     }),
 
-  delete: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    return ctx.prisma.project.delete({
-      where: { id: input },
-    });
-  }),
+  delete: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.employee.delete({
+        where: { id: input.id },
+      });
+    }),
 });
