@@ -154,11 +154,16 @@ export default function ReportsPage() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [dateRange, setDateRange] = useState<DateRange>({
     from: startOfYear(subYears(new Date(), 1)),
-    to: endOfYear(new Date()),
+    to: new Date(),
   });
   const [expanded, setExpanded] = useState<ExpandedState>({});
 
-  const { data, isLoading } = api.timeReports.getAll.useQuery();
+  const { data, isLoading } = api.timeReports.getAll.useQuery({
+    dateRange: {
+      from: (dateRange.from ?? new Date()).toDateString(),
+      to: (dateRange.to ?? new Date()).toDateString(),
+    },
+  });
 
   const timeReport = data?.timeReports ?? [];
   const timeTypes = data?.timeTypes ?? [];
@@ -371,6 +376,29 @@ export default function ReportsPage() {
             </div>
             <div className="divide-y">
               {row.timeEntries.map((entry: TimeReportEntry, index) => {
+                if (entry.isPublicHoliday) {
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-4"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-purple-600 dark:text-purple-400">
+                          {entry.publicHolidayName}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-purple-100 dark:bg-purple-900 px-2 py-0.5 text-xs font-medium text-purple-800 dark:text-purple-100">
+                          Public Holiday
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-purple-600 dark:text-purple-400">
+                          {entry.hours} hours
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+
                 if (entry.isLeave) {
                   return (
                     <div
@@ -478,7 +506,7 @@ export default function ReportsPage() {
   >();
 
   filteredData.forEach((report) => {
-    report.timeEntries.forEach((entry) => {
+    report.timeEntries.forEach((entry: TimeReportEntry) => {
       const key = entry.isLeave ? "leave" : entry.timeTypeId;
       const current = timeTypeHours.get(key) || {
         hours: 0,

@@ -47,4 +47,6 @@ export interface TimeReportEntry {
   projectName?: string;
   jiraId?: string;
   jiraUrl?: string;
+  isPublicHoliday?: boolean;
+  publicHolidayName?: string;
 }
