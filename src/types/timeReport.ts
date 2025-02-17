@@ -41,4 +41,10 @@ export interface TimeReportEntry {
   hours: number;
   timeTypeId: string;
   isCapDev: boolean;
+  isLeave?: boolean;
+  leaveType?: string;
+  projectId?: string;
+  projectName?: string;
+  jiraId?: string;
+  jiraUrl?: string;
 }

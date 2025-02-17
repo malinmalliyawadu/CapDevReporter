@@ -52,7 +52,13 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import type { TimeReport, TimeType, Team, Role } from "@/types/timeReport";
+import type {
+  TimeReport,
+  TimeType,
+  Team,
+  Role,
+  TimeReportEntry,
+} from "@/types/timeReport";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
@@ -364,7 +370,30 @@ export default function ReportsPage() {
               <span>Time Entries</span>
             </div>
             <div className="divide-y">
-              {row.timeEntries.map((entry, index) => {
+              {row.timeEntries.map((entry: TimeReportEntry, index) => {
+                if (entry.isLeave) {
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-4"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-orange-600 dark:text-orange-400">
+                          {entry.leaveType}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-900 px-2 py-0.5 text-xs font-medium text-orange-800 dark:text-orange-100">
+                          Leave
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-orange-600 dark:text-orange-400">
+                          {Math.abs(entry.hours / 8)} day(s)
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+
                 const timeType = timeTypes.find(
                   (t) => t.id === entry.timeTypeId
                 );
@@ -374,9 +403,25 @@ export default function ReportsPage() {
                     className="flex items-center justify-between p-4"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">
-                        {timeType?.name || "Unknown"}
-                      </span>
+                      {entry.jiraId ? (
+                        <>
+                          <a
+                            href={entry.jiraUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 hover:underline"
+                          >
+                            {entry.jiraId}
+                          </a>
+                          <span className="text-muted-foreground">
+                            {entry.projectName}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="font-medium">
+                          {timeType?.name || "Unknown"}
+                        </span>
+                      )}
                       {entry.isCapDev && (
                         <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
                           CapDev
@@ -426,45 +471,56 @@ export default function ReportsPage() {
     .getFilteredRowModel()
     .rows.map((row) => row.original);
 
-  // Calculate detailed time type data
+  // Calculate detailed time type data including leave
   const timeTypeHours = new Map<
     string,
-    { hours: number; isCapDev: boolean; name: string }
+    { hours: number; isCapDev: boolean; name: string; isLeave?: boolean }
   >();
 
   filteredData.forEach((report) => {
     report.timeEntries.forEach((entry) => {
-      const current = timeTypeHours.get(entry.timeTypeId) || {
+      const key = entry.isLeave ? "leave" : entry.timeTypeId;
+      const current = timeTypeHours.get(key) || {
         hours: 0,
         isCapDev: entry.isCapDev,
-        name:
-          timeTypes.find((t) => t.id === entry.timeTypeId)?.name || "Unknown",
+        name: entry.isLeave
+          ? "Leave"
+          : timeTypes.find((t) => t.id === entry.timeTypeId)?.name || "Unknown",
+        isLeave: entry.isLeave,
       };
-      current.hours += entry.hours;
-      timeTypeHours.set(entry.timeTypeId, current);
+      current.hours += Math.abs(entry.hours); // Use absolute value for leave hours
+      timeTypeHours.set(key, current);
     });
   });
 
-  // Calculate rolled up CapDev data
+  // Calculate rolled up CapDev data (excluding leave)
   const totalCapDevHours = Array.from(timeTypeHours.values())
-    .filter((data) => data.isCapDev)
+    .filter((data) => !data.isLeave && data.isCapDev)
     .reduce((sum, data) => sum + data.hours, 0);
 
   const totalNonCapDevHours = Array.from(timeTypeHours.values())
-    .filter((data) => !data.isCapDev)
+    .filter((data) => !data.isLeave && !data.isCapDev)
+    .reduce((sum, data) => sum + data.hours, 0);
+
+  const totalLeaveHours = Array.from(timeTypeHours.values())
+    .filter((data) => data.isLeave)
     .reduce((sum, data) => sum + data.hours, 0);
 
   const rolledUpData = [
     { name: "CapDev", value: totalCapDevHours, color: "#0ea5e9" },
     { name: "Non-CapDev", value: totalNonCapDevHours, color: "#f43f5e" },
+    { name: "Leave", value: totalLeaveHours, color: "#f97316" },
   ];
 
   const detailedChartData = Array.from(timeTypeHours.entries()).map(
     ([, data], index) => ({
       name: data.name,
       value: data.hours,
-      color: timeTypeColors[index % timeTypeColors.length],
+      color: data.isLeave
+        ? "#f97316"
+        : timeTypeColors[index % timeTypeColors.length],
       isCapDev: data.isCapDev,
+      isLeave: data.isLeave,
     })
   );
 

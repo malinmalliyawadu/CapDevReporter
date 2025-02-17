@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { addDays, startOfWeek, subWeeks } from "date-fns";
+import { addDays, subDays, subWeeks } from "date-fns";
 
 const prisma = new PrismaClient();
 
@@ -9,6 +9,13 @@ async function main() {
     data: {
       name: "Software Developer",
       description: "Develops and maintains software applications",
+    },
+  });
+
+  const seniorDevRole = await prisma.role.create({
+    data: {
+      name: "Senior Developer",
+      description: "Leads development efforts and mentors other developers",
     },
   });
 
@@ -48,7 +55,14 @@ async function main() {
     },
   });
 
-  // Create employees with their teams and roles
+  const platformTeam = await prisma.team.create({
+    data: {
+      name: "Platform Team",
+      description: "Responsible for infrastructure and platform services",
+    },
+  });
+
+  // Create employees
   const johnDoe = await prisma.employee.create({
     data: {
       name: "John Doe",
@@ -64,7 +78,7 @@ async function main() {
       name: "Jane Smith",
       payrollId: "EMP002",
       teamId: backendTeam.id,
-      roleId: developerRole.id,
+      roleId: seniorDevRole.id,
       hoursPerWeek: 40,
     },
   });
@@ -89,13 +103,43 @@ async function main() {
     },
   });
 
-  // Create projects with jiraId and isCapDev fields
+  const charlieGreen = await prisma.employee.create({
+    data: {
+      name: "Charlie Green",
+      payrollId: "EMP005",
+      teamId: platformTeam.id,
+      roleId: seniorDevRole.id,
+      hoursPerWeek: 40,
+    },
+  });
+
+  const dianaBrown = await prisma.employee.create({
+    data: {
+      name: "Diana Brown",
+      payrollId: "EMP006",
+      teamId: backendTeam.id,
+      roleId: developerRole.id,
+      hoursPerWeek: 40,
+    },
+  });
+
+  // Create projects
   const webApp = await prisma.project.create({
     data: {
       name: "Web Application",
       description: "Main web application project",
       teamId: frontendTeam.id,
       jiraId: "WEB-001",
+      isCapDev: true,
+    },
+  });
+
+  const mobileApp = await prisma.project.create({
+    data: {
+      name: "Mobile App",
+      description: "Mobile application development",
+      teamId: frontendTeam.id,
+      jiraId: "MOB-001",
       isCapDev: true,
     },
   });
@@ -110,150 +154,263 @@ async function main() {
     },
   });
 
+  const microservices = await prisma.project.create({
+    data: {
+      name: "Microservices",
+      description: "Microservices architecture implementation",
+      teamId: backendTeam.id,
+      jiraId: "MICRO-001",
+      isCapDev: true,
+    },
+  });
+
   const designSystem = await prisma.project.create({
     data: {
       name: "Design System",
       description: "Company-wide design system",
       teamId: designTeam.id,
       jiraId: "DES-001",
+      isCapDev: true,
+    },
+  });
+
+  const userResearch = await prisma.project.create({
+    data: {
+      name: "User Research",
+      description: "User research and testing",
+      teamId: designTeam.id,
+      jiraId: "RES-001",
       isCapDev: false,
+    },
+  });
+
+  const maintenance = await prisma.project.create({
+    data: {
+      name: "System Maintenance",
+      description: "Ongoing system maintenance and support",
+      teamId: backendTeam.id,
+      jiraId: "MAINT-001",
+      isCapDev: false,
+    },
+  });
+
+  const platformInfra = await prisma.project.create({
+    data: {
+      name: "Platform Infrastructure",
+      description: "Cloud infrastructure and platform services",
+      teamId: platformTeam.id,
+      jiraId: "PLAT-001",
+      isCapDev: true,
     },
   });
 
   // Create time types
-  const developmentType = await prisma.timeType.create({
+  const generalAdmin = await prisma.timeType.create({
     data: {
-      name: "Development",
-      description: "Software development work",
-      isCapDev: true,
-    },
-  });
-
-  const maintenanceType = await prisma.timeType.create({
-    data: {
-      name: "Maintenance",
-      description: "System maintenance and support",
+      name: "General Administration",
+      description: "General administrative tasks and emails",
       isCapDev: false,
     },
   });
 
-  const meetingType = await prisma.timeType.create({
+  const fridayUpdate = await prisma.timeType.create({
     data: {
-      name: "Meeting",
-      description: "Team meetings and discussions",
+      name: "Friday Update",
+      description: "Weekly team updates and reporting",
       isCapDev: false,
     },
   });
 
-  const designType = await prisma.timeType.create({
+  const personalDev = await prisma.timeType.create({
     data: {
-      name: "Design",
-      description: "UI/UX design work",
+      name: "Personal Development",
+      description: "Learning and skill development",
+      isCapDev: false,
+    },
+  });
+
+  const techDebt = await prisma.timeType.create({
+    data: {
+      name: "Tech Debt",
+      description: "Technical debt and improvements",
       isCapDev: true,
     },
   });
 
-  // Create time entries for the last 4 weeks
-  const employees = [johnDoe, janeSmith, aliceJohnson, bobWilson];
-  const projects = [webApp, apiProject, designSystem];
-  const timeTypes = [developmentType, maintenanceType, meetingType, designType];
-
-  for (let weekOffset = 0; weekOffset < 4; weekOffset++) {
-    const weekStart = startOfWeek(subWeeks(new Date(), weekOffset));
-
-    for (const employee of employees) {
-      // Determine relevant projects and time types based on employee's team
-      let relevantProjects = projects;
-      let relevantTimeTypes = timeTypes;
-
-      if (employee.teamId === frontendTeam.id) {
-        relevantProjects = [webApp];
-        relevantTimeTypes = [developmentType, maintenanceType, meetingType];
-      } else if (employee.teamId === backendTeam.id) {
-        relevantProjects = [apiProject];
-        relevantTimeTypes = [developmentType, maintenanceType, meetingType];
-      } else {
-        relevantProjects = [designSystem];
-        relevantTimeTypes = [designType, meetingType];
-      }
-
-      // Create entries for each day of the week
-      for (let day = 0; day < 5; day++) {
-        const date = addDays(weekStart, day);
-        const dailyHours = 8; // 8 hours per day
-        let remainingHours = dailyHours;
-
-        // Distribute hours among different time types
-        while (remainingHours > 0) {
-          const timeType =
-            relevantTimeTypes[
-              Math.floor(Math.random() * relevantTimeTypes.length)
-            ];
-          const project =
-            relevantProjects[
-              Math.floor(Math.random() * relevantProjects.length)
-            ];
-          const hours = Math.min(remainingHours, Math.random() * 4 + 1);
-
-          await prisma.timeEntry.create({
-            data: {
-              date,
-              hours,
-              description: `Work on ${project.name}`,
-              employeeId: employee.id,
-              projectId: project.id,
-              timeTypeId: timeType.id,
-            },
-          });
-
-          remainingHours -= hours;
-        }
-      }
-    }
-  }
+  const agileCeremonies = await prisma.timeType.create({
+    data: {
+      name: "Agile Ceremonies",
+      description: "Stand-ups, planning, and retrospectives",
+      isCapDev: false,
+    },
+  });
 
   // Create general time assignments
-  await prisma.generalTimeAssignment.createMany({
-    data: [
-      {
-        roleId: developerRole.id,
-        timeTypeId: developmentType.id,
-        hoursPerWeek: 30,
-      },
-      {
-        roleId: developerRole.id,
-        timeTypeId: maintenanceType.id,
-        hoursPerWeek: 5,
-      },
-      {
-        roleId: developerRole.id,
-        timeTypeId: meetingType.id,
-        hoursPerWeek: 5,
-      },
-      {
-        roleId: designerRole.id,
-        timeTypeId: designType.id,
-        hoursPerWeek: 25,
-      },
-      {
-        roleId: designerRole.id,
-        timeTypeId: meetingType.id,
-        hoursPerWeek: 15,
-      },
-      {
-        roleId: managerRole.id,
-        timeTypeId: meetingType.id,
-        hoursPerWeek: 25,
-      },
-      {
-        roleId: managerRole.id,
-        timeTypeId: maintenanceType.id,
-        hoursPerWeek: 15,
-      },
-    ],
-  });
+  const assignments = [
+    // Common assignments for all roles
+    {
+      roleId: developerRole.id,
+      timeTypeId: generalAdmin.id,
+      hoursPerWeek: 5,
+    },
+    {
+      roleId: seniorDevRole.id,
+      timeTypeId: generalAdmin.id,
+      hoursPerWeek: 5,
+    },
+    {
+      roleId: designerRole.id,
+      timeTypeId: generalAdmin.id,
+      hoursPerWeek: 5,
+    },
+    {
+      roleId: managerRole.id,
+      timeTypeId: generalAdmin.id,
+      hoursPerWeek: 5,
+    },
+    // Friday Update for all roles
+    {
+      roleId: developerRole.id,
+      timeTypeId: fridayUpdate.id,
+      hoursPerWeek: 1,
+    },
+    {
+      roleId: seniorDevRole.id,
+      timeTypeId: fridayUpdate.id,
+      hoursPerWeek: 1,
+    },
+    {
+      roleId: designerRole.id,
+      timeTypeId: fridayUpdate.id,
+      hoursPerWeek: 1,
+    },
+    {
+      roleId: managerRole.id,
+      timeTypeId: fridayUpdate.id,
+      hoursPerWeek: 1,
+    },
+    // Personal Development for all roles
+    {
+      roleId: developerRole.id,
+      timeTypeId: personalDev.id,
+      hoursPerWeek: 4,
+    },
+    {
+      roleId: seniorDevRole.id,
+      timeTypeId: personalDev.id,
+      hoursPerWeek: 4,
+    },
+    {
+      roleId: designerRole.id,
+      timeTypeId: personalDev.id,
+      hoursPerWeek: 4,
+    },
+    {
+      roleId: managerRole.id,
+      timeTypeId: personalDev.id,
+      hoursPerWeek: 4,
+    },
+    // Tech Debt for devs only
+    {
+      roleId: developerRole.id,
+      timeTypeId: techDebt.id,
+      hoursPerWeek: 4,
+    },
+    {
+      roleId: seniorDevRole.id,
+      timeTypeId: techDebt.id,
+      hoursPerWeek: 4,
+    },
+    // Agile Ceremonies for devs only
+    {
+      roleId: developerRole.id,
+      timeTypeId: agileCeremonies.id,
+      hoursPerWeek: 2,
+    },
+    {
+      roleId: seniorDevRole.id,
+      timeTypeId: agileCeremonies.id,
+      hoursPerWeek: 2,
+    },
+  ];
 
-  console.log("Database has been seeded. 🌱");
+  for (const assignment of assignments) {
+    await prisma.generalTimeAssignment.create({ data: assignment });
+  }
+
+  const today = new Date();
+
+  // Create leave records
+  const leaveRecords = [
+    // John Doe's leave
+    {
+      date: today,
+      type: "Annual Leave",
+      status: "TAKEN",
+      duration: 1,
+      employeeId: johnDoe.id,
+    },
+    {
+      date: subDays(today, 5),
+      type: "Sick Leave",
+      status: "TAKEN",
+      duration: 1,
+      employeeId: johnDoe.id,
+    },
+    // Jane Smith's leave
+    {
+      date: subDays(today, 1),
+      type: "Annual Leave",
+      status: "TAKEN",
+      duration: 1,
+      employeeId: janeSmith.id,
+    },
+    {
+      date: addDays(today, 5),
+      type: "Annual Leave",
+      status: "APPROVED",
+      duration: 5,
+      employeeId: janeSmith.id,
+    },
+    // Alice Johnson's leave
+    {
+      date: subDays(today, 3),
+      type: "Sick Leave",
+      status: "TAKEN",
+      duration: 2,
+      employeeId: aliceJohnson.id,
+    },
+    // Bob Wilson's leave
+    {
+      date: addDays(today, 10),
+      type: "Annual Leave",
+      status: "APPROVED",
+      duration: 10,
+      employeeId: bobWilson.id,
+    },
+    // Charlie Green's leave
+    {
+      date: subDays(today, 2),
+      type: "Annual Leave",
+      status: "TAKEN",
+      duration: 3,
+      employeeId: charlieGreen.id,
+    },
+    // Diana Brown's leave
+    {
+      date: addDays(today, 3),
+      type: "Annual Leave",
+      status: "APPROVED",
+      duration: 2,
+      employeeId: dianaBrown.id,
+    },
+  ];
+
+  for (const leave of leaveRecords) {
+    await prisma.leave.create({ data: leave });
+  }
+
+  console.log("Seed data created successfully");
 }
 
 main()

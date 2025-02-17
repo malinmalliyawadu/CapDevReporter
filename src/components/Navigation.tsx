@@ -133,7 +133,7 @@ export function Navigation() {
           <div className="flex items-center gap-2 text-cyan-800 dark:text-white">
             <Timer className="animate-spin-once" />
             <h1 className="text-2xl font-bold tracking-tight animate-slide-down">
-              ***REMOVED*** Timesheet
+              <Link href="/">***REMOVED*** Timesheet</Link>
             </h1>
           </div>
 

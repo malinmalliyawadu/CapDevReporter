@@ -5,9 +5,12 @@ export const timeEntryRouter = router({
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.timeEntry.findMany({
       include: {
-        user: true,
+        employee: true,
         project: true,
         timeType: true,
+      },
+      orderBy: {
+        date: "desc",
       },
     });
   }),
@@ -16,42 +19,22 @@ export const timeEntryRouter = router({
     return ctx.prisma.timeEntry.findUnique({
       where: { id: input },
       include: {
-        user: true,
+        employee: true,
         project: true,
         timeType: true,
       },
     });
   }),
 
-  getByUser: publicProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
-      })
-    )
+  getByEmployee: publicProcedure
+    .input(z.string())
     .query(async ({ ctx, input }) => {
-      const { userId, startDate, endDate } = input;
       return ctx.prisma.timeEntry.findMany({
-        where: {
-          userId,
-          ...(startDate && endDate
-            ? {
-                date: {
-                  gte: startDate,
-                  lte: endDate,
-                },
-              }
-            : {}),
-        },
+        where: { employeeId: input },
         include: {
-          user: true,
+          employee: true,
           project: true,
           timeType: true,
-        },
-        orderBy: {
-          date: "desc",
         },
       });
     }),
@@ -62,7 +45,7 @@ export const timeEntryRouter = router({
         date: z.date(),
         hours: z.number(),
         description: z.string().optional(),
-        userId: z.string(),
+        employeeId: z.string(),
         projectId: z.string(),
         timeTypeId: z.string(),
       })
@@ -71,7 +54,7 @@ export const timeEntryRouter = router({
       return ctx.prisma.timeEntry.create({
         data: input,
         include: {
-          user: true,
+          employee: true,
           project: true,
           timeType: true,
         },
@@ -85,6 +68,7 @@ export const timeEntryRouter = router({
         date: z.date().optional(),
         hours: z.number().optional(),
         description: z.string().optional(),
+        employeeId: z.string().optional(),
         projectId: z.string().optional(),
         timeTypeId: z.string().optional(),
       })
@@ -95,7 +79,7 @@ export const timeEntryRouter = router({
         where: { id },
         data,
         include: {
-          user: true,
+          employee: true,
           project: true,
           timeType: true,
         },
