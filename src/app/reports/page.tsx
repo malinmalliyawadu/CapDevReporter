@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -792,7 +792,7 @@ export default function ReportsPage() {
               <TableBody>
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
-                    <>
+                    <React.Fragment key={row.id}>
                       <TableRow
                         key={row.id}
                         data-state={row.getIsSelected() && "selected"}
@@ -807,7 +807,7 @@ export default function ReportsPage() {
                         ))}
                       </TableRow>
                       {row.getIsExpanded() && renderSubRow(row.original)}
-                    </>
+                    </React.Fragment>
                   ))
                 ) : (
                   <TableRow>
