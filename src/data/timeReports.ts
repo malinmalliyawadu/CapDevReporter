@@ -1,4 +1,5 @@
-import { TimeReport, TimeEntry } from "@/types/timeReport";
+import { TimeReport } from "@/types/timeReport";
+import { TimeEntry } from "@/types/timeEntry";
 import { employees } from "./employees";
 import { teams } from "./teams";
 import { roles } from "./roles";
@@ -37,6 +38,7 @@ const generateTimeEntries = (
     // Default entry if no assignments
     return [
       {
+        id: 1,
         timeTypeId: 2, // Project Work
         hours: totalHours,
         isCapDev: true,
@@ -59,6 +61,7 @@ const generateTimeEntries = (
         (assignment.hoursPerWeek / totalAssignedHours) * totalHours
       );
       entries.push({
+        id: entries.length + 1,
         timeTypeId: timeType.id,
         hours: scaledHours,
         isCapDev: timeType.isCapDev,

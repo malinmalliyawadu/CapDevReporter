@@ -76,10 +76,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { TimeEntry } from "@/types/timeEntry";
 
 // Add this function before the component
 const exportToCsv = (data: TimeReport[]) => {
@@ -125,35 +125,6 @@ const exportToCsv = (data: TimeReport[]) => {
   document.body.removeChild(link);
 };
 
-// Add this helper function before the ReportsPage component
-const getCurrentWeek = () => {
-  const now = new Date();
-  const monday = new Date(now);
-  monday.setDate(monday.getDate() - monday.getDay() + 1); // Set to Monday of current week
-  return monday.toISOString().split("T")[0]; // Format as YYYY-MM-DD
-};
-
-// Add this helper function to generate weeks for the last 24 months
-const getLastTwoYearsWeeks = () => {
-  const weeks = [];
-  const now = new Date();
-
-  // Go back 24 months
-  for (let i = 0; i < 24 * 4.33; i++) {
-    // approximately 4.33 weeks per month
-    const date = new Date(now);
-    date.setDate(date.getDate() - i * 7);
-
-    // Find Monday of this week
-    const monday = new Date(date);
-    monday.setDate(monday.getDate() - monday.getDay() + 1);
-
-    weeks.push(monday.toISOString().split("T")[0]); // Format as YYYY-MM-DD
-  }
-
-  return [...new Set(weeks)].sort().reverse(); // Remove duplicates and sort descending
-};
-
 // Add this color palette for the detailed chart
 const timeTypeColors = [
   "#2563eb", // blue-600
@@ -173,14 +144,6 @@ const timeTypeColors = [
   "#1d4ed8", // blue-700
 ];
 
-// Add this type definition
-type TimeEntry = {
-  id: number;
-  timeTypeId: number;
-  hours: number;
-  isCapDev: boolean;
-};
-
 export function ReportsPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -192,6 +155,7 @@ export function ReportsPage() {
   const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<TimeReport | null>(null);
+  const [timeReport, setTimeReport] = useState<TimeReport[]>(timeReports);
 
   const datePresets = [
     {
@@ -463,7 +427,7 @@ export function ReportsPage() {
   };
 
   const table = useReactTable({
-    data: timeReports,
+    data: timeReport,
     columns,
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
@@ -524,7 +488,7 @@ export function ReportsPage() {
   ];
 
   const detailedChartData = Array.from(timeTypeHours.entries()).map(
-    ([id, data], index) => ({
+    ([, data], index) => ({
       name: data.name,
       value: data.hours,
       color: timeTypeColors[index % timeTypeColors.length],
@@ -537,9 +501,6 @@ export function ReportsPage() {
     (sum, item) => sum + item.value,
     0
   );
-
-  // Get the weeks once when component mounts
-  const availableWeeks = getLastTwoYearsWeeks();
 
   // Add this function to handle entry updates
   const handleEntrySubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -563,12 +524,14 @@ export function ReportsPage() {
       // Update the timeReports array with the new entry
       // Note: You'll need to implement proper state management here
       // This is just an example assuming local state
-      const updatedReports = timeReports.map((report) =>
+      const updatedReports = timeReport?.map((report) =>
         report.id === editingReport.id
           ? { ...report, timeEntries: updatedTimeEntries }
           : report
       );
+
       // Update your state management here
+      setTimeReport(updatedReports);
     }
 
     setIsDialogOpen(false);
@@ -584,10 +547,12 @@ export function ReportsPage() {
 
     // Update the timeReports array without the deleted entry
     // Note: You'll need to implement proper state management here
-    const updatedReports = timeReports.map((r) =>
+    const updatedReports = timeReport.map((r) =>
       r.id === report.id ? { ...r, timeEntries: updatedTimeEntries } : r
     );
+
     // Update your state management here
+    setTimeReport(updatedReports);
   };
 
   // Add this dialog component before the return statement
@@ -683,7 +648,11 @@ export function ReportsPage() {
               />
               <DateRangePicker
                 dateRange={dateRange}
-                onDateRangeChange={setDateRange}
+                onDateRangeChange={(range) => {
+                  if (range) {
+                    setDateRange(range);
+                  }
+                }}
                 presets={datePresets}
               />
               <Select
