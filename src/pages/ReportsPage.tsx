@@ -38,6 +38,9 @@ import {
   ChevronDown,
   ChevronRight,
   BarChart,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   PieChart,
@@ -68,6 +71,15 @@ import {
   subWeeks,
   subMonths,
 } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 // Add this function before the component
 const exportToCsv = (data: TimeReport[]) => {
@@ -161,6 +173,14 @@ const timeTypeColors = [
   "#1d4ed8", // blue-700
 ];
 
+// Add this type definition
+type TimeEntry = {
+  id: number;
+  timeTypeId: number;
+  hours: number;
+  isCapDev: boolean;
+};
+
 export function ReportsPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -169,6 +189,9 @@ export function ReportsPage() {
     to: endOfYear(new Date()),
   });
   const [expanded, setExpanded] = useState<ExpandedState>({});
+  const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<TimeReport | null>(null);
 
   const datePresets = [
     {
@@ -371,8 +394,20 @@ export function ReportsPage() {
       <TableRow key={`${row.id}-expanded`} className="bg-muted/50">
         <TableCell colSpan={columns.length} className="p-4">
           <div className="rounded-md border">
-            <div className="bg-muted px-4 py-2 font-medium border-b">
-              Time Entries
+            <div className="bg-muted px-4 py-2 font-medium border-b flex justify-between items-center">
+              <span>Time Entries</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingReport(row);
+                  setSelectedEntry(null);
+                  setIsDialogOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Entry
+              </Button>
             </div>
             <div className="divide-y">
               {row.timeEntries.map((entry, index) => {
@@ -394,9 +429,29 @@ export function ReportsPage() {
                         </span>
                       )}
                     </div>
-                    <span className="font-medium">
-                      {entry.hours.toFixed(1)} hours
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">
+                        {entry.hours.toFixed(1)} hours
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingReport(row);
+                          setSelectedEntry(entry);
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteEntry(row, entry.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -485,6 +540,117 @@ export function ReportsPage() {
 
   // Get the weeks once when component mounts
   const availableWeeks = getLastTwoYearsWeeks();
+
+  // Add this function to handle entry updates
+  const handleEntrySubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    const newEntry = {
+      id: selectedEntry?.id || Date.now(),
+      timeTypeId: Number(formData.get("timeTypeId")),
+      hours: Number(formData.get("hours")),
+      isCapDev: Boolean(formData.get("isCapDev")),
+    };
+
+    if (editingReport) {
+      const updatedTimeEntries = selectedEntry
+        ? editingReport.timeEntries.map((entry) =>
+            entry.id === selectedEntry.id ? newEntry : entry
+          )
+        : [...editingReport.timeEntries, newEntry];
+
+      // Update the timeReports array with the new entry
+      // Note: You'll need to implement proper state management here
+      // This is just an example assuming local state
+      const updatedReports = timeReports.map((report) =>
+        report.id === editingReport.id
+          ? { ...report, timeEntries: updatedTimeEntries }
+          : report
+      );
+      // Update your state management here
+    }
+
+    setIsDialogOpen(false);
+    setSelectedEntry(null);
+    setEditingReport(null);
+  };
+
+  // Add this function to handle entry deletion
+  const handleDeleteEntry = (report: TimeReport, entryId: number) => {
+    const updatedTimeEntries = report.timeEntries.filter(
+      (entry) => entry.id !== entryId
+    );
+
+    // Update the timeReports array without the deleted entry
+    // Note: You'll need to implement proper state management here
+    const updatedReports = timeReports.map((r) =>
+      r.id === report.id ? { ...r, timeEntries: updatedTimeEntries } : r
+    );
+    // Update your state management here
+  };
+
+  // Add this dialog component before the return statement
+  const entryDialog = (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {selectedEntry ? "Edit Time Entry" : "Add Time Entry"}
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleEntrySubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="timeTypeId">Time Type</Label>
+            <Select
+              name="timeTypeId"
+              defaultValue={selectedEntry?.timeTypeId.toString()}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select time type" />
+              </SelectTrigger>
+              <SelectContent>
+                {timeTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.id.toString()}>
+                    {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="hours">Hours</Label>
+            <Input
+              id="hours"
+              name="hours"
+              type="number"
+              step="0.1"
+              defaultValue={selectedEntry?.hours}
+              required
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              id="isCapDev"
+              name="isCapDev"
+              type="checkbox"
+              defaultChecked={selectedEntry?.isCapDev}
+            />
+            <Label htmlFor="isCapDev">CapDev Time</Label>
+          </div>
+
+          <DialogFooter>
+            <Button type="submit">
+              {selectedEntry ? "Save Changes" : "Add Entry"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -775,6 +941,7 @@ export function ReportsPage() {
           </div>
         </CardContent>
       </Card>
+      {entryDialog}
     </div>
   );
 }
