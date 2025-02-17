@@ -75,6 +75,7 @@ export const timeReportsRouter = createTRPCRouter({
       });
 
       // Calculate time reports
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const timeReportMap = new Map<string, any>();
 
       // Define the date range from input

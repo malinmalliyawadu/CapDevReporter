@@ -40,6 +40,8 @@ import {
   ChevronDown,
   ChevronRight,
   BarChart,
+  XCircle,
+  AlertTriangle,
 } from "lucide-react";
 import {
   PieChart,
@@ -67,6 +69,7 @@ import {
   subMonths,
 } from "date-fns";
 import { trpc } from "@/trpc/client";
+import { ErrorBoundary } from "react-error-boundary";
 
 // Add color palette for the detailed chart
 const timeTypeColors = [
@@ -131,7 +134,32 @@ const exportToCsv = (data: TimeReport[]) => {
   document.body.removeChild(link);
 };
 
+function ErrorFallback({ error }: { error: Error }) {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center gap-4 max-w-md text-center">
+        <div className="p-3 rounded-full bg-red-100 text-red-600">
+          <XCircle className="h-6 w-6" />
+        </div>
+        <h3 className="text-lg font-semibold">Something went wrong</h3>
+        <p className="text-sm text-muted-foreground">{error.message}</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Try again
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function ReportsPage() {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <ReportsContent />
+    </ErrorBoundary>
+  );
+}
+
+function ReportsContent() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -140,64 +168,24 @@ export default function ReportsPage() {
   });
   const [expanded, setExpanded] = useState<ExpandedState>({});
 
-  const [data] = trpc.timeReports.getAll.useSuspenseQuery({
-    dateRange: {
-      from: (dateRange.from ?? new Date()).toDateString(),
-      to: (dateRange.to ?? new Date()).toDateString(),
+  const { data, isLoading } = trpc.timeReports.getAll.useQuery(
+    {
+      dateRange: {
+        from: (dateRange.from ?? new Date()).toDateString(),
+        to: (dateRange.to ?? new Date()).toDateString(),
+      },
     },
-  });
+    {
+      retry: 3,
+      retryDelay: 1000,
+    }
+  );
 
   const timeReport = data?.timeReports ?? [];
   const timeTypes = data?.timeTypes ?? [];
   const teams = data?.teams ?? [];
   const roles = data?.roles ?? [];
 
-  const datePresets = [
-    {
-      label: "This Week",
-      value: {
-        from: startOfWeek(new Date(), { weekStartsOn: 1 }),
-        to: endOfWeek(new Date(), { weekStartsOn: 1 }),
-      },
-    },
-    {
-      label: "Last Week",
-      value: {
-        from: startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }),
-        to: endOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }),
-      },
-    },
-    {
-      label: "This Month",
-      value: {
-        from: startOfMonth(new Date()),
-        to: endOfMonth(new Date()),
-      },
-    },
-    {
-      label: "Last Month",
-      value: {
-        from: startOfMonth(subMonths(new Date(), 1)),
-        to: endOfMonth(subMonths(new Date(), 1)),
-      },
-    },
-    {
-      label: "This Year",
-      value: {
-        from: startOfYear(new Date()),
-        to: endOfYear(new Date()),
-      },
-    },
-    {
-      label: "Last 2 Years",
-      value: {
-        from: startOfYear(subYears(new Date(), 1)),
-        to: endOfYear(new Date()),
-      },
-    },
-  ];
-
-  // Add this handler function
   const handleFilterChange = (columnId: string, value: string) => {
     const filterValue = value === "All" ? undefined : value;
     table.getColumn(columnId)?.setFilterValue(filterValue);
@@ -348,6 +336,166 @@ export default function ReportsPage() {
     },
   ];
 
+  const table = useReactTable({
+    data: timeReport,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    onExpandedChange: setExpanded,
+    state: {
+      sorting,
+      columnFilters,
+      expanded,
+    },
+  });
+
+  useEffect(() => {
+    if (dateRange?.from) {
+      table.getColumn("week")?.setFilterValue(dateRange);
+    }
+  }, [dateRange, table]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white" />
+          <p className="text-sm text-muted-foreground">Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-4 max-w-md text-center">
+          <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <h3 className="text-lg font-semibold">No data available</h3>
+          <p className="text-sm text-muted-foreground">
+            Please try again later or contact support if the issue persists.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const filteredData = table
+    .getFilteredRowModel()
+    .rows.map((row) => row.original);
+
+  const datePresets = [
+    {
+      label: "This Week",
+      value: {
+        from: startOfWeek(new Date(), { weekStartsOn: 1 }),
+        to: endOfWeek(new Date(), { weekStartsOn: 1 }),
+      },
+    },
+    {
+      label: "Last Week",
+      value: {
+        from: startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }),
+        to: endOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }),
+      },
+    },
+    {
+      label: "This Month",
+      value: {
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date()),
+      },
+    },
+    {
+      label: "Last Month",
+      value: {
+        from: startOfMonth(subMonths(new Date(), 1)),
+        to: endOfMonth(subMonths(new Date(), 1)),
+      },
+    },
+    {
+      label: "This Year",
+      value: {
+        from: startOfYear(new Date()),
+        to: endOfYear(new Date()),
+      },
+    },
+    {
+      label: "Last 2 Years",
+      value: {
+        from: startOfYear(subYears(new Date(), 1)),
+        to: endOfYear(new Date()),
+      },
+    },
+  ];
+
+  // Calculate detailed time type data including leave
+  const timeTypeHours = new Map<
+    string,
+    { hours: number; isCapDev: boolean; name: string; isLeave?: boolean }
+  >();
+
+  filteredData.forEach((report) => {
+    report.timeEntries.forEach((entry: TimeReportEntry) => {
+      const key = entry.isLeave ? "leave" : entry.timeTypeId;
+      const current = timeTypeHours.get(key) || {
+        hours: 0,
+        isCapDev: entry.isCapDev,
+        name: entry.isLeave
+          ? "Leave"
+          : timeTypes.find((t) => t.id === entry.timeTypeId)?.name ||
+            "Projects",
+        isLeave: entry.isLeave,
+      };
+      current.hours += Math.abs(entry.hours); // Use absolute value for leave hours
+      timeTypeHours.set(key, current);
+    });
+  });
+
+  // Calculate rolled up CapDev data (excluding leave)
+  const totalCapDevHours = Array.from(timeTypeHours.values())
+    .filter((data) => !data.isLeave && data.isCapDev)
+    .reduce((sum, data) => sum + data.hours, 0);
+
+  const totalNonCapDevHours = Array.from(timeTypeHours.values())
+    .filter((data) => !data.isLeave && !data.isCapDev)
+    .reduce((sum, data) => sum + data.hours, 0);
+
+  const totalLeaveHours = Array.from(timeTypeHours.values())
+    .filter((data) => data.isLeave)
+    .reduce((sum, data) => sum + data.hours, 0);
+
+  const rolledUpData = [
+    { name: "CapDev", value: totalCapDevHours, color: "#0ea5e9" },
+    { name: "Non-CapDev", value: totalNonCapDevHours, color: "#f43f5e" },
+    { name: "Leave", value: totalLeaveHours, color: "#f97316" },
+  ];
+
+  const detailedChartData = Array.from(timeTypeHours.entries()).map(
+    ([, data], index) => ({
+      name: data.name,
+      value: data.hours,
+      color: data.isLeave
+        ? "#f97316"
+        : timeTypeColors[index % timeTypeColors.length],
+      isCapDev: data.isCapDev,
+      isLeave: data.isLeave,
+    })
+  );
+
+  const totalTime = rolledUpData.reduce((sum, item) => sum + item.value, 0);
+  const totalDetailedTime = detailedChartData.reduce(
+    (sum, item) => sum + item.value,
+    0
+  );
+
   const renderSubRow = (row: TimeReport) => {
     return (
       <TableRow key={`${row.id}-expanded`} className="bg-muted/50">
@@ -452,94 +600,6 @@ export default function ReportsPage() {
       </TableRow>
     );
   };
-
-  const table = useReactTable({
-    data: timeReport,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    onExpandedChange: setExpanded,
-    state: {
-      sorting,
-      columnFilters,
-      expanded,
-    },
-  });
-
-  useEffect(() => {
-    if (dateRange?.from) {
-      table.getColumn("week")?.setFilterValue(dateRange);
-    }
-  }, [dateRange, table]);
-
-  const filteredData = table
-    .getFilteredRowModel()
-    .rows.map((row) => row.original);
-
-  // Calculate detailed time type data including leave
-  const timeTypeHours = new Map<
-    string,
-    { hours: number; isCapDev: boolean; name: string; isLeave?: boolean }
-  >();
-
-  filteredData.forEach((report) => {
-    report.timeEntries.forEach((entry: TimeReportEntry) => {
-      const key = entry.isLeave ? "leave" : entry.timeTypeId;
-      const current = timeTypeHours.get(key) || {
-        hours: 0,
-        isCapDev: entry.isCapDev,
-        name: entry.isLeave
-          ? "Leave"
-          : timeTypes.find((t) => t.id === entry.timeTypeId)?.name ||
-            "Projects",
-        isLeave: entry.isLeave,
-      };
-      current.hours += Math.abs(entry.hours); // Use absolute value for leave hours
-      timeTypeHours.set(key, current);
-    });
-  });
-
-  // Calculate rolled up CapDev data (excluding leave)
-  const totalCapDevHours = Array.from(timeTypeHours.values())
-    .filter((data) => !data.isLeave && data.isCapDev)
-    .reduce((sum, data) => sum + data.hours, 0);
-
-  const totalNonCapDevHours = Array.from(timeTypeHours.values())
-    .filter((data) => !data.isLeave && !data.isCapDev)
-    .reduce((sum, data) => sum + data.hours, 0);
-
-  const totalLeaveHours = Array.from(timeTypeHours.values())
-    .filter((data) => data.isLeave)
-    .reduce((sum, data) => sum + data.hours, 0);
-
-  const rolledUpData = [
-    { name: "CapDev", value: totalCapDevHours, color: "#0ea5e9" },
-    { name: "Non-CapDev", value: totalNonCapDevHours, color: "#f43f5e" },
-    { name: "Leave", value: totalLeaveHours, color: "#f97316" },
-  ];
-
-  const detailedChartData = Array.from(timeTypeHours.entries()).map(
-    ([, data], index) => ({
-      name: data.name,
-      value: data.hours,
-      color: data.isLeave
-        ? "#f97316"
-        : timeTypeColors[index % timeTypeColors.length],
-      isCapDev: data.isCapDev,
-      isLeave: data.isLeave,
-    })
-  );
-
-  const totalTime = rolledUpData.reduce((sum, item) => sum + item.value, 0);
-  const totalDetailedTime = detailedChartData.reduce(
-    (sum, item) => sum + item.value,
-    0
-  );
 
   return (
     <div className="">

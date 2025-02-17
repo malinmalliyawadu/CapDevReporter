@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -30,7 +30,6 @@ export default function TeamAssignmentsPage() {
   const [selectedTeam, setSelectedTeam] = useState("");
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
-  const [loading, setLoading] = useState(false);
 
   const { data, isLoading, refetch } = trpc.employee.getAll.useQuery();
   const { data: teamsData } = trpc.team.getAll.useQuery();

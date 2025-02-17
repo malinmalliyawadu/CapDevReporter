@@ -166,6 +166,7 @@ export default function EmployeesPage() {
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const startEditing = (employee: any) => {
     setEditingEmployee({
       id: employee.id,

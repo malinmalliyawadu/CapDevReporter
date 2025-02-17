@@ -31,6 +31,7 @@ export async function fetchLeaveRecords(): Promise<IPayrollLeave[]> {
     const response = await ipayrollClient.get(
       `/companies/${process.env.IPAYROLL_COMPANY_ID}/leave`
     );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return response.data.map((record: any) => ({
       employeeId: record.employeeId,
       date: record.date,
