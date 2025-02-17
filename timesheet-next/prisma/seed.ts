@@ -3,188 +3,149 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  // Seed roles
-  const roles = [
-    {
-      name: "Software Engineer",
-      description: "Develops software applications",
+  // Create roles
+  const developerRole = await prisma.role.create({
+    data: {
+      name: "Software Developer",
+      description: "Develops and maintains software applications",
     },
-    {
+  });
+
+  const designerRole = await prisma.role.create({
+    data: {
+      name: "UI/UX Designer",
+      description: "Designs user interfaces and experiences",
+    },
+  });
+
+  const managerRole = await prisma.role.create({
+    data: {
       name: "Project Manager",
       description: "Manages project timelines and resources",
     },
-    {
-      name: "Designer",
-      description: "Creates user interfaces and experiences",
-    },
-    { name: "QA Engineer", description: "Tests and ensures software quality" },
-    {
-      name: "DevOps Engineer",
-      description: "Manages infrastructure and deployment",
-    },
-    {
-      name: "Product Manager",
-      description: "Defines product vision and roadmap",
-    },
-  ];
+  });
 
-  console.log("Seeding roles...");
-  for (const role of roles) {
-    await prisma.role.upsert({
-      where: { name: role.name },
-      update: {},
-      create: role,
-    });
-  }
+  // Create teams
+  const frontendTeam = await prisma.team.create({
+    data: {
+      name: "Frontend Team",
+      description: "Responsible for user interface development",
+    },
+  });
 
-  // Seed teams
-  const teams = [
-    { name: "Engineering", description: "Core engineering team" },
-    { name: "Design", description: "UI/UX design team" },
-    { name: "Product", description: "Product management team" },
-    { name: "QA", description: "Quality assurance team" },
-  ];
+  const backendTeam = await prisma.team.create({
+    data: {
+      name: "Backend Team",
+      description: "Responsible for server-side development",
+    },
+  });
 
-  console.log("Seeding teams...");
-  for (const team of teams) {
-    await prisma.team.upsert({
-      where: { name: team.name },
-      update: {},
-      create: team,
-    });
-  }
-
-  // Seed employees
-  console.log("Seeding employees...");
-  const employees = [
-    {
-      name: "John Smith",
-      payrollId: "EMP001",
-      hoursPerWeek: 40,
-      team: { connect: { name: "Engineering" } },
-      role: { connect: { name: "Software Engineer" } },
+  const designTeam = await prisma.team.create({
+    data: {
+      name: "Design Team",
+      description: "Responsible for UI/UX design",
     },
-    {
-      name: "Sarah Johnson",
-      payrollId: "EMP002",
-      hoursPerWeek: 40,
-      team: { connect: { name: "Design" } },
-      role: { connect: { name: "Designer" } },
-    },
-    {
-      name: "Michael Chen",
-      payrollId: "EMP003",
-      hoursPerWeek: 40,
-      team: { connect: { name: "Engineering" } },
-      role: { connect: { name: "DevOps Engineer" } },
-    },
-    {
-      name: "Emily Davis",
-      payrollId: "EMP004",
-      hoursPerWeek: 32,
-      team: { connect: { name: "Product" } },
-      role: { connect: { name: "Product Manager" } },
-    },
-    {
-      name: "James Wilson",
-      payrollId: "EMP005",
-      hoursPerWeek: 40,
-      team: { connect: { name: "QA" } },
-      role: { connect: { name: "QA Engineer" } },
-    },
-  ];
+  });
 
   // Create employees
-  const createdEmployees = await Promise.all(
-    employees.map((employee) =>
-      prisma.employee.create({
-        data: employee,
-      })
-    )
-  );
-
-  // Seed time types
-  const timeTypes = [
-    { name: "Regular", description: "Regular working hours" },
-    { name: "Overtime", description: "Hours worked beyond regular schedule" },
-    { name: "PTO", description: "Paid time off" },
-    { name: "Sick Leave", description: "Time off due to illness" },
-  ];
-
-  console.log("Seeding time types...");
-  for (const timeType of timeTypes) {
-    await prisma.timeType.upsert({
-      where: { name: timeType.name },
-      update: {},
-      create: timeType,
-    });
-  }
-
-  // Get the Engineering team for reference
-  const engineeringTeam = await prisma.team.findUnique({
-    where: { name: "Engineering" },
-  });
-
-  if (!engineeringTeam) {
-    throw new Error("Engineering team not found");
-  }
-
-  // Create a test user
-  console.log("Creating test user...");
-  await prisma.user.upsert({
-    where: { email: "test@example.com" },
-    update: {},
-    create: {
-      email: "test@example.com",
-      name: "Test User",
-      teams: {
-        connect: { id: engineeringTeam.id },
+  await prisma.employee.createMany({
+    data: [
+      {
+        name: "John Doe",
+        payrollId: "EMP001",
+        hoursPerWeek: 40,
+        teamId: frontendTeam.id,
+        roleId: developerRole.id,
       },
+      {
+        name: "Jane Smith",
+        payrollId: "EMP002",
+        hoursPerWeek: 40,
+        teamId: backendTeam.id,
+        roleId: developerRole.id,
+      },
+      {
+        name: "Alice Johnson",
+        payrollId: "EMP003",
+        hoursPerWeek: 40,
+        teamId: designTeam.id,
+        roleId: designerRole.id,
+      },
+      {
+        name: "Bob Wilson",
+        payrollId: "EMP004",
+        hoursPerWeek: 40,
+        teamId: frontendTeam.id,
+        roleId: managerRole.id,
+      },
+    ],
+  });
+
+  // Create time types
+  const developmentType = await prisma.timeType.create({
+    data: {
+      name: "Development",
+      description: "Software development work",
+      isCapDev: true,
     },
   });
 
-  // Create a test project
-  console.log("Creating test project...");
-  await prisma.project.upsert({
-    where: { id: "test-project" },
-    update: {},
-    create: {
-      id: "test-project",
-      name: "Test Project",
-      description: "A test project",
-      teamId: engineeringTeam.id,
+  const maintenanceType = await prisma.timeType.create({
+    data: {
+      name: "Maintenance",
+      description: "System maintenance and support",
+      isCapDev: false,
     },
   });
 
-  // Create some leave records
-  const leaveTypes = [
-    "Annual Leave",
-    "Sick Leave",
-    "Bereavement Leave",
-    "Other",
-  ];
-  const leaveStatuses = ["Approved", "Pending", "Taken"];
+  const meetingType = await prisma.timeType.create({
+    data: {
+      name: "Meeting",
+      description: "Team meetings and discussions",
+      isCapDev: false,
+    },
+  });
 
-  for (const employee of createdEmployees) {
-    // Create 3-5 leave records per employee
-    const numLeaveRecords = Math.floor(Math.random() * 3) + 3;
-
-    for (let i = 0; i < numLeaveRecords; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() + Math.floor(Math.random() * 60) - 30); // Random date ±30 days from now
-
-      await prisma.leave.create({
-        data: {
-          date,
-          type: leaveTypes[Math.floor(Math.random() * leaveTypes.length)],
-          status:
-            leaveStatuses[Math.floor(Math.random() * leaveStatuses.length)],
-          duration: Math.random() < 0.2 ? 0.5 : 1, // 20% chance of half day
-          employeeId: employee.id,
-        },
-      });
-    }
-  }
+  // Create general time assignments
+  await prisma.generalTimeAssignment.createMany({
+    data: [
+      {
+        roleId: developerRole.id,
+        timeTypeId: developmentType.id,
+        hoursPerWeek: 30,
+      },
+      {
+        roleId: developerRole.id,
+        timeTypeId: maintenanceType.id,
+        hoursPerWeek: 5,
+      },
+      {
+        roleId: developerRole.id,
+        timeTypeId: meetingType.id,
+        hoursPerWeek: 5,
+      },
+      {
+        roleId: designerRole.id,
+        timeTypeId: developmentType.id,
+        hoursPerWeek: 25,
+      },
+      {
+        roleId: designerRole.id,
+        timeTypeId: meetingType.id,
+        hoursPerWeek: 15,
+      },
+      {
+        roleId: managerRole.id,
+        timeTypeId: meetingType.id,
+        hoursPerWeek: 25,
+      },
+      {
+        roleId: managerRole.id,
+        timeTypeId: maintenanceType.id,
+        hoursPerWeek: 15,
+      },
+    ],
+  });
 
   console.log("Database has been seeded. 🌱");
 }

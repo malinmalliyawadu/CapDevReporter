@@ -110,7 +110,7 @@ const assignments: {
         Team Assignments
       </span>
     ),
-    href: "/teams",
+    href: "/team-assignments",
     description: "Assign employees to teams",
   },
   {
@@ -120,7 +120,7 @@ const assignments: {
         General Time
       </span>
     ),
-    href: "/general-time",
+    href: "/general-time-assignments",
     description: "Manage general time hours per week based on role",
   },
 ];

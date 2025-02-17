@@ -60,13 +60,14 @@ model TimeEntry {
 }
 
 model TimeType {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-  isCapDev    Boolean  @default(false)
-  timeEntries TimeEntry[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String   @unique
+  description     String?
+  isCapDev        Boolean  @default(false)
+  timeEntries     TimeEntry[]
+  generalAssignments GeneralTimeAssignment[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model LeaveRequest {
@@ -83,12 +84,13 @@ model LeaveRequest {
 }
 
 model Role {
-  id          String     @id @default(cuid())
-  name        String     @unique
-  description String?
-  employees   Employee[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id                String     @id @default(cuid())
+  name              String     @unique
+  description       String?
+  employees         Employee[]
+  generalAssignments GeneralTimeAssignment[]
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 }
 
 model Employee {
@@ -115,4 +117,17 @@ model Leave {
   employeeId   String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model GeneralTimeAssignment {
+  id           String   @id @default(cuid())
+  role         Role     @relation(fields: [roleId], references: [id])
+  roleId       String
+  timeType     TimeType @relation(fields: [timeTypeId], references: [id])
+  timeTypeId   String
+  hoursPerWeek Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([roleId, timeTypeId])
 } 
