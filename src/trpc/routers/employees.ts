@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "../api/trpc";
+import { createTRPCRouter, publicProcedure } from "../init";
 
 export const employeesRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {

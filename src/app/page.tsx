@@ -1,8 +1,8 @@
 "use client";
 
-import { trpc } from "@/utils/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { trpc } from "@/trpc/client";
 import { CalendarDays, Users, FolderKanban, Clock } from "lucide-react";
 
 export default function Home() {

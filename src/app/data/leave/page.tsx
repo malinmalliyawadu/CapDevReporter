@@ -1,6 +1,5 @@
 "use client";
 
-import { trpc } from "@/utils/trpc";
 import { useState } from "react";
 import { Palmtree, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/hooks/use-toast";
-import type { RouterOutputs } from "@/utils/trpc";
+import { RouterOutputs, trpc } from "@/trpc/client";
 
 export default function LeavePage() {
   const { toast } = useToast();

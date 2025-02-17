@@ -1,6 +1,5 @@
 "use client";
 
-import { trpc } from "@/utils/trpc";
 import { useState } from "react";
 import { Pencil, Trash2, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/hooks/use-toast";
-import type { RouterOutputs } from "@/utils/trpc";
+import { trpc, type RouterOutputs } from "@/trpc/client";
 
 type TimeType = RouterOutputs["timeType"]["getAll"][number];
 

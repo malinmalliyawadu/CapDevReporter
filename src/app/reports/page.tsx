@@ -40,9 +40,6 @@ import {
   ChevronDown,
   ChevronRight,
   BarChart,
-  Plus,
-  Pencil,
-  Trash2,
 } from "lucide-react";
 import {
   PieChart,
@@ -52,13 +49,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import type {
-  TimeReport,
-  TimeType,
-  Team,
-  Role,
-  TimeReportEntry,
-} from "@/types/timeReport";
+import type { TimeReport, TimeReportEntry } from "@/types/timeReport";
 import { PageHeader } from "@/components/ui/page-header";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
@@ -75,16 +66,7 @@ import {
   subWeeks,
   subMonths,
 } from "date-fns";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { api } from "@/trpc/react";
+import { trpc } from "@/trpc/client";
 
 // Add color palette for the detailed chart
 const timeTypeColors = [
@@ -158,7 +140,7 @@ export default function ReportsPage() {
   });
   const [expanded, setExpanded] = useState<ExpandedState>({});
 
-  const { data, isLoading } = api.timeReports.getAll.useQuery({
+  const { data, isLoading } = trpc.timeReports.getAll.useQuery({
     dateRange: {
       from: (dateRange.from ?? new Date()).toDateString(),
       to: (dateRange.to ?? new Date()).toDateString(),

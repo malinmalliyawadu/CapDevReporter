@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure } from "../init";
 import { jiraClient, isCapDevProject } from "@/utils/jira";
 import type { JiraProject } from "@/utils/jira";
 
-export const projectRouter = router({
+export const projectRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.project.findMany({
       include: {

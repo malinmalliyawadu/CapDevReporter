@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure } from "../init";
 import { fetchLeaveRecords } from "@/utils/ipayroll";
 
-export const leaveRouter = router({
+export const leaveRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.leave.findMany({
       include: {

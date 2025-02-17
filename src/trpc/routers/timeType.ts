@@ -1,27 +1,34 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure } from "../init";
 
-export const userRouter = router({
+export const timeTypeRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.user.findMany();
+    return ctx.prisma.timeType.findMany({
+      include: {
+        timeEntries: true,
+      },
+    });
   }),
 
   getById: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
-    return ctx.prisma.user.findUnique({
+    return ctx.prisma.timeType.findUnique({
       where: { id: input },
+      include: {
+        timeEntries: true,
+      },
     });
   }),
 
   create: publicProcedure
     .input(
       z.object({
-        email: z.string().email(),
-        name: z.string().optional(),
-        role: z.string().default("USER"),
+        name: z.string(),
+        description: z.string().optional(),
+        isCapDev: z.boolean().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.user.create({
+      return ctx.prisma.timeType.create({
         data: input,
       });
     }),
@@ -30,21 +37,21 @@ export const userRouter = router({
     .input(
       z.object({
         id: z.string(),
-        email: z.string().email().optional(),
         name: z.string().optional(),
-        role: z.string().optional(),
+        description: z.string().optional(),
+        isCapDev: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
-      return ctx.prisma.user.update({
+      return ctx.prisma.timeType.update({
         where: { id },
         data,
       });
     }),
 
   delete: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    return ctx.prisma.user.delete({
+    return ctx.prisma.timeType.delete({
       where: { id: input },
     });
   }),

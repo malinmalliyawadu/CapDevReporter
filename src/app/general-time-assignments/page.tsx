@@ -22,9 +22,7 @@ import {
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/ui/page-header";
 import { toast } from "sonner";
-import { api } from "@/trpc/react";
-import { type TRPCClientError } from "@trpc/client";
-import { type AppRouter } from "@/server/routers/_app";
+import { trpc } from "@/trpc/client";
 
 interface Role {
   id: string;
@@ -56,8 +54,8 @@ export default function GeneralTimeAssignmentsPage() {
   });
 
   const { data, isLoading, refetch } =
-    api.generalTimeAssignments.getAll.useQuery();
-  const createMutation = api.generalTimeAssignments.create.useMutation({
+    trpc.generalTimeAssignments.getAll.useQuery();
+  const createMutation = trpc.generalTimeAssignments.create.useMutation({
     onSuccess: () => {
       refetch();
       setNewAssignment({ roleId: "", timeTypeId: "", hoursPerWeek: 0 });
@@ -69,7 +67,7 @@ export default function GeneralTimeAssignmentsPage() {
     },
   });
 
-  const deleteMutation = api.generalTimeAssignments.delete.useMutation({
+  const deleteMutation = trpc.generalTimeAssignments.delete.useMutation({
     onSuccess: () => {
       refetch();
       toast.success("Assignment deleted successfully");

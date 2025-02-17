@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure } from "../init";
 
-export const employeeRouter = router({
+export const employeeRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.employee.findMany({
       include: {
@@ -72,7 +72,7 @@ export const employeeRouter = router({
       });
     }),
 
-  sync: publicProcedure.mutation(async ({ ctx }) => {
+  sync: publicProcedure.mutation(async ({}) => {
     // TODO: Add actual iPayroll API integration
     // For now, we'll simulate the API call
     await new Promise((resolve) => setTimeout(resolve, 1500));

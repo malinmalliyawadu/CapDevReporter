@@ -1,6 +1,5 @@
 "use client";
 
-import { trpc } from "@/utils/trpc";
 import { useState } from "react";
 import { Pencil, Trash2, ClipboardList, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { RouterOutputs } from "@/utils/trpc";
+import { RouterOutputs, trpc } from "@/trpc/client";
 
 type Project = RouterOutputs["project"]["getAll"][number];
 

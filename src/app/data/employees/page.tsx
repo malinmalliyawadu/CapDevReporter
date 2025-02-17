@@ -1,6 +1,5 @@
 "use client";
 
-import { trpc } from "@/utils/trpc";
 import { useState } from "react";
 import { User, RefreshCw, Pencil, Trash2 } from "lucide-react";
 import {
@@ -31,6 +30,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { trpc } from "@/trpc/client";
 
 interface NewEmployee {
   name: string;

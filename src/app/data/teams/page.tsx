@@ -1,6 +1,5 @@
 "use client";
 
-import { trpc } from "@/utils/trpc";
 import { useState } from "react";
 import { Pencil, Users, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +34,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import type { RouterOutputs } from "@/utils/trpc";
+import { RouterOutputs, trpc } from "@/trpc/client";
 
 type Team = RouterOutputs["team"]["getAll"][number];
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { trpc } from "@/utils/trpc";
 import { useState } from "react";
 import { Drama } from "lucide-react";
 import {
@@ -17,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
+import { trpc } from "@/trpc/client";
 
 export default function RolesPage() {
   const [newRoleName, setNewRoleName] = useState("");

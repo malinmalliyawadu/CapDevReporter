@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure } from "../init";
 import {
   startOfWeek,
   endOfWeek,
@@ -8,53 +8,11 @@ import {
   isWeekend,
 } from "date-fns";
 import Holidays from "date-holidays";
-import {
-  type TimeEntry,
-  type Employee,
-  type Project,
-  type Team,
-  type TimeType,
-  type Role,
-} from "@prisma/client";
 
 // Initialize holidays for New Zealand
 const holidays = new Holidays("NZ", "WGN");
 
-interface TimeEntryWithRelations extends TimeEntry {
-  employee: Employee & {
-    role: Role;
-    team: Team;
-  };
-  project: {
-    team: Team;
-  };
-  timeType: TimeType;
-}
-
-interface TimeReportEntry {
-  id: string;
-  hours: number;
-  timeTypeId: string;
-  isCapDev: boolean;
-  isLeave?: boolean;
-  leaveType?: string;
-  isPublicHoliday?: boolean;
-  publicHolidayName?: string;
-}
-
-interface TimeReport {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  week: string;
-  payrollId: string;
-  fullHours: number;
-  team: string;
-  role: string;
-  timeEntries: TimeReportEntry[];
-}
-
-export const timeReportsRouter = router({
+export const timeReportsRouter = createTRPCRouter({
   getAll: publicProcedure
     .input(
       z.object({

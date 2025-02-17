@@ -1,20 +1,20 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure } from "../init";
 
-export const timeTypeRouter = router({
+export const roleRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.timeType.findMany({
+    return ctx.prisma.role.findMany({
       include: {
-        timeEntries: true,
+        employees: true,
       },
     });
   }),
 
   getById: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
-    return ctx.prisma.timeType.findUnique({
+    return ctx.prisma.role.findUnique({
       where: { id: input },
       include: {
-        timeEntries: true,
+        employees: true,
       },
     });
   }),
@@ -24,12 +24,14 @@ export const timeTypeRouter = router({
       z.object({
         name: z.string(),
         description: z.string().optional(),
-        isCapDev: z.boolean().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.timeType.create({
+      return ctx.prisma.role.create({
         data: input,
+        include: {
+          employees: true,
+        },
       });
     }),
 
@@ -39,20 +41,24 @@ export const timeTypeRouter = router({
         id: z.string(),
         name: z.string().optional(),
         description: z.string().optional(),
-        isCapDev: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
-      return ctx.prisma.timeType.update({
+      return ctx.prisma.role.update({
         where: { id },
         data,
+        include: {
+          employees: true,
+        },
       });
     }),
 
-  delete: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    return ctx.prisma.timeType.delete({
-      where: { id: input },
-    });
-  }),
+  delete: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.role.delete({
+        where: { id: input.id },
+      });
+    }),
 });

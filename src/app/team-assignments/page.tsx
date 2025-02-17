@@ -23,7 +23,7 @@ import { DatePicker } from "@/components/ui/datepicker";
 import { PageHeader } from "@/components/ui/page-header";
 import { LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
-import { api } from "@/trpc/react";
+import { trpc } from "@/trpc/client";
 
 export default function TeamAssignmentsPage() {
   const [selectedEmployee, setSelectedEmployee] = useState("");
@@ -32,9 +32,9 @@ export default function TeamAssignmentsPage() {
   const [endDate, setEndDate] = useState<Date>();
   const [loading, setLoading] = useState(false);
 
-  const { data, isLoading, refetch } = api.employee.getAll.useQuery();
-  const { data: teamsData } = api.team.getAll.useQuery();
-  const updateTeamMutation = api.employee.update.useMutation({
+  const { data, isLoading, refetch } = trpc.employee.getAll.useQuery();
+  const { data: teamsData } = trpc.team.getAll.useQuery();
+  const updateTeamMutation = trpc.employee.update.useMutation({
     onSuccess: () => {
       refetch();
       toast.success("Team assignment updated successfully");
