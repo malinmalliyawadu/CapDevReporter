@@ -17,9 +17,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/trpc/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function RolesPage() {
   const [newRoleName, setNewRoleName] = useState("");
+  const [open, setOpen] = useState(false);
 
   const { data: roles, refetch: refetchRoles } = trpc.role.getAll.useQuery();
   const { mutate: createRole } = trpc.role.create.useMutation({
@@ -52,6 +61,7 @@ export default function RolesPage() {
     createRole({
       name: newRoleName.trim(),
     });
+    setOpen(false);
   };
 
   return (
@@ -66,12 +76,15 @@ export default function RolesPage() {
         description="Manage employee roles and responsibilities."
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Add New Role</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button className="mb-6">Add New Role</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Role</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4">
             <div className="grid w-full items-center gap-1.5">
               <Label htmlFor="role-name">Role Name</Label>
               <Input
@@ -83,15 +96,13 @@ export default function RolesPage() {
               />
             </div>
           </div>
-          <Button
-            className="mt-4"
-            onClick={handleAddRole}
-            disabled={!newRoleName.trim()}
-          >
-            Add Role
-          </Button>
-        </CardContent>
-      </Card>
+          <DialogFooter>
+            <Button onClick={handleAddRole} disabled={!newRoleName.trim()}>
+              Add Role
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
@@ -111,9 +122,9 @@ export default function RolesPage() {
                 <TableRow key={role.id}>
                   <TableCell>{role.name}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">
+                    <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
                       {role.employees.length} employees
-                    </Badge>
+                    </span>
                   </TableCell>
                   <TableCell>
                     <Button
