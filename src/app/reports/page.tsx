@@ -105,6 +105,11 @@ function ReportsContent() {
     }
   }, [dateRange, table]);
 
+  // Get filtered data for charts
+  const filteredData = table
+    .getFilteredRowModel()
+    .rows.map((row) => row.original);
+
   if (isLoading) {
     return (
       <div className="space-y-8">
@@ -179,9 +184,9 @@ function ReportsContent() {
         />
       </div>
 
-      <TimeDistributionCharts timeReport={timeReport} timeTypes={timeTypes} />
+      <TimeDistributionCharts timeReport={filteredData} timeTypes={timeTypes} />
 
-      <UtilizationIssues timeReports={timeReport} />
+      <UtilizationIssues timeReports={filteredData} />
 
       <TimeReportTable table={table} timeTypes={timeTypes} />
     </div>
