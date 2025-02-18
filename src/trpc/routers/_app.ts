@@ -8,6 +8,7 @@ import { leaveRouter } from "./leave";
 import { timeReportsRouter } from "./timeReports";
 import { employeesRouter } from "./employees";
 import { generalTimeAssignmentsRouter } from "./generalTimeAssignments";
+import { employeeAssignmentRouter } from "./employeeAssignment";
 import { createTRPCRouter } from "../init";
 
 export const appRouter = createTRPCRouter({
@@ -21,6 +22,7 @@ export const appRouter = createTRPCRouter({
   leave: leaveRouter,
   timeReports: timeReportsRouter,
   generalTimeAssignments: generalTimeAssignmentsRouter,
+  employeeAssignment: employeeAssignmentRouter,
 });
 
 export type AppRouter = typeof appRouter;

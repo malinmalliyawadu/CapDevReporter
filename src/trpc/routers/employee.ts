@@ -1,23 +1,40 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../init";
+import { type Prisma } from "@prisma/client";
+
+const defaultEmployeeSelect = {
+  id: true,
+  name: true,
+  payrollId: true,
+  hoursPerWeek: true,
+  teamId: true,
+  roleId: true,
+  createdAt: true,
+  updatedAt: true,
+  team: true,
+  role: true,
+  assignments: {
+    orderBy: {
+      startDate: "desc" as const,
+    },
+  },
+} satisfies Prisma.EmployeeSelect;
+
+export type EmployeeWithRelations = Prisma.EmployeeGetPayload<{
+  select: typeof defaultEmployeeSelect;
+}>;
 
 export const employeeRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.employee.findMany({
-      include: {
-        team: true,
-        role: true,
-      },
+      select: defaultEmployeeSelect,
     });
   }),
 
   getById: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
     return ctx.prisma.employee.findUnique({
       where: { id: input },
-      include: {
-        team: true,
-        role: true,
-      },
+      select: defaultEmployeeSelect,
     });
   }),
 
