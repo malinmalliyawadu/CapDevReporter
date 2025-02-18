@@ -62,6 +62,66 @@ async function main() {
     },
   });
 
+  // Create Jira boards
+  await Promise.all([
+    prisma.jiraBoard.create({
+      data: {
+        name: "Web Projects",
+        boardId: "WEB",
+        teamId: frontendTeam.id,
+      },
+    }),
+    prisma.jiraBoard.create({
+      data: {
+        name: "Mobile Projects",
+        boardId: "MOB",
+        teamId: frontendTeam.id,
+      },
+    }),
+    prisma.jiraBoard.create({
+      data: {
+        name: "API Projects",
+        boardId: "API",
+        teamId: backendTeam.id,
+      },
+    }),
+    prisma.jiraBoard.create({
+      data: {
+        name: "Microservices",
+        boardId: "MICRO",
+        teamId: backendTeam.id,
+      },
+    }),
+    prisma.jiraBoard.create({
+      data: {
+        name: "Design System",
+        boardId: "DES",
+        teamId: designTeam.id,
+      },
+    }),
+    prisma.jiraBoard.create({
+      data: {
+        name: "Research",
+        boardId: "RES",
+        teamId: designTeam.id,
+      },
+    }),
+    prisma.jiraBoard.create({
+      data: {
+        name: "Maintenance",
+        boardId: "MAINT",
+        teamId: backendTeam.id,
+      },
+    }),
+    prisma.jiraBoard.create({
+      data: {
+        name: "Platform",
+        boardId: "PLAT",
+        teamId: platformTeam.id,
+      },
+    }),
+  ]);
+
   // Create employees
   const employees = await Promise.all([
     prisma.employee.create({
