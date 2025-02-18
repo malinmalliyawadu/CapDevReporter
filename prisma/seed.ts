@@ -63,59 +63,123 @@ async function main() {
   });
 
   // Create employees
-  const johnDoe = await prisma.employee.create({
-    data: {
-      name: "John Doe",
-      payrollId: "EMP001",
-      roleId: developerRole.id,
-      hoursPerWeek: 40,
-    },
-  });
+  const employees = await Promise.all([
+    prisma.employee.create({
+      data: {
+        name: "John Doe",
+        payrollId: "EMP001",
+        roleId: developerRole.id,
+        hoursPerWeek: 40,
+      },
+    }),
+    prisma.employee.create({
+      data: {
+        name: "Jane Smith",
+        payrollId: "EMP002",
+        roleId: seniorDevRole.id,
+        hoursPerWeek: 40,
+      },
+    }),
+    prisma.employee.create({
+      data: {
+        name: "Alice Johnson",
+        payrollId: "EMP003",
+        roleId: designerRole.id,
+        hoursPerWeek: 40,
+      },
+    }),
+    prisma.employee.create({
+      data: {
+        name: "Bob Wilson",
+        payrollId: "EMP004",
+        roleId: managerRole.id,
+        hoursPerWeek: 0, // Unset state
+      },
+    }),
+    prisma.employee.create({
+      data: {
+        name: "Charlie Green",
+        payrollId: "EMP005",
+        roleId: seniorDevRole.id,
+        hoursPerWeek: 30,
+      },
+    }),
+    prisma.employee.create({
+      data: {
+        name: "Diana Brown",
+        payrollId: "EMP006",
+        roleId: developerRole.id,
+        hoursPerWeek: 0, // Unset state
+      },
+    }),
+  ]);
 
-  const janeSmith = await prisma.employee.create({
-    data: {
-      name: "Jane Smith",
-      payrollId: "EMP002",
-      roleId: seniorDevRole.id,
-      hoursPerWeek: 40,
-    },
-  });
+  // Create team assignments
+  const [
+    johnDoe,
+    janeSmith,
+    aliceJohnson,
+    bobWilson,
+    charlieGreen,
+    dianaBrown,
+  ] = employees;
 
-  const aliceJohnson = await prisma.employee.create({
-    data: {
-      name: "Alice Johnson",
-      payrollId: "EMP003",
-      roleId: designerRole.id,
-      hoursPerWeek: 40,
-    },
-  });
-
-  const bobWilson = await prisma.employee.create({
-    data: {
-      name: "Bob Wilson",
-      payrollId: "EMP004",
-      roleId: managerRole.id,
-      hoursPerWeek: 40,
-    },
-  });
-
-  const charlieGreen = await prisma.employee.create({
-    data: {
-      name: "Charlie Green",
-      payrollId: "EMP005",
-      roleId: seniorDevRole.id,
-      hoursPerWeek: 40,
-    },
-  });
-
-  const dianaBrown = await prisma.employee.create({
-    data: {
-      name: "Diana Brown",
-      payrollId: "EMP006",
-      roleId: developerRole.id,
-      hoursPerWeek: 40,
-    },
-  });
+  await Promise.all([
+    // Current assignments
+    prisma.employeeAssignment.create({
+      data: {
+        employeeId: johnDoe.id,
+        teamId: frontendTeam.id,
+        startDate: new Date("2024-01-01"),
+      },
+    }),
+    prisma.employeeAssignment.create({
+      data: {
+        employeeId: janeSmith.id,
+        teamId: backendTeam.id,
+        startDate: new Date("2024-02-01"),
+      },
+    }),
+    prisma.employeeAssignment.create({
+      data: {
+        employeeId: aliceJohnson.id,
+        teamId: designTeam.id,
+        startDate: new Date("2024-01-15"),
+      },
+    }),
+    prisma.employeeAssignment.create({
+      data: {
+        employeeId: charlieGreen.id,
+        teamId: platformTeam.id,
+        startDate: new Date("2024-02-15"),
+      },
+    }),
+    // Historical assignments
+    prisma.employeeAssignment.create({
+      data: {
+        employeeId: johnDoe.id,
+        teamId: backendTeam.id,
+        startDate: new Date("2023-06-01"),
+        endDate: new Date("2023-12-31"),
+      },
+    }),
+    prisma.employeeAssignment.create({
+      data: {
+        employeeId: janeSmith.id,
+        teamId: frontendTeam.id,
+        startDate: new Date("2023-08-01"),
+        endDate: new Date("2024-01-31"),
+      },
+    }),
+    // Future assignment
+    prisma.employeeAssignment.create({
+      data: {
+        employeeId: dianaBrown.id,
+        teamId: frontendTeam.id,
+        startDate: new Date("2024-03-01"),
+      },
+    }),
+  ]);
 
   // Create projects
   const webApp = await prisma.project.create({
@@ -458,42 +522,6 @@ async function main() {
   for (const leave of leaveRecords) {
     await prisma.leave.create({ data: leave });
   }
-
-  // Create employees
-  const employees = await Promise.all([
-    prisma.employee.create({
-      data: {
-        name: "John Smith",
-        payrollId: "IP001",
-        hoursPerWeek: 40,
-        role: { connect: { id: developerRole.id } },
-      },
-    }),
-    prisma.employee.create({
-      data: {
-        name: "Jane Doe",
-        payrollId: "IP002",
-        hoursPerWeek: 30,
-        role: { connect: { id: seniorDevRole.id } },
-      },
-    }),
-    prisma.employee.create({
-      data: {
-        name: "Bob Wilson",
-        payrollId: "IP003",
-        hoursPerWeek: 0, // Unset state
-        role: { connect: { id: managerRole.id } },
-      },
-    }),
-    prisma.employee.create({
-      data: {
-        name: "Alice Brown",
-        payrollId: "IP004",
-        hoursPerWeek: 0, // Unset state
-        role: { connect: { id: developerRole.id } },
-      },
-    }),
-  ]);
 
   console.log("Seed data created successfully");
 }
