@@ -20,6 +20,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { toast } from "sonner";
 import { trpc } from "@/trpc/client";
@@ -47,6 +54,7 @@ interface GeneralTimeAssignment {
 }
 
 export default function GeneralTimeAssignmentsPage() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newAssignment, setNewAssignment] = useState({
     roleId: "",
     timeTypeId: "",
@@ -59,6 +67,7 @@ export default function GeneralTimeAssignmentsPage() {
     onSuccess: () => {
       refetch();
       setNewAssignment({ roleId: "", timeTypeId: "", hoursPerWeek: 0 });
+      setIsDialogOpen(false);
       toast.success("Assignment added successfully");
     },
     onError: (error) => {
@@ -115,68 +124,76 @@ export default function GeneralTimeAssignmentsPage() {
         description="Manage general time hours per week based on role."
       />
 
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Add New Assignment</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-6 max-w-2xl">
-            <Select
-              value={newAssignment.roleId}
-              onValueChange={(value) =>
-                setNewAssignment({ ...newAssignment, roleId: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Role" />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((role: Role) => (
-                  <SelectItem key={role.id} value={role.id}>
-                    {role.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={newAssignment.timeTypeId}
-              onValueChange={(value) =>
-                setNewAssignment({ ...newAssignment, timeTypeId: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Time Type" />
-              </SelectTrigger>
-              <SelectContent>
-                {timeTypes.map((type: TimeType) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Input
-              type="number"
-              min={0}
-              value={newAssignment.hoursPerWeek || ""}
-              onChange={(e) =>
-                setNewAssignment({
-                  ...newAssignment,
-                  hoursPerWeek: parseFloat(e.target.value) || 0,
-                })
-              }
-              placeholder="Hours per week"
-            />
-
-            <Button onClick={handleAdd} className="w-full">
+      <div className="mb-6">
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
               <Plus className="h-4 w-4 mr-2" />
               Add Assignment
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Assignment</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <Select
+                value={newAssignment.roleId}
+                onValueChange={(value) =>
+                  setNewAssignment({ ...newAssignment, roleId: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role: Role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={newAssignment.timeTypeId}
+                onValueChange={(value) =>
+                  setNewAssignment({ ...newAssignment, timeTypeId: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Time Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeTypes.map((type: TimeType) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Input
+                type="number"
+                min={0}
+                value={newAssignment.hoursPerWeek || ""}
+                onChange={(e) =>
+                  setNewAssignment({
+                    ...newAssignment,
+                    hoursPerWeek: parseFloat(e.target.value) || 0,
+                  })
+                }
+                placeholder="Hours per week"
+              />
+
+              <Button onClick={handleAdd} className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Assignment
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <Card>
         <CardHeader>
