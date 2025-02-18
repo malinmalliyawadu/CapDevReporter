@@ -14,6 +14,9 @@ const defaultEmployeeSelect = {
   team: true,
   role: true,
   assignments: {
+    include: {
+      team: true,
+    },
     orderBy: {
       startDate: "desc" as const,
     },
