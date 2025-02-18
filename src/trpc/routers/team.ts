@@ -1,12 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "../init";
-import type { Context } from "../context";
+import { Context, createTRPCRouter, publicProcedure } from "../init";
 
 export const teamRouter = createTRPCRouter({
-  getAll: publicProcedure.query(({ ctx }: { ctx: Context }) => {
+  getAll: publicProcedure.query(({ ctx }) => {
     return ctx.prisma.team.findMany({
       include: {
-        employees: true,
         projects: true,
         jiraBoards: true,
       },
@@ -17,7 +15,6 @@ export const teamRouter = createTRPCRouter({
     return ctx.prisma.team.findUnique({
       where: { id: input },
       include: {
-        employees: true,
         projects: true,
       },
     });

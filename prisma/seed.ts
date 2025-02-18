@@ -67,7 +67,6 @@ async function main() {
     data: {
       name: "John Doe",
       payrollId: "EMP001",
-      teamId: frontendTeam.id,
       roleId: developerRole.id,
       hoursPerWeek: 40,
     },
@@ -77,7 +76,6 @@ async function main() {
     data: {
       name: "Jane Smith",
       payrollId: "EMP002",
-      teamId: backendTeam.id,
       roleId: seniorDevRole.id,
       hoursPerWeek: 40,
     },
@@ -87,7 +85,6 @@ async function main() {
     data: {
       name: "Alice Johnson",
       payrollId: "EMP003",
-      teamId: designTeam.id,
       roleId: designerRole.id,
       hoursPerWeek: 40,
     },
@@ -97,7 +94,6 @@ async function main() {
     data: {
       name: "Bob Wilson",
       payrollId: "EMP004",
-      teamId: frontendTeam.id,
       roleId: managerRole.id,
       hoursPerWeek: 40,
     },
@@ -107,7 +103,6 @@ async function main() {
     data: {
       name: "Charlie Green",
       payrollId: "EMP005",
-      teamId: platformTeam.id,
       roleId: seniorDevRole.id,
       hoursPerWeek: 40,
     },
@@ -117,7 +112,6 @@ async function main() {
     data: {
       name: "Diana Brown",
       payrollId: "EMP006",
-      teamId: backendTeam.id,
       roleId: developerRole.id,
       hoursPerWeek: 40,
     },
@@ -464,6 +458,42 @@ async function main() {
   for (const leave of leaveRecords) {
     await prisma.leave.create({ data: leave });
   }
+
+  // Create employees
+  const employees = await Promise.all([
+    prisma.employee.create({
+      data: {
+        name: "John Smith",
+        payrollId: "IP001",
+        hoursPerWeek: 40,
+        role: { connect: { id: developerRole.id } },
+      },
+    }),
+    prisma.employee.create({
+      data: {
+        name: "Jane Doe",
+        payrollId: "IP002",
+        hoursPerWeek: 30,
+        role: { connect: { id: seniorDevRole.id } },
+      },
+    }),
+    prisma.employee.create({
+      data: {
+        name: "Bob Wilson",
+        payrollId: "IP003",
+        hoursPerWeek: 0, // Unset state
+        role: { connect: { id: managerRole.id } },
+      },
+    }),
+    prisma.employee.create({
+      data: {
+        name: "Alice Brown",
+        payrollId: "IP004",
+        hoursPerWeek: 0, // Unset state
+        role: { connect: { id: developerRole.id } },
+      },
+    }),
+  ]);
 
   console.log("Seed data created successfully");
 }

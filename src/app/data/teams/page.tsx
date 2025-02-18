@@ -220,7 +220,6 @@ export default function TeamsPage() {
               <TableRow>
                 <TableHead>Team Name</TableHead>
                 <TableHead>Description</TableHead>
-                <TableHead>Members</TableHead>
                 <TableHead>Projects</TableHead>
                 <TableHead>Jira Boards</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
@@ -231,7 +230,6 @@ export default function TeamsPage() {
                 <TableRow key={team.id}>
                   <TableCell>{team.name}</TableCell>
                   <TableCell>{team.description}</TableCell>
-                  <TableCell>{team.employees.length}</TableCell>
                   <TableCell>{team.projects.length}</TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-2">

@@ -7,11 +7,9 @@ const defaultEmployeeSelect = {
   name: true,
   payrollId: true,
   hoursPerWeek: true,
-  teamId: true,
   roleId: true,
   createdAt: true,
   updatedAt: true,
-  team: true,
   role: true,
   assignments: {
     include: {
@@ -47,7 +45,6 @@ export const employeeRouter = createTRPCRouter({
         name: z.string(),
         payrollId: z.string(),
         roleId: z.string(),
-        teamId: z.string(),
         hoursPerWeek: z.number(),
       })
     )
@@ -55,7 +52,6 @@ export const employeeRouter = createTRPCRouter({
       return ctx.prisma.employee.create({
         data: input,
         include: {
-          team: true,
           role: true,
         },
       });
@@ -68,7 +64,6 @@ export const employeeRouter = createTRPCRouter({
         name: z.string().optional(),
         payrollId: z.string().optional(),
         roleId: z.string().optional(),
-        teamId: z.string().optional(),
         hoursPerWeek: z.number().optional(),
       })
     )
@@ -78,7 +73,6 @@ export const employeeRouter = createTRPCRouter({
         where: { id },
         data,
         include: {
-          team: true,
           role: true,
         },
       });
@@ -92,12 +86,54 @@ export const employeeRouter = createTRPCRouter({
       });
     }),
 
-  sync: publicProcedure.mutation(async ({}) => {
+  updateHoursPerWeek: publicProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        hoursPerWeek: z.number().min(0).max(168),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.employee.update({
+        where: { id: input.id },
+        data: {
+          hoursPerWeek: input.hoursPerWeek,
+        },
+        select: defaultEmployeeSelect,
+      });
+    }),
+
+  sync: publicProcedure.mutation(async ({ ctx }) => {
     // TODO: Add actual iPayroll API integration
-    // For now, we'll simulate the API call
+    // For now, we'll simulate the API call with mock data
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // Return success response
+    // Mock data - in reality this would come from iPayroll API
+    const mockEmployees = [
+      {
+        name: "John Doe",
+        payrollId: "IP001",
+        roleId: "role_1", // This would need to map to actual role IDs
+      },
+      // ... more employees
+    ];
+
+    // Upsert each employee from iPayroll
+    for (const employee of mockEmployees) {
+      await ctx.prisma.employee.upsert({
+        where: { payrollId: employee.payrollId },
+        create: {
+          ...employee,
+          hoursPerWeek: 40, // Default value
+        },
+        update: {
+          name: employee.name,
+          roleId: employee.roleId,
+          // Note: We don't update hoursPerWeek here as it's manually set
+        },
+      });
+    }
+
     return {
       success: true,
       message: "Employees synced with iPayroll",

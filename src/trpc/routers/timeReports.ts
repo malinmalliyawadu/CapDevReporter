@@ -27,13 +27,20 @@ export const timeReportsRouter = createTRPCRouter({
       const employees = await ctx.prisma.employee.findMany({
         include: {
           role: true,
-          team: {
+          assignments: {
             include: {
-              projects: {
+              team: {
                 include: {
-                  timeEntries: true,
+                  projects: {
+                    include: {
+                      timeEntries: true,
+                    },
+                  },
                 },
               },
+            },
+            orderBy: {
+              startDate: "desc",
             },
           },
         },
@@ -84,6 +91,15 @@ export const timeReportsRouter = createTRPCRouter({
 
       // Process each employee
       employees.forEach((employee) => {
+        // Get current team assignment
+        const currentAssignment = employee.assignments.find((a) => {
+          const today = new Date();
+          return (
+            new Date(a.startDate) <= today &&
+            (!a.endDate || new Date(a.endDate) >= today)
+          );
+        });
+
         // Get general assignments for the employee's role
         const roleAssignments = generalAssignments.filter(
           (assignment) => assignment.roleId === employee.roleId
@@ -115,6 +131,13 @@ export const timeReportsRouter = createTRPCRouter({
             end: weekEnd,
           });
 
+          // Get assignment for this week
+          const weekAssignment = employee.assignments.find((a) => {
+            const assignmentStart = new Date(a.startDate);
+            const assignmentEnd = a.endDate ? new Date(a.endDate) : new Date();
+            return assignmentStart <= weekEnd && assignmentEnd >= weekStart;
+          });
+
           // Initialize time report
           if (!timeReportMap.has(reportKey)) {
             timeReportMap.set(reportKey, {
@@ -124,7 +147,7 @@ export const timeReportsRouter = createTRPCRouter({
               week: weekKey,
               payrollId: employee.payrollId,
               fullHours: 0,
-              team: employee.team.name,
+              team: weekAssignment?.team.name ?? "Unassigned",
               role: employee.role.name,
               timeEntries: [],
             });
@@ -175,8 +198,9 @@ export const timeReportsRouter = createTRPCRouter({
             return !holiday && !leaveRecord;
           }).length;
 
-          // Calculate available hours for work
-          const availableHours = workingDays * 8;
+          // Calculate available hours for work based on employee's hours per week setting
+          const hoursPerDay = employee.hoursPerWeek / 5; // Assuming 5-day work week
+          const availableHours = workingDays * hoursPerDay;
 
           // Add role assignments at their full weekly rate
           roleAssignments.forEach((assignment) => {
@@ -196,9 +220,13 @@ export const timeReportsRouter = createTRPCRouter({
             availableHours - totalAssignedHours
           );
 
-          // If there are remaining hours, distribute them among team projects with jitter
-          if (remainingHours > 0 && employee.team.projects.length > 0) {
-            const projects = employee.team.projects;
+          // If there are remaining hours and employee has a team assignment, distribute them among team projects
+          if (
+            remainingHours > 0 &&
+            weekAssignment &&
+            weekAssignment.team.projects.length > 0
+          ) {
+            const projects = weekAssignment.team.projects;
             let remainingToDistribute = remainingHours;
 
             // Calculate base hours per project

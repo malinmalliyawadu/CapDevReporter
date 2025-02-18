@@ -128,8 +128,10 @@ export default function TeamAssignmentsPage() {
     createAssignment({
       employeeId: editingAssignment.employeeId,
       teamId: editingAssignment.teamId,
-      startDate: editingAssignment.startDate,
-      endDate: editingAssignment.endDate ? editingAssignment.endDate : null,
+      startDate: editingAssignment.startDate.toISOString(),
+      endDate: editingAssignment.endDate
+        ? editingAssignment.endDate.toISOString()
+        : null,
     });
   };
 
@@ -196,7 +198,10 @@ export default function TeamAssignmentsPage() {
                     <TableCell>
                       {getCurrentAssignment(employee.assignments) ? (
                         <span className="text-green-600 dark:text-green-400">
-                          {employee.team.name}
+                          {
+                            getCurrentAssignment(employee.assignments)?.team
+                              .name
+                          }
                         </span>
                       ) : (
                         <span className="text-yellow-600 dark:text-yellow-400 flex items-center gap-1">

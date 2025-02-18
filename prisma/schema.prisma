@@ -16,7 +16,6 @@ model Team {
   name        String   @unique
   description String?
   projects    Project[]
-  employees   Employee[]
   jiraBoards  JiraBoard[]
   assignments EmployeeAssignment[]
   createdAt   DateTime @default(now())
@@ -77,8 +76,6 @@ model Employee {
   name         String
   payrollId    String   @unique
   hoursPerWeek Int      @default(40)
-  team         Team     @relation(fields: [teamId], references: [id])
-  teamId       String
   role         Role     @relation(fields: [roleId], references: [id])
   roleId       String
   createdAt    DateTime @default(now())
