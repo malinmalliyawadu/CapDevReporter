@@ -54,15 +54,15 @@ export default function Home() {
                 <h3 className="text-lg font-semibold">Unassigned Employees</h3>
               </div>
               <div className="space-y-4">
-                {employeesWithoutTeams.map((employee) => (
+                {employeesWithoutTeams.map((report) => (
                   <div
-                    key={employee.id}
+                    key={report.id}
                     className="flex items-center justify-between border-b pb-2 last:border-0"
                   >
                     <div className="space-y-2">
-                      <div className="font-medium">{employee.name}</div>
+                      <div className="font-medium">{report.employeeName}</div>
                       <div className="text-sm text-muted-foreground">
-                        {employee.role}
+                        {report.role}
                       </div>
                     </div>
                     <Link href="/team-assignments">
@@ -128,17 +128,21 @@ export default function Home() {
                 <h3 className="text-lg font-semibold">Missing Hours</h3>
               </div>
               <div className="space-y-4">
-                {employeesWithMissingHours.map((employee) => (
+                {employeesWithMissingHours.map((report) => (
                   <div
-                    key={employee.id}
+                    key={report.id}
                     className="flex items-center justify-between border-b pb-2 last:border-0"
                   >
                     <div className="space-y-2">
-                      <div className="font-medium">{employee.name}</div>
+                      <div className="font-medium">{report.employeeName}</div>
                       <div className="text-sm text-muted-foreground">
-                        {employee.hoursLogged} / {employee.hoursRequired} hours
-                        logged
+                        {report.fullHours} / {report.expectedHours} hours logged
                       </div>
+                      {report.underutilizationReason && (
+                        <div className="text-sm text-yellow-600">
+                          {report.underutilizationReason}
+                        </div>
+                      )}
                     </div>
                     <Link href="/reports">
                       <Button variant="outline" size="sm">
