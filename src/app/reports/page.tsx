@@ -198,6 +198,7 @@ function ReportsContent() {
       cell: ({ row }) => {
         const isUnderutilized = row.original.isUnderutilized;
         const missingHours = row.original.missingHours;
+        const reason = row.original.underutilizationReason;
 
         return (
           <div className="flex items-center gap-2">
@@ -218,7 +219,9 @@ function ReportsContent() {
             {isUnderutilized && (
               <div
                 className="text-amber-500 dark:text-amber-400"
-                title={`${missingHours} hours under target (${row.original.expectedHours}/${row.original.fullHours})`}
+                title={`${missingHours.toFixed(
+                  1
+                )} hours under target\nReason: ${reason}`}
               >
                 <AlertTriangle className="h-4 w-4" />
               </div>
@@ -288,6 +291,9 @@ function ReportsContent() {
         const hours = row.original.fullHours;
         const expectedHours = row.original.expectedHours;
         const isUnderutilized = row.original.isUnderutilized;
+        const missingHours = row.original.missingHours;
+        const reason = row.original.underutilizationReason;
+
         return (
           <div className="flex items-center gap-2">
             <span
@@ -305,9 +311,9 @@ function ReportsContent() {
             {isUnderutilized && (
               <div
                 className="text-amber-500 dark:text-amber-400"
-                title={`${(expectedHours - hours).toFixed(
+                title={`${missingHours.toFixed(
                   1
-                )} hours under target`}
+                )} hours under target\nReason: ${reason}`}
               >
                 <AlertTriangle className="h-4 w-4" />
               </div>

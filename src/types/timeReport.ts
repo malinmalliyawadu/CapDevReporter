@@ -15,6 +15,7 @@ export interface TimeReport {
   expectedHours: number;
   isUnderutilized: boolean;
   missingHours: number;
+  underutilizationReason?: string;
   team: string;
   role: string;
   timeEntries: TimeReportEntry[];

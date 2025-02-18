@@ -165,7 +165,9 @@ export const timeReportsRouter = createTRPCRouter({
                   payrollId: employee.payrollId,
                   fullHours: 0,
                   expectedHours: availableHours,
-                  isUnderutilized: false, // Will be set after all hours are calculated
+                  isUnderutilized: false,
+                  missingHours: 0,
+                  underutilizationReason: undefined,
                   team: weekAssignment?.team.name ?? "Unassigned",
                   role: employee.role.name,
                   timeEntries: [],
@@ -173,6 +175,15 @@ export const timeReportsRouter = createTRPCRouter({
               }
 
               const report = timeReportMap.get(reportKey);
+
+              // Check if hours per week is set
+              if (employee.hoursPerWeek === 0) {
+                report.isUnderutilized = true;
+                report.expectedHours = 0; // Set to 0 instead of 40
+                report.missingHours = 0;
+                report.underutilizationReason = "Hours per week not set";
+                return;
+              }
 
               // Process each day for leave and public holidays
               let leaveDays = 0;
@@ -275,7 +286,18 @@ export const timeReportsRouter = createTRPCRouter({
                   activeProjectIds.has(p.id)
                 );
 
-                if (projects.length === 0) return;
+                if (projects.length === 0) {
+                  // No active projects this week
+                  report.isUnderutilized =
+                    report.fullHours < report.expectedHours;
+                  report.missingHours = Math.max(
+                    0,
+                    report.expectedHours - report.fullHours
+                  );
+                  report.underutilizationReason =
+                    "No active projects in team's boards";
+                  return;
+                }
 
                 let remainingToDistribute = remainingHours;
 
@@ -327,6 +349,13 @@ export const timeReportsRouter = createTRPCRouter({
                     report.fullHours += roundedHours;
                   }
                 });
+              } else if (remainingHours > 0) {
+                // No team assignment or no boards/projects
+                report.isUnderutilized = true;
+                report.missingHours = remainingHours;
+                report.underutilizationReason = !weekAssignment
+                  ? "No team assignment for this period"
+                  : "No active projects in team's boards";
               }
 
               // After all time entries are added, check if we met the expected hours
@@ -335,6 +364,9 @@ export const timeReportsRouter = createTRPCRouter({
                 0,
                 report.expectedHours - report.fullHours
               );
+              if (report.isUnderutilized && !report.underutilizationReason) {
+                report.underutilizationReason = "Insufficient hours allocated";
+              }
             })
           );
         })
