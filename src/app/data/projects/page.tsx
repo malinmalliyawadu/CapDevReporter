@@ -10,7 +10,6 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
-  Calendar,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,7 +47,19 @@ import {
 import { format } from "date-fns";
 import { RouterOutputs, trpc } from "@/trpc/client";
 
-type Project = RouterOutputs["project"]["getAll"][number];
+type Project = RouterOutputs["project"]["getAll"][number] & {
+  timeEntries: TimeEntry[];
+  activities: ProjectActivity[];
+};
+
+interface TimeEntry {
+  date: string | Date;
+}
+
+interface ProjectActivity {
+  activityDate: string | Date;
+  jiraIssueId: string;
+}
 
 export default function ProjectsPage() {
   const { toast } = useToast();
@@ -189,42 +200,30 @@ export default function ProjectsPage() {
   ];
 
   const renderSubRow = (row: Project) => {
-    const activityDates = row.timeEntries
-      .map((entry) => new Date(entry.date))
-      .sort((a, b) => b.getTime() - a.getTime());
+    console.log("Row data:", row);
 
-    const uniqueDates = Array.from(
-      new Set(activityDates.map((date) => date.toISOString().split("T")[0]))
-    ).map((dateStr) => new Date(dateStr));
+    // Sort activities by date in descending order
+    const sortedActivities = [...row.activities].sort(
+      (a, b) =>
+        new Date(b.activityDate).getTime() - new Date(a.activityDate).getTime()
+    );
 
     return (
       <TableRow key={`${row.id}-expanded`} className="bg-muted/50">
         <TableCell colSpan={columns.length} className="p-4">
-          <div className="rounded-md border">
-            <div className="bg-muted px-4 py-2 font-medium border-b flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span>Activity Dates</span>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                {uniqueDates.map((date, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 p-2 rounded-md bg-background"
-                  >
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">
-                      {format(date, "dd MMM yyyy")}
-                    </span>
+          <div className="text-sm">
+            <div className="font-medium mb-2">Activity Dates</div>
+            {sortedActivities.length > 0 ? (
+              <div className="space-y-1">
+                {sortedActivities.map((activity, index) => (
+                  <div key={index} className="text-muted-foreground">
+                    {format(new Date(activity.activityDate), "dd MMM yyyy")}
                   </div>
                 ))}
               </div>
-              {uniqueDates.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-2">
-                  No activity dates recorded
-                </p>
-              )}
-            </div>
+            ) : (
+              <p className="text-muted-foreground">No activity recorded</p>
+            )}
           </div>
         </TableCell>
       </TableRow>
@@ -232,7 +231,7 @@ export default function ProjectsPage() {
   };
 
   const table = useReactTable({
-    data: projects ?? [],
+    data: (projects ?? []) as Project[],
     columns,
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,

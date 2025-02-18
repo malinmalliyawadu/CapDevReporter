@@ -5,32 +5,115 @@ import type { JiraProject } from "@/utils/jira";
 
 export const projectRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.project.findMany({
+    const projects = await ctx.prisma.project.findMany({
       include: {
         team: true,
-        timeEntries: true,
+        timeEntries: {
+          select: {
+            date: true,
+          },
+        },
       },
     });
+
+    // Fetch activities for each project
+    const projectsWithActivities = await Promise.all(
+      projects.map(async (project) => {
+        const activities = await ctx.prisma.projectActivity.findMany({
+          where: {
+            jiraIssueId: project.jiraId,
+          },
+          orderBy: {
+            activityDate: "desc",
+          },
+          select: {
+            id: true,
+            jiraIssueId: true,
+            activityDate: true,
+          },
+        });
+        return {
+          ...project,
+          activities,
+        };
+      })
+    );
+
+    return projectsWithActivities;
   }),
 
   getById: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
-    return ctx.prisma.project.findUnique({
+    const project = await ctx.prisma.project.findUnique({
       where: { id: input },
       include: {
         team: true,
-        timeEntries: true,
+        timeEntries: {
+          select: {
+            date: true,
+          },
+        },
       },
     });
+
+    if (!project) return null;
+
+    const activities = await ctx.prisma.projectActivity.findMany({
+      where: {
+        jiraIssueId: project.jiraId,
+      },
+      orderBy: {
+        activityDate: "desc",
+      },
+      select: {
+        id: true,
+        jiraIssueId: true,
+        activityDate: true,
+      },
+    });
+
+    return {
+      ...project,
+      activities,
+    };
   }),
 
   getByTeam: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
-    return ctx.prisma.project.findMany({
+    const projects = await ctx.prisma.project.findMany({
       where: { teamId: input },
       include: {
         team: true,
-        timeEntries: true,
+        timeEntries: {
+          select: {
+            date: true,
+          },
+        },
       },
     });
+
+    // Fetch activities for each project
+    const projectsWithActivities = await Promise.all(
+      projects.map(async (project) => {
+        const activities = await ctx.prisma.projectActivity.findMany({
+          where: {
+            jiraIssueId: project.jiraId,
+          },
+          orderBy: {
+            activityDate: "desc",
+          },
+          select: {
+            id: true,
+            jiraIssueId: true,
+            activityDate: true,
+          },
+        });
+        return {
+          ...project,
+          activities,
+        };
+      })
+    );
+
+    return projectsWithActivities;
   }),
 
   create: publicProcedure

@@ -204,6 +204,63 @@ async function main() {
     },
   });
 
+  // Create project activities
+  const today = new Date();
+  const projectActivities = [
+    // Web Application activities (WEB-001)
+    {
+      jiraIssueId: "WEB-001",
+      activityDate: subDays(today, 1),
+    },
+    {
+      jiraIssueId: "WEB-001",
+      activityDate: subDays(today, 2),
+    },
+    // Mobile App activities (MOB-001)
+    {
+      jiraIssueId: "MOB-001",
+      activityDate: subDays(today, 1),
+    },
+    {
+      jiraIssueId: "MOB-001",
+      activityDate: today,
+    },
+    // API Development activities (API-001)
+    {
+      jiraIssueId: "API-001",
+      activityDate: subDays(today, 3),
+    },
+    {
+      jiraIssueId: "API-001",
+      activityDate: subDays(today, 1),
+    },
+    // Microservices activities (MICRO-001)
+    {
+      jiraIssueId: "MICRO-001",
+      activityDate: subDays(today, 2),
+    },
+    // Design System activities (DES-001)
+    {
+      jiraIssueId: "DES-001",
+      activityDate: subDays(today, 4),
+    },
+    // Platform Infrastructure activities (PLAT-001)
+    {
+      jiraIssueId: "PLAT-001",
+      activityDate: today,
+    },
+    {
+      jiraIssueId: "PLAT-001",
+      activityDate: subDays(today, 1),
+    },
+  ];
+
+  for (const activity of projectActivities) {
+    await prisma.projectActivity.create({
+      data: activity,
+    });
+  }
+
   // Create time types
   const generalAdmin = await prisma.timeType.create({
     data: {
@@ -337,8 +394,6 @@ async function main() {
   for (const assignment of assignments) {
     await prisma.generalTimeAssignment.create({ data: assignment });
   }
-
-  const today = new Date();
 
   // Create leave records
   const leaveRecords = [
