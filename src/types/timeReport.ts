@@ -12,6 +12,9 @@ export interface TimeReport {
   week: string;
   payrollId: string;
   fullHours: number;
+  expectedHours: number;
+  isUnderutilized: boolean;
+  missingHours: number;
   team: string;
   role: string;
   timeEntries: TimeReportEntry[];

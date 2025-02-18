@@ -196,21 +196,34 @@ function ReportsContent() {
       id: "expander",
       header: () => null,
       cell: ({ row }) => {
+        const isUnderutilized = row.original.isUnderutilized;
+        const missingHours = row.original.missingHours;
+
         return (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => {
-              row.toggleExpanded();
-            }}
-          >
-            {row.getIsExpanded() ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => {
+                row.toggleExpanded();
+              }}
+            >
+              {row.getIsExpanded() ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </Button>
+            {isUnderutilized && (
+              <div
+                className="text-amber-500 dark:text-amber-400"
+                title={`${missingHours} hours under target (${row.original.expectedHours}/${row.original.fullHours})`}
+              >
+                <AlertTriangle className="h-4 w-4" />
+              </div>
             )}
-          </Button>
+          </div>
         );
       },
     },
@@ -270,7 +283,38 @@ function ReportsContent() {
     },
     {
       accessorKey: "fullHours",
-      header: "Full Hours",
+      header: "Total Hours",
+      cell: ({ row }) => {
+        const hours = row.original.fullHours;
+        const expectedHours = row.original.expectedHours;
+        const isUnderutilized = row.original.isUnderutilized;
+        return (
+          <div className="flex items-center gap-2">
+            <span
+              className={
+                isUnderutilized
+                  ? "text-amber-600 dark:text-amber-400 font-medium"
+                  : ""
+              }
+            >
+              {hours.toFixed(1)}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              / {expectedHours.toFixed(1)}
+            </span>
+            {isUnderutilized && (
+              <div
+                className="text-amber-500 dark:text-amber-400"
+                title={`${(expectedHours - hours).toFixed(
+                  1
+                )} hours under target`}
+              >
+                <AlertTriangle className="h-4 w-4" />
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "capdevTime",
@@ -852,6 +896,11 @@ function ReportsContent() {
                       <TableRow
                         key={row.id}
                         data-state={row.getIsSelected() && "selected"}
+                        className={
+                          row.original.isUnderutilized
+                            ? "bg-amber-50 dark:bg-amber-950/20"
+                            : ""
+                        }
                       >
                         {row.getVisibleCells().map((cell) => (
                           <TableCell key={cell.id}>
