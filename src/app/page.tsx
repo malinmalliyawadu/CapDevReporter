@@ -210,10 +210,14 @@ export default function Home() {
                   </div>
                   <div className="text-sm">
                     <p className="font-medium">
-                      {team.employees.length} members
+                      {team.assignments?.length || 0} members
                     </p>
                     <p className="text-muted-foreground">
-                      {team.projects.length} projects
+                      {team.jiraBoards.reduce(
+                        (sum, board) => sum + board.projects.length,
+                        0
+                      )}{" "}
+                      projects
                     </p>
                   </div>
                 </div>

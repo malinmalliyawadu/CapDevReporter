@@ -10,6 +10,7 @@ export const teamRouter = createTRPCRouter({
             projects: true,
           },
         },
+        assignments: true,
       },
     });
   }),
