@@ -2,7 +2,6 @@
 
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { TimeReport, TimeReportEntry } from "@/types/timeReport";
-import { format } from "date-fns";
 
 interface TimeReportExpandedRowProps {
   report: TimeReport;

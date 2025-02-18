@@ -2,15 +2,7 @@
 
 import React from "react";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -30,7 +22,7 @@ import {
   Plus,
 } from "lucide-react";
 import { toast } from "sonner";
-import { trpc } from "@/trpc/client";
+import { RouterOutputs, trpc } from "@/trpc/client";
 import { format } from "date-fns";
 import {
   Select,
@@ -39,19 +31,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { type EmployeeWithRelations } from "@/trpc/routers/employee";
-import { TableSkeleton, CardSkeleton } from "@/components/ui/skeleton";
 
 interface Team {
   id: string;
   name: string;
-}
-
-interface Assignment {
-  id: string;
-  startDate: string;
-  endDate: string | null;
-  team: Team;
 }
 
 interface EditingAssignment {
@@ -62,6 +45,9 @@ interface EditingAssignment {
   endDate: Date | undefined;
 }
 
+type EmployeeAssignment =
+  RouterOutputs["employee"]["getAll"][number]["assignments"][number];
+
 export default function TeamAssignmentsPage() {
   const [editingAssignment, setEditingAssignment] =
     useState<EditingAssignment | null>(null);
@@ -69,18 +55,8 @@ export default function TeamAssignmentsPage() {
     new Set()
   );
 
-  const {
-    data: employees,
-    isLoading,
-    refetch,
-  } = trpc.employee.getAll.useQuery() as {
-    data: EmployeeWithRelations[] | undefined;
-    isLoading: boolean;
-    refetch: () => Promise<any>;
-  };
-  const { data: teamsData } = trpc.team.getAll.useQuery() as {
-    data: Team[] | undefined;
-  };
+  const { data: employees, refetch } = trpc.employee.getAll.useQuery();
+  const { data: teamsData } = trpc.team.getAll.useQuery();
   const teams: Team[] = teamsData ?? [];
   const { mutate: createAssignment } =
     trpc.employeeAssignment.create.useMutation({
@@ -95,12 +71,9 @@ export default function TeamAssignmentsPage() {
       },
     });
 
-  const formatDate = (date: string | Date | null | undefined) => {
-    if (!date) return "-";
-    return format(new Date(date), "dd MMM yyyy");
-  };
-
-  const getCurrentAssignment = (assignments: any[] | undefined) => {
+  const getCurrentAssignment = (
+    assignments: EmployeeAssignment[] | undefined
+  ) => {
     if (!assignments?.length) return null;
     const today = new Date();
     return assignments.find(
@@ -134,16 +107,6 @@ export default function TeamAssignmentsPage() {
         ? editingAssignment.endDate.toISOString()
         : null,
     });
-  };
-
-  const toggleExpanded = (employeeId: string) => {
-    const newExpanded = new Set(expandedEmployees);
-    if (newExpanded.has(employeeId)) {
-      newExpanded.delete(employeeId);
-    } else {
-      newExpanded.add(employeeId);
-    }
-    setExpandedEmployees(newExpanded);
   };
 
   return (
@@ -236,11 +199,11 @@ export default function TeamAssignmentsPage() {
                     <div className="p-4 space-y-3">
                       {employee.assignments
                         .sort(
-                          (a: any, b: any) =>
+                          (a: EmployeeAssignment, b: EmployeeAssignment) =>
                             new Date(b.startDate).getTime() -
                             new Date(a.startDate).getTime()
                         )
-                        .map((assignment: any) => (
+                        .map((assignment: EmployeeAssignment) => (
                           <div
                             key={assignment.id}
                             className="flex items-center justify-between"

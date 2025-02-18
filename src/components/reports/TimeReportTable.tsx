@@ -11,15 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  Download,
-  ChevronDown,
-  ChevronRight,
-  AlertTriangle,
-} from "lucide-react";
+import { Download } from "lucide-react";
 import type { TimeReport } from "@/types/timeReport";
 import { TimeReportExpandedRow } from "./TimeReportExpandedRow";
 import type { Table as TableType } from "@tanstack/react-table";

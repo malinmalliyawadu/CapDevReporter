@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Pencil, Users, Trash2, Plus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -22,17 +22,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { RouterOutputs, trpc } from "@/trpc/client";
 import { TableSkeleton } from "@/components/ui/skeleton";
@@ -43,7 +32,7 @@ export default function TeamsPage() {
   const { toast } = useToast();
   const utils = trpc.useContext();
   const { data: teams, isLoading } = trpc.team.getAll.useQuery();
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [, setSelectedTeam] = useState<Team | null>(null);
   const [newTeam, setNewTeam] = useState({
     name: "",
     description: "",
@@ -64,27 +53,6 @@ export default function TeamsPage() {
       toast({
         title: "Success",
         description: "Team created successfully",
-      });
-    },
-  });
-
-  const updateTeam = trpc.team.update.useMutation({
-    onSuccess: () => {
-      utils.team.getAll.invalidate();
-      setSelectedTeam(null);
-      toast({
-        title: "Success",
-        description: "Team updated successfully",
-      });
-    },
-  });
-
-  const deleteTeam = trpc.team.delete.useMutation({
-    onSuccess: () => {
-      utils.team.getAll.invalidate();
-      toast({
-        title: "Success",
-        description: "Team deleted successfully",
       });
     },
   });
@@ -122,16 +90,6 @@ export default function TeamsPage() {
     }
 
     createTeam.mutate(newTeam);
-  };
-
-  const handleUpdateTeam = () => {
-    if (!selectedTeam) return;
-
-    updateTeam.mutate({
-      id: selectedTeam.id,
-      name: selectedTeam.name,
-      description: selectedTeam.description ?? undefined,
-    });
   };
 
   const handleAddJiraBoard = () => {

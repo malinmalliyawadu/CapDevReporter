@@ -103,13 +103,6 @@ export const timeReportsRouter = createTRPCRouter({
       await Promise.all(
         employees.map(async (employee) => {
           // Get current team assignment
-          const currentAssignment = employee.assignments.find((a) => {
-            const today = new Date();
-            return (
-              new Date(a.startDate) <= today &&
-              (!a.endDate || new Date(a.endDate) >= today)
-            );
-          });
 
           // Get general assignments for the employee's role
           const roleAssignments = generalAssignments.filter(
@@ -145,7 +138,6 @@ export const timeReportsRouter = createTRPCRouter({
               // Calculate working days (excluding weekends and public holidays)
               const workingDays = daysInWeek.filter((date) => {
                 if (isWeekend(date)) return false;
-                const dateKey = format(date, "yyyy-MM-dd");
                 const holiday = holidays.isHoliday(date);
                 // Don't exclude leave days from working days calculation
                 return !holiday;

@@ -1,4 +1,3 @@
-import { TableLoading } from "@/components/loading/TableLoading";
 import { PageHeader } from "@/components/ui/page-header";
 import { LayoutGrid } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";

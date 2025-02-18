@@ -14,13 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/hooks/use-toast";
-import { RouterOutputs, trpc } from "@/trpc/client";
+import { trpc } from "@/trpc/client";
 import { format } from "date-fns";
 
 export default function LeavePage() {
   const { toast } = useToast();
   const utils = trpc.useContext();
-  const { data: leaveRecords, isLoading } = trpc.leave.getAll.useQuery();
+  const { data: leaveRecords } = trpc.leave.getAll.useQuery();
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const syncMutation = trpc.leave.sync.useMutation({

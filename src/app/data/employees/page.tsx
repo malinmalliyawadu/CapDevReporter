@@ -15,7 +15,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { toast } from "sonner";
 import { trpc } from "@/trpc/client";
-import { type EmployeeWithRelations } from "@/trpc/routers/employee";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +24,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TableSkeleton } from "@/components/ui/skeleton";
 
 export default function EmployeesPage() {
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
@@ -36,15 +34,8 @@ export default function EmployeesPage() {
     hoursPerWeek: number;
   } | null>(null);
 
-  const {
-    data: employees,
-    refetch: refetchEmployees,
-    isLoading,
-  } = trpc.employee.getAll.useQuery() as {
-    data: EmployeeWithRelations[] | undefined;
-    isLoading: boolean;
-    refetch: () => Promise<any>;
-  };
+  const { data: employees, refetch: refetchEmployees } =
+    trpc.employee.getAll.useQuery();
 
   const { mutate: syncEmployees } = trpc.employee.sync.useMutation({
     onSuccess: () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/trpc/client";
 import { AlertTriangle, UserX, FolderX, AlertCircle } from "lucide-react";
 import { startOfWeek, endOfWeek } from "date-fns";
@@ -36,7 +36,6 @@ export default function Home() {
   );
 
   // Employees not assigned to teams (check current assignments)
-  const currentDate = new Date();
   const employeesWithoutTeams = timeReports.timeReports.filter(
     (report) => report.team === "Unassigned"
   );

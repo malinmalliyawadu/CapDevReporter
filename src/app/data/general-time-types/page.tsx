@@ -20,7 +20,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogDescription,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -98,25 +97,9 @@ function EditTimeTypeDialog({
 export default function TimeTypesPage() {
   const { toast } = useToast();
   const utils = trpc.useContext();
-  const { data: timeTypes, isLoading } = trpc.timeType.getAll.useQuery();
+  const { data: timeTypes } = trpc.timeType.getAll.useQuery();
   const [editingTimeType, setEditingTimeType] = useState<TimeType | null>(null);
-  const [newTimeType, setNewTimeType] = useState({
-    name: "",
-    isCapDev: false,
-  });
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
-  const createTimeType = trpc.timeType.create.useMutation({
-    onSuccess: () => {
-      utils.timeType.getAll.invalidate();
-      setIsAddDialogOpen(false);
-      setNewTimeType({ name: "", isCapDev: false });
-      toast({
-        title: "Success",
-        description: "Time type created successfully",
-      });
-    },
-  });
+  const [, setIsAddDialogOpen] = useState(false);
 
   const updateTimeType = trpc.timeType.update.useMutation({
     onSuccess: () => {
@@ -138,19 +121,6 @@ export default function TimeTypesPage() {
       });
     },
   });
-
-  const handleCreateTimeType = () => {
-    if (!newTimeType.name.trim()) {
-      toast({
-        title: "Error",
-        description: "Time type name is required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createTimeType.mutate(newTimeType);
-  };
 
   const handleUpdateTimeType = (timeType: TimeType) => {
     updateTimeType.mutate({

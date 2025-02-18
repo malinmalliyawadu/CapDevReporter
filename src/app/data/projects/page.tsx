@@ -10,7 +10,6 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
-  FolderGit2,
   ClipboardList,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,7 +47,6 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { RouterOutputs, trpc } from "@/trpc/client";
-import { TableSkeleton } from "@/components/ui/skeleton";
 
 type Project = RouterOutputs["project"]["getAll"][number] & {
   timeEntries: TimeEntry[];
@@ -67,8 +65,7 @@ interface ProjectActivity {
 export default function ProjectsPage() {
   const { toast } = useToast();
   const utils = trpc.useContext();
-  const { data: projects, isLoading: isLoadingProjects } =
-    trpc.project.getAll.useQuery();
+  const { data: projects } = trpc.project.getAll.useQuery();
   const { data: teams } = trpc.team.getAll.useQuery();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
