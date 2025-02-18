@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+export const dynamic = "force-dynamic";
+
+import React, { useState, useEffect, Suspense } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -22,8 +24,9 @@ import { TimeDistributionCharts } from "@/components/reports/TimeDistributionCha
 import { TimeReportTable } from "@/components/reports/TimeReportTable";
 import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
 import { createColumns } from "@/components/reports/TableColumns";
+import { Card, CardContent } from "@/components/ui/card";
 
-export default function ReportsPage() {
+function ReportsContent() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
@@ -34,7 +37,7 @@ export default function ReportsPage() {
     to: defaultEndDate,
   });
 
-  const [data] = trpc.timeReports.getAll.useSuspenseQuery({
+  const { data } = trpc.timeReports.getAll.useQuery({
     dateRange: {
       from: (dateRange.from ?? defaultStartDate).toDateString(),
       to: (dateRange.to ?? defaultEndDate).toDateString(),
@@ -78,17 +81,7 @@ export default function ReportsPage() {
     .rows.map((row) => row.original);
 
   return (
-    <div className="">
-      <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <BarChart className="h-6 w-6 text-rose-500" />
-            Time Reports
-          </span>
-        }
-        description="View and analyze time tracking reports."
-      />
-
+    <>
       <div className="sticky top-4 z-10">
         <TimeReportFilters
           table={table}
@@ -104,6 +97,38 @@ export default function ReportsPage() {
       <UtilizationIssues timeReports={filteredData} />
 
       <TimeReportTable table={table} timeTypes={timeTypes} />
+    </>
+  );
+}
+
+function LoadingState() {
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="h-24 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <div className="">
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <BarChart className="h-6 w-6 text-rose-500" />
+            Time Reports
+          </span>
+        }
+        description="View and analyze time tracking reports."
+      />
+
+      <Suspense fallback={<LoadingState />}>
+        <ReportsContent />
+      </Suspense>
     </div>
   );
 }

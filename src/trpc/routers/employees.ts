@@ -5,8 +5,15 @@ export const employeesRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     const employees = await ctx.prisma.employee.findMany({
       include: {
-        team: true,
         role: true,
+        assignments: {
+          include: {
+            team: true,
+          },
+          where: {
+            endDate: null,
+          },
+        },
       },
     });
 
@@ -27,13 +34,30 @@ export const employeesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.employee.create({
-        data: input,
+      const { teamId, ...employeeData } = input;
+      const employee = await ctx.prisma.employee.create({
+        data: {
+          ...employeeData,
+          assignments: {
+            create: {
+              teamId,
+              startDate: new Date(),
+            },
+          },
+        },
         include: {
-          team: true,
           role: true,
+          assignments: {
+            include: {
+              team: true,
+            },
+            where: {
+              endDate: null,
+            },
+          },
         },
       });
+      return employee;
     }),
 
   delete: publicProcedure

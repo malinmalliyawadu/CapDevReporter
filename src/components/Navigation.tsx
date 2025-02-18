@@ -127,7 +127,7 @@ const assignments: {
 
 export function Navigation() {
   return (
-    <header className="relative bg-gradient-to-r from-white via-zinc-50 to-white dark:from-blue-800 dark:via-blue-950 dark:to-blue-900 border-b border-zinc-200 dark:border-zinc-800 dark:text-white backdrop-blur-sm sticky top-0 z-50 transition-all duration-200 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/0 dark:before:from-white/5 dark:before:to-white/0 before:pointer-events-none after:absolute after:inset-0 after:bg-gradient-to-t after:from-zinc-50/50 after:via-zinc-50/25 after:to-zinc-50/0 dark:after:from-blue-900/20 dark:after:via-blue-900/5 dark:after:to-blue-900/0 after:pointer-events-none">
+    <header className="bg-gradient-to-r from-white via-zinc-50 to-white dark:from-blue-800 dark:via-blue-950 dark:to-blue-900 border-b border-zinc-200 dark:border-zinc-800 dark:text-white backdrop-blur-sm sticky top-0 z-50 transition-all duration-200 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/0 dark:before:from-white/5 dark:before:to-white/0 before:pointer-events-none after:absolute after:inset-0 after:bg-gradient-to-t after:from-zinc-50/50 after:via-zinc-50/25 after:to-zinc-50/0 dark:after:from-blue-900/20 dark:after:via-blue-900/5 dark:after:to-blue-900/0 after:pointer-events-none">
       <div className="relative max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <div className="flex items-center gap-10">
           <div className="flex items-center gap-2.5 text-cyan-800 dark:text-white group relative">
