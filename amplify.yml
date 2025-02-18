@@ -4,20 +4,16 @@ frontend:
     preBuild:
       commands:
         - npm ci
+    build:
+      commands:
         - npx prisma generate
         - mkdir -p .next/prisma
         - cp -r prisma/* .next/prisma/
-    build:
-      commands:
         - npm run build
   artifacts:
     baseDirectory: .next
     files:
       - "**/*"
-      - ".next/**/*"
-      - "prisma/**/*"
-      - "node_modules/.prisma/**/*"
-      - "node_modules/@prisma/**/*"
   cache:
     paths:
       - node_modules/**/*
