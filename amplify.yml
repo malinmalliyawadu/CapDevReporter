@@ -5,11 +5,13 @@ frontend:
       commands:
         - npm ci
         - npx prisma generate
+        - mkdir -p .next/prisma
+        - cp -r prisma/* .next/prisma/
     build:
       commands:
         - npm run build
   artifacts:
-    baseDirectory: .
+    baseDirectory: .next
     files:
       - "**/*"
       - ".next/**/*"
