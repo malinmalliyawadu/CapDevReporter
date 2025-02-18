@@ -20,6 +20,7 @@ import {
   Palmtree,
   PartyPopper,
   Timer,
+  TimerReset,
   User,
   Users,
 } from "lucide-react";
@@ -127,22 +128,35 @@ const assignments: {
 
 export function Navigation() {
   return (
-    <header className="bg-gradient-to-r from-zinc-50 to-zinc-100 border-b border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800 dark:text-white dark:from-blue-800 dark:to-blue-900">
-      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between">
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-2 text-cyan-800 dark:text-white">
-            <Timer className="animate-spin-once" />
-            <h1 className="text-2xl font-bold tracking-tight animate-slide-down">
-              <Link href="/">***REMOVED*** Timesheet</Link>
+    <header className="relative bg-gradient-to-r from-white via-zinc-50 to-white dark:from-blue-800 dark:via-blue-950 dark:to-blue-900 border-b border-zinc-200 dark:border-zinc-800 dark:text-white backdrop-blur-sm sticky top-0 z-50 transition-all duration-200 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/0 dark:before:from-white/5 dark:before:to-white/0 before:pointer-events-none after:absolute after:inset-0 after:bg-gradient-to-t after:from-zinc-50/50 after:via-zinc-50/25 after:to-zinc-50/0 dark:after:from-blue-900/20 dark:after:via-blue-900/5 dark:after:to-blue-900/0 after:pointer-events-none">
+      <div className="relative max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <div className="flex items-center gap-10">
+          <div className="flex items-center gap-2.5 text-cyan-800 dark:text-white group relative">
+            <div className="relative">
+              <TimerReset className="h-6 w-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-180 relative z-10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 dark:from-cyan-400/20 dark:to-blue-400/20 rounded-full blur-lg group-hover:scale-150 transition-transform duration-500 -z-10" />
+            </div>
+            <h1 className="text-2xl font-bold relative">
+              <Link href="/" className="relative inline-block">
+                <span className="bg-gradient-to-r from-cyan-700 via-cyan-600 to-blue-600 dark:from-cyan-400 dark:via-cyan-400 dark:to-blue-500 bg-clip-text text-transparent animate-slide-down transition-all duration-300">
+                  ***REMOVED***
+                </span>
+                <span className="text-zinc-600 dark:text-zinc-300 ml-2 animate-slide-down transition-all duration-300">
+                  Timesheet
+                </span>
+                <span className="absolute -bottom-0.5 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-700 via-cyan-600 to-blue-600 dark:from-cyan-400 dark:via-cyan-400 dark:to-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+              </Link>
             </h1>
           </div>
 
-          <NavigationMenu>
-            <NavigationMenuList className="gap-2">
+          <NavigationMenu className="relative">
+            <NavigationMenuList className="gap-3">
               <NavigationMenuItem>
-                <NavigationMenuTrigger>Data</NavigationMenuTrigger>
+                <NavigationMenuTrigger className="bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/80 dark:to-zinc-900/50 hover:from-white hover:to-white/80 dark:hover:from-zinc-800 dark:hover:to-zinc-800/80 transition-all duration-200 rounded-lg font-medium text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 data-[state=open]:text-cyan-700 dark:data-[state=open]:text-cyan-400 shadow-sm">
+                  Data
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                  <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-gradient-to-b from-white to-white/95 dark:from-zinc-900 dark:to-zinc-900/95 backdrop-blur-md rounded-lg shadow-lg border border-zinc-200/50 dark:border-zinc-700/50">
                     {data.map((component) => (
                       <ListItem
                         key={component.href}
@@ -156,9 +170,11 @@ export function Navigation() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuTrigger>Assignments</NavigationMenuTrigger>
+                <NavigationMenuTrigger className="bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/80 dark:to-zinc-900/50 hover:from-white hover:to-white/80 dark:hover:from-zinc-800 dark:hover:to-zinc-800/80 transition-all duration-200 rounded-lg font-medium text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 data-[state=open]:text-cyan-700 dark:data-[state=open]:text-cyan-400 shadow-sm">
+                  Assignments
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+                  <ul className="grid w-[400px] gap-3 p-6 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-gradient-to-b from-white to-white/95 dark:from-zinc-900 dark:to-zinc-900/95 backdrop-blur-md rounded-lg shadow-lg border border-zinc-200/50 dark:border-zinc-700/50">
                     {assignments.map((component) => (
                       <ListItem
                         key={component.href}
@@ -173,7 +189,12 @@ export function Navigation() {
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <Link href="/reports">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  <NavigationMenuLink
+                    className={cn(
+                      "bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/80 dark:to-zinc-900/50 hover:from-white hover:to-white/80 dark:hover:from-zinc-800 dark:hover:to-zinc-800/80 px-4 py-2 rounded-lg inline-flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 transition-all duration-200 shadow-sm",
+                      "hover:scale-105"
+                    )}
+                  >
                     Report
                   </NavigationMenuLink>
                 </Link>
@@ -248,13 +269,18 @@ const ListItem = ({
       <NavigationMenuLink asChild>
         <Link
           className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+            "block select-none rounded-md p-3 no-underline outline-none transition-all duration-200",
+            "hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80 hover:scale-[1.02]",
+            "focus:bg-accent focus:text-accent-foreground",
+            "border border-transparent hover:border-zinc-200/50 dark:hover:border-zinc-700/50",
             className
           )}
           href={href ?? ""}
         >
-          <div className="text-sm font-medium leading-none">{title}</div>
-          <p className="line-clamp-2 text-sm leading-snug text-gray-500">
+          <div className="text-sm font-medium leading-none mb-2 text-zinc-800 dark:text-zinc-200">
+            {title}
+          </div>
+          <p className="text-sm leading-snug text-zinc-600 dark:text-zinc-400">
             {children}
           </p>
         </Link>
