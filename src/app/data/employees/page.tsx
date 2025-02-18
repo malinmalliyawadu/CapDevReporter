@@ -90,35 +90,6 @@ export default function EmployeesPage() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-8">
-        <PageHeader
-          title={
-            <span className="flex items-center gap-2">
-              <User className="h-6 w-6 text-green-500" />
-              Employees
-            </span>
-          }
-          description="View employee directory synced from iPayroll."
-        />
-
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-[180px] h-10 bg-muted animate-pulse rounded-md" />
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Employee List</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <TableSkeleton rows={8} cols={4} />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="">
       <PageHeader

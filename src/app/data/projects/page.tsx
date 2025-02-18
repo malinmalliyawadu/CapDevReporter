@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronRight,
   FolderGit2,
+  ClipboardList,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -250,43 +251,15 @@ export default function ProjectsPage() {
     },
   });
 
-  if (isLoadingProjects) {
-    return (
-      <div className="space-y-8">
-        <PageHeader
-          title={
-            <span className="flex items-center gap-2">
-              <FolderGit2 className="h-6 w-6 text-blue-500" />
-              Projects
-            </span>
-          }
-          description="View and manage projects synced from Jira."
-        />
-
-        <div className="flex items-center gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-[180px] h-10 bg-muted animate-pulse rounded-md" />
-            <div className="w-[180px] h-10 bg-muted animate-pulse rounded-md" />
-          </div>
-          <div className="w-[120px] h-10 bg-muted animate-pulse rounded-md ml-auto" />
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Project List</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <TableSkeleton rows={6} cols={5} />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Projects"
+        title={
+          <span className="flex items-center gap-2">
+            <ClipboardList className="h-6 w-6 text-indigo-500" />
+            Projects
+          </span>
+        }
         description="View and manage projects synced from Jira."
       />
 

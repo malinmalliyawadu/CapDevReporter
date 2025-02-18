@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, Clock } from "lucide-react";
+import { Pencil, Trash2, Clock, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -160,80 +160,35 @@ export default function TimeTypesPage() {
     });
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <div className="">
+    <div className="space-y-8">
       <PageHeader
         title={
           <span className="flex items-center gap-2">
-            <Clock className="h-6 w-6 text-amber-500" />
+            <Clock className="h-6 w-6 text-purple-500" />
             Time Types
           </span>
         }
-        description="Manage your time tracking categories."
+        description="Manage time tracking categories."
       />
 
-      <div className="mb-6 flex justify-end">
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Add Time Type</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Time Type</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="time-type-name">Time Type Name</Label>
-                <Input
-                  id="time-type-name"
-                  value={newTimeType.name}
-                  onChange={(e) =>
-                    setNewTimeType({ ...newTimeType, name: e.target.value })
-                  }
-                  placeholder="Enter time type name"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="is-capdev">CapDev Time</Label>
-                <Switch
-                  id="is-capdev"
-                  checked={newTimeType.isCapDev}
-                  onCheckedChange={(checked) =>
-                    setNewTimeType({
-                      ...newTimeType,
-                      isCapDev: checked,
-                    })
-                  }
-                />
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Button
-                onClick={handleCreateTimeType}
-                disabled={createTimeType.isPending}
-              >
-                {createTimeType.isPending ? "Creating..." : "Create Time Type"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+      <div className="flex justify-end">
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Time Type
+        </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Time Type List</CardTitle>
+          <CardTitle>Time Types</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>CapDev</TableHead>
-                <TableHead>Time Entries</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -241,107 +196,25 @@ export default function TimeTypesPage() {
               {timeTypes?.map((timeType) => (
                 <TableRow key={timeType.id}>
                   <TableCell>{timeType.name}</TableCell>
-                  <TableCell>{timeType.isCapDev ? "Yes" : "No"}</TableCell>
-                  <TableCell>{timeType.timeEntries.length}</TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
-                      <Dialog
-                        open={editingTimeType?.id === timeType.id}
-                        onOpenChange={(open) =>
-                          !open && setEditingTimeType(null)
-                        }
+                    {timeType.isCapDev ? "CapDev" : "Non-CapDev"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingTimeType(timeType)}
                       >
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingTimeType(timeType)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Edit Time Type</DialogTitle>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid w-full items-center gap-1.5">
-                              <Label htmlFor="edit-time-type-name">
-                                Time Type Name
-                              </Label>
-                              <Input
-                                id="edit-time-type-name"
-                                value={editingTimeType?.name}
-                                onChange={(e) =>
-                                  setEditingTimeType((prev) =>
-                                    prev
-                                      ? { ...prev, name: e.target.value }
-                                      : null
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="edit-is-capdev">
-                                CapDev Time
-                              </Label>
-                              <Switch
-                                id="edit-is-capdev"
-                                checked={editingTimeType?.isCapDev ?? false}
-                                onCheckedChange={(checked) =>
-                                  setEditingTimeType((prev) =>
-                                    prev ? { ...prev, isCapDev: checked } : null
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
-                          <div className="flex justify-end">
-                            <Button
-                              onClick={() =>
-                                editingTimeType &&
-                                handleUpdateTimeType(editingTimeType)
-                              }
-                              disabled={updateTimeType.isPending}
-                            >
-                              {updateTimeType.isPending
-                                ? "Updating..."
-                                : "Update Time Type"}
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Are you absolutely sure?</DialogTitle>
-                            <DialogDescription>
-                              This action cannot be undone. This will
-                              permanently delete this time type from the system.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="flex justify-end gap-4">
-                            <DialogClose asChild>
-                              <Button variant="outline">Cancel</Button>
-                            </DialogClose>
-                            <Button
-                              variant="destructive"
-                              onClick={() => deleteTimeType.mutate(timeType.id)}
-                              disabled={deleteTimeType.isPending}
-                            >
-                              {deleteTimeType.isPending
-                                ? "Deleting..."
-                                : "Delete"}
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteTimeType.mutate(timeType.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>

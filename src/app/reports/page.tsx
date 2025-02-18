@@ -55,24 +55,20 @@ export default function ReportsPage() {
 function ReportsContent() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: startOfYear(subYears(new Date(), 1)),
-    to: new Date(),
-  });
   const [expanded, setExpanded] = useState<ExpandedState>({});
+  const defaultStartDate = startOfYear(new Date());
+  const defaultEndDate = new Date();
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: defaultStartDate,
+    to: defaultEndDate,
+  });
 
-  const { data, isLoading } = trpc.timeReports.getAll.useQuery(
-    {
-      dateRange: {
-        from: (dateRange.from ?? new Date()).toDateString(),
-        to: (dateRange.to ?? new Date()).toDateString(),
-      },
+  const { data, isLoading } = trpc.timeReports.getAll.useQuery({
+    dateRange: {
+      from: (dateRange.from ?? defaultStartDate).toDateString(),
+      to: (dateRange.to ?? defaultEndDate).toDateString(),
     },
-    {
-      retry: 3,
-      retryDelay: 1000,
-    }
-  );
+  });
 
   const timeReport = data?.timeReports ?? [];
   const timeTypes = data?.timeTypes ?? [];

@@ -48,18 +48,18 @@ export default function TeamsPage() {
     name: "",
     description: "",
   });
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isAddBoardDialogOpen, setIsAddBoardDialogOpen] = useState(false);
   const [newBoard, setNewBoard] = useState({
     name: "",
     boardId: "",
     teamId: "",
   });
+  const [isAddTeamDialogOpen, setIsAddTeamDialogOpen] = useState(false);
+  const [isAddBoardDialogOpen, setIsAddBoardDialogOpen] = useState(false);
 
   const createTeam = trpc.team.create.useMutation({
     onSuccess: () => {
       utils.team.getAll.invalidate();
-      setIsAddDialogOpen(false);
+      setIsAddTeamDialogOpen(false);
       setNewTeam({ name: "", description: "" });
       toast({
         title: "Success",
@@ -101,7 +101,7 @@ export default function TeamsPage() {
     },
   });
 
-  const removeJiraBoard = trpc.team.removeJiraBoard.useMutation({
+  const deleteJiraBoard = trpc.team.removeJiraBoard.useMutation({
     onSuccess: () => {
       utils.team.getAll.invalidate();
       toast({
@@ -160,7 +160,7 @@ export default function TeamsPage() {
           description="View and manage teams and their Jira board assignments."
         />
 
-        <div className="flex justify-end mb-8">
+        <div className="flex justify-end">
           <div className="w-[120px] h-10 bg-muted animate-pulse rounded-md" />
         </div>
 
@@ -187,226 +187,137 @@ export default function TeamsPage() {
   }
 
   return (
-    <div className="">
+    <div className="space-y-8">
       <PageHeader
         title={
           <span className="flex items-center gap-2">
-            <Users className="h-6 w-6 text-blue-500" />
+            <Users className="h-6 w-6 text-indigo-500" />
             Teams
           </span>
         }
-        description="Manage your teams and their configurations."
+        description="View and manage teams and their Jira board assignments."
       />
 
-      <div className="mb-6 flex justify-end">
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Add Team</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Team</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="team-name">Team Name</Label>
-                <Input
-                  id="team-name"
-                  value={newTeam.name}
-                  onChange={(e) =>
-                    setNewTeam((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                  placeholder="Engineering Team"
-                />
-              </div>
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  value={newTeam.description}
-                  onChange={(e) =>
-                    setNewTeam((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  placeholder="Team description"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Button
-                onClick={handleCreateTeam}
-                disabled={createTeam.isPending}
-              >
-                {createTeam.isPending ? "Creating..." : "Create Team"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+      <div className="flex justify-end">
+        <Button onClick={() => setIsAddTeamDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Team
+        </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Team List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Team Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Projects</TableHead>
-                <TableHead>Jira Boards</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {teams?.map((team) => (
-                <TableRow key={team.id}>
-                  <TableCell>{team.name}</TableCell>
-                  <TableCell>{team.description}</TableCell>
-                  <TableCell>
-                    {team.jiraBoards.reduce(
-                      (sum, board) => sum + board.projects.length,
-                      0
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-2">
-                      {team.jiraBoards.map((board) => (
-                        <div key={board.id} className="flex items-center gap-2">
-                          <span>{board.name}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              removeJiraBoard.mutate({
-                                teamId: team.id,
-                                boardId: board.id,
-                              })
-                            }
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      ))}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setNewBoard((prev) => ({ ...prev, teamId: team.id }));
-                          setIsAddBoardDialogOpen(true);
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Board
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Dialog
-                        open={selectedTeam?.id === team.id}
-                        onOpenChange={(open) => !open && setSelectedTeam(null)}
-                      >
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedTeam(team)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Edit Team</DialogTitle>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid w-full items-center gap-1.5">
-                              <Label htmlFor="edit-team-name">Team Name</Label>
-                              <Input
-                                id="edit-team-name"
-                                value={selectedTeam?.name}
-                                onChange={(e) =>
-                                  setSelectedTeam((prev) =>
-                                    prev
-                                      ? { ...prev, name: e.target.value }
-                                      : null
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="grid w-full items-center gap-1.5">
-                              <Label htmlFor="edit-description">
-                                Description
-                              </Label>
-                              <Input
-                                id="edit-description"
-                                value={selectedTeam?.description ?? ""}
-                                onChange={(e) =>
-                                  setSelectedTeam((prev) =>
-                                    prev
-                                      ? {
-                                          ...prev,
-                                          description: e.target.value,
-                                        }
-                                      : null
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
-                          <div className="flex justify-end">
-                            <Button
-                              onClick={handleUpdateTeam}
-                              disabled={updateTeam.isPending}
-                            >
-                              {updateTeam.isPending
-                                ? "Updating..."
-                                : "Update Team"}
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+      <div className="grid gap-6">
+        {teams?.map((team) => (
+          <Card key={team.id}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <h3 className="text-lg font-semibold">{team.name}</h3>
+                  {team.description && (
+                    <span className="text-sm text-muted-foreground">
+                      {team.description}
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedTeam(team)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setNewBoard((prev) => ({ ...prev, teamId: team.id }));
+                      setIsAddBoardDialogOpen(true);
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Board Name</TableHead>
+                    <TableHead>Board ID</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {team.jiraBoards.map((board) => (
+                    <TableRow key={board.id}>
+                      <TableCell>{board.name}</TableCell>
+                      <TableCell>{board.boardId}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            deleteJiraBoard.mutate({
+                              boardId: board.id,
+                              teamId: team.id,
+                            })
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              Are you sure you want to delete this team?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will
-                              permanently delete the team and remove all
-                              associations.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteTeam.mutate(team.id)}
-                              className="bg-red-500 hover:bg-red-600"
-                            >
-                              {deleteTeam.isPending ? "Deleting..." : "Delete"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <Dialog open={isAddTeamDialogOpen} onOpenChange={setIsAddTeamDialogOpen}>
+        <DialogTrigger asChild>
+          <Button>Add Team</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Team</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="team-name">Team Name</Label>
+              <Input
+                id="team-name"
+                value={newTeam.name}
+                onChange={(e) =>
+                  setNewTeam((prev) => ({ ...prev, name: e.target.value }))
+                }
+                placeholder="Engineering Team"
+              />
+            </div>
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                value={newTeam.description}
+                onChange={(e) =>
+                  setNewTeam((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                placeholder="Team description"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={handleCreateTeam} disabled={createTeam.isPending}>
+              {createTeam.isPending ? "Creating..." : "Create Team"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={isAddBoardDialogOpen}

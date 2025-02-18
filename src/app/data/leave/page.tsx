@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/hooks/use-toast";
 import { RouterOutputs, trpc } from "@/trpc/client";
+import { format } from "date-fns";
 
 export default function LeavePage() {
   const { toast } = useToast();
@@ -49,12 +50,8 @@ export default function LeavePage() {
     syncMutation.mutate();
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <div className="">
+    <div className="space-y-8">
       <PageHeader
         title={
           <span className="flex items-center gap-2">
@@ -90,7 +87,6 @@ export default function LeavePage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Employee</TableHead>
-                <TableHead>Payroll ID</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
@@ -98,22 +94,19 @@ export default function LeavePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {leaveRecords?.map(
-                (leave: RouterOutputs["leave"]["getAll"][number]) => (
-                  <TableRow key={leave.id}>
-                    <TableCell>{leave.employee.name}</TableCell>
-                    <TableCell>{leave.employee.payrollId}</TableCell>
-                    <TableCell>
-                      {new Date(leave.date).toLocaleDateString("en-NZ")}
-                    </TableCell>
-                    <TableCell>{leave.type}</TableCell>
-                    <TableCell>{leave.status}</TableCell>
-                    <TableCell>
-                      {leave.duration} day{leave.duration !== 1 ? "s" : ""}
-                    </TableCell>
-                  </TableRow>
-                )
-              )}
+              {leaveRecords?.map((record) => (
+                <TableRow key={record.id}>
+                  <TableCell>{record.employee.name}</TableCell>
+                  <TableCell>
+                    {format(new Date(record.date), "dd MMM yyyy")}
+                  </TableCell>
+                  <TableCell>{record.type}</TableCell>
+                  <TableCell>{record.status}</TableCell>
+                  <TableCell>
+                    {record.duration} day{record.duration !== 1 ? "s" : ""}
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </CardContent>

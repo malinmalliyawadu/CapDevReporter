@@ -146,46 +146,8 @@ export default function TeamAssignmentsPage() {
     setExpandedEmployees(newExpanded);
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-8">
-        <PageHeader
-          title={
-            <span className="flex items-center gap-2">
-              <LayoutGrid className="h-6 w-6 text-orange-500" />
-              Team Assignments
-            </span>
-          }
-          description="Manage employee team assignments."
-        />
-
-        <div className="flex justify-end mb-8">
-          <div className="w-[120px] h-10 bg-muted animate-pulse rounded-md" />
-        </div>
-
-        <div className="grid gap-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="w-48 h-6 bg-muted animate-pulse rounded-md" />
-                  <div className="flex gap-2">
-                    <div className="w-10 h-10 bg-muted animate-pulse rounded-md" />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <TableSkeleton rows={3} cols={4} />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="">
+    <div className="space-y-8">
       <PageHeader
         title={
           <span className="flex items-center gap-2">
@@ -193,178 +155,138 @@ export default function TeamAssignmentsPage() {
             Team Assignments
           </span>
         }
-        description="Manage team memberships and assignments."
+        description="Manage employee team assignments."
       />
+
+      <div className="flex justify-end">
+        <Button
+          onClick={() =>
+            setEditingAssignment({
+              employeeId: "",
+              teamId: "",
+              startDate: new Date(),
+              endDate: undefined,
+            })
+          }
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Assignment
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Current Assignments</CardTitle>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Current Assignments</h3>
+          </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[30px]"></TableHead>
-                <TableHead>Employee</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Current Team</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {employees?.map((employee) => (
-                <React.Fragment key={employee.id}>
-                  <TableRow className="border-b-0">
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => toggleExpanded(employee.id)}
-                      >
-                        {expandedEmployees.has(employee.id) ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TableCell>
-                    <TableCell>{employee.name}</TableCell>
-                    <TableCell>{employee.role.name}</TableCell>
-                    <TableCell>
-                      {getCurrentAssignment(employee.assignments) ? (
-                        <span className="text-green-600 dark:text-green-400">
-                          {
-                            getCurrentAssignment(employee.assignments)?.team
-                              .name
+          <div className="space-y-4">
+            {employees?.map((employee) => (
+              <div key={employee.id} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        setExpandedEmployees((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(employee.id)) {
+                            next.delete(employee.id);
+                          } else {
+                            next.add(employee.id);
                           }
-                        </span>
+                          return next;
+                        })
+                      }
+                    >
+                      {expandedEmployees.has(employee.id) ? (
+                        <ChevronDown className="h-4 w-4" />
                       ) : (
-                        <span className="text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                            />
-                          </svg>
-                          No current assignment
-                        </span>
+                        <ChevronRight className="h-4 w-4" />
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setEditingAssignment({
-                            employeeId: employee.id,
-                            startDate: undefined,
-                            endDate: undefined,
-                          });
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  {expandedEmployees.has(employee.id) && (
-                    <TableRow>
-                      <TableCell className="p-0" colSpan={5}>
-                        <div className="bg-muted/50 border-y">
-                          <div className="divide-y">
-                            {employee.assignments?.map((assignment) => {
-                              const isCurrentAssignment =
-                                !assignment.endDate ||
-                                new Date(assignment.endDate) >= new Date();
-                              return (
-                                <div
-                                  key={assignment.id}
-                                  className={`flex items-center justify-between px-4 py-2 ${
-                                    isCurrentAssignment
-                                      ? "bg-green-50 dark:bg-green-900/10"
-                                      : ""
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-4">
-                                    <div className="w-[30px]"></div>
-                                    <div>
-                                      <div className="font-medium flex items-center gap-2">
-                                        {formatDate(assignment.startDate)}
-                                        {isCurrentAssignment && (
-                                          <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">
-                                            Current
-                                          </span>
-                                        )}
-                                      </div>
-                                      <div className="text-sm text-muted-foreground space-y-1">
-                                        <div>Team: {assignment.team.name}</div>
-                                        {assignment.endDate && (
-                                          <div>
-                                            Until{" "}
-                                            {formatDate(assignment.endDate)}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => {
-                                      setEditingAssignment({
-                                        employeeId: employee.id,
-                                        assignmentId: assignment.id,
-                                        startDate: new Date(
-                                          assignment.startDate
-                                        ),
-                                        endDate: assignment.endDate
-                                          ? new Date(assignment.endDate)
-                                          : undefined,
-                                      });
-                                    }}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              );
-                            })}
-                            {(!employee.assignments ||
-                              employee.assignments.length === 0) && (
-                              <div className="px-4 py-2 text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
-                                <div className="w-[30px]"></div>
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                  />
-                                </svg>
-                                No assignments found
+                    </Button>
+                    <span className="font-medium">{employee.name}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {employee.role.name}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {getCurrentAssignment(employee.assignments)?.team.name ??
+                        "Unassigned"}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      setEditingAssignment({
+                        employeeId: employee.id,
+                        teamId: "",
+                        startDate: new Date(),
+                        endDate: undefined,
+                      })
+                    }
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {expandedEmployees.has(employee.id) && (
+                  <div className="pl-12 bg-muted/50 border rounded-md">
+                    <div className="p-4 space-y-3">
+                      {employee.assignments
+                        .sort(
+                          (a: any, b: any) =>
+                            new Date(b.startDate).getTime() -
+                            new Date(a.startDate).getTime()
+                        )
+                        .map((assignment: any) => (
+                          <div
+                            key={assignment.id}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="space-y-1">
+                              <div className="font-medium">
+                                {assignment.team.name}
                               </div>
-                            )}
+                              <div className="text-sm text-muted-foreground">
+                                {format(
+                                  new Date(assignment.startDate),
+                                  "dd MMM yyyy"
+                                )}{" "}
+                                -{" "}
+                                {assignment.endDate
+                                  ? format(
+                                      new Date(assignment.endDate),
+                                      "dd MMM yyyy"
+                                    )
+                                  : "Present"}
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setEditingAssignment({
+                                  employeeId: employee.id,
+                                  teamId: assignment.team.id,
+                                  startDate: new Date(assignment.startDate),
+                                  endDate: assignment.endDate
+                                    ? new Date(assignment.endDate)
+                                    : undefined,
+                                })
+                              }
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
                           </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </React.Fragment>
-              ))}
-            </TableBody>
-          </Table>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
