@@ -63,7 +63,16 @@ async function main() {
   });
 
   // Create Jira boards
-  await Promise.all([
+  const [
+    webBoard,
+    mobileBoard,
+    apiBoard,
+    microservicesBoard,
+    designBoard,
+    researchBoard,
+    maintenanceBoard,
+    platformBoard,
+  ] = await Promise.all([
     prisma.jiraBoard.create({
       data: {
         name: "Web Projects",
@@ -246,7 +255,7 @@ async function main() {
     data: {
       name: "Web Application",
       description: "Main web application project",
-      teamId: frontendTeam.id,
+      boardId: webBoard.id,
       jiraId: "WEB-001",
       isCapDev: true,
     },
@@ -256,7 +265,7 @@ async function main() {
     data: {
       name: "Mobile App",
       description: "Mobile application development",
-      teamId: frontendTeam.id,
+      boardId: mobileBoard.id,
       jiraId: "MOB-001",
       isCapDev: true,
     },
@@ -266,7 +275,7 @@ async function main() {
     data: {
       name: "API Development",
       description: "RESTful API development project",
-      teamId: backendTeam.id,
+      boardId: apiBoard.id,
       jiraId: "API-001",
       isCapDev: true,
     },
@@ -276,7 +285,7 @@ async function main() {
     data: {
       name: "Microservices",
       description: "Microservices architecture implementation",
-      teamId: backendTeam.id,
+      boardId: microservicesBoard.id,
       jiraId: "MICRO-001",
       isCapDev: true,
     },
@@ -286,7 +295,7 @@ async function main() {
     data: {
       name: "Design System",
       description: "Company-wide design system",
-      teamId: designTeam.id,
+      boardId: designBoard.id,
       jiraId: "DES-001",
       isCapDev: true,
     },
@@ -296,7 +305,7 @@ async function main() {
     data: {
       name: "User Research",
       description: "User research and testing",
-      teamId: designTeam.id,
+      boardId: researchBoard.id,
       jiraId: "RES-001",
       isCapDev: false,
     },
@@ -306,7 +315,7 @@ async function main() {
     data: {
       name: "System Maintenance",
       description: "Ongoing system maintenance and support",
-      teamId: backendTeam.id,
+      boardId: maintenanceBoard.id,
       jiraId: "MAINT-001",
       isCapDev: false,
     },
@@ -316,7 +325,7 @@ async function main() {
     data: {
       name: "Platform Infrastructure",
       description: "Cloud infrastructure and platform services",
-      teamId: platformTeam.id,
+      boardId: platformBoard.id,
       jiraId: "PLAT-001",
       isCapDev: true,
     },

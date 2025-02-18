@@ -5,8 +5,11 @@ export const teamRouter = createTRPCRouter({
   getAll: publicProcedure.query(({ ctx }) => {
     return ctx.prisma.team.findMany({
       include: {
-        projects: true,
-        jiraBoards: true,
+        jiraBoards: {
+          include: {
+            projects: true,
+          },
+        },
       },
     });
   }),
@@ -15,7 +18,11 @@ export const teamRouter = createTRPCRouter({
     return ctx.prisma.team.findUnique({
       where: { id: input },
       include: {
-        projects: true,
+        jiraBoards: {
+          include: {
+            projects: true,
+          },
+        },
       },
     });
   }),

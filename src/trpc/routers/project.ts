@@ -7,7 +7,11 @@ export const projectRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     const projects = await ctx.prisma.project.findMany({
       include: {
-        team: true,
+        board: {
+          include: {
+            team: true,
+          },
+        },
         timeEntries: {
           select: {
             date: true,
@@ -46,7 +50,11 @@ export const projectRouter = createTRPCRouter({
     const project = await ctx.prisma.project.findUnique({
       where: { id: input },
       include: {
-        team: true,
+        board: {
+          include: {
+            team: true,
+          },
+        },
         timeEntries: {
           select: {
             date: true,
@@ -79,9 +87,17 @@ export const projectRouter = createTRPCRouter({
 
   getByTeam: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
     const projects = await ctx.prisma.project.findMany({
-      where: { teamId: input },
+      where: {
+        board: {
+          teamId: input,
+        },
+      },
       include: {
-        team: true,
+        board: {
+          include: {
+            team: true,
+          },
+        },
         timeEntries: {
           select: {
             date: true,
@@ -121,7 +137,7 @@ export const projectRouter = createTRPCRouter({
       z.object({
         name: z.string(),
         description: z.string().nullable(),
-        teamId: z.string(),
+        boardId: z.string(),
         jiraId: z.string(),
         isCapDev: z.boolean().default(false),
       })
@@ -130,7 +146,11 @@ export const projectRouter = createTRPCRouter({
       return ctx.prisma.project.create({
         data: input,
         include: {
-          team: true,
+          board: {
+            include: {
+              team: true,
+            },
+          },
         },
       });
     }),
@@ -141,7 +161,7 @@ export const projectRouter = createTRPCRouter({
         id: z.string(),
         name: z.string().optional(),
         description: z.string().nullable().optional(),
-        teamId: z.string().optional(),
+        boardId: z.string().optional(),
         jiraId: z.string().optional(),
         isCapDev: z.boolean().optional(),
       })
@@ -152,7 +172,11 @@ export const projectRouter = createTRPCRouter({
         where: { id },
         data,
         include: {
-          team: true,
+          board: {
+            include: {
+              team: true,
+            },
+          },
         },
       });
     }),
@@ -191,6 +215,19 @@ export const projectRouter = createTRPCRouter({
           jiraProject.key
         )) as JiraProject;
 
+        // Find the corresponding board based on the Jira project key prefix
+        const boardId = jiraProject.key.split("-")[0];
+        const board = await ctx.prisma.jiraBoard.findFirst({
+          where: { boardId },
+        });
+
+        if (!board) {
+          console.warn(
+            `No matching board found for project ${jiraProject.key}`
+          );
+          continue;
+        }
+
         if (existingProjectMap.has(jiraProject.key)) {
           // Update existing project
           await ctx.prisma.project.update({
@@ -199,23 +236,18 @@ export const projectRouter = createTRPCRouter({
               name: projectDetails.name,
               description: projectDetails.description || null,
               isCapDev: isCapDevProject(projectDetails),
-              // Note: We don't update teamId here as it's managed locally
+              boardId: board.id,
             },
           });
         } else {
           // Create new project
-          // Note: Assigning to the first team for demo purposes
-          // In real implementation, you'd need to map Jira projects to teams
-          const firstTeam = await ctx.prisma.team.findFirst();
-          if (!firstTeam) throw new Error("No teams found");
-
           await ctx.prisma.project.create({
             data: {
               name: projectDetails.name,
               description: projectDetails.description || null,
               jiraId: projectDetails.key,
               isCapDev: isCapDevProject(projectDetails),
-              teamId: firstTeam.id,
+              boardId: board.id,
             },
           });
         }

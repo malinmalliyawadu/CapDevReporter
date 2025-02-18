@@ -31,9 +31,9 @@ export const timeReportsRouter = createTRPCRouter({
             include: {
               team: {
                 include: {
-                  projects: {
+                  jiraBoards: {
                     include: {
-                      timeEntries: true,
+                      projects: true,
                     },
                   },
                 },
@@ -224,9 +224,13 @@ export const timeReportsRouter = createTRPCRouter({
           if (
             remainingHours > 0 &&
             weekAssignment &&
-            weekAssignment.team.projects.length > 0
+            weekAssignment.team.jiraBoards.some(
+              (board) => board.projects.length > 0
+            )
           ) {
-            const projects = weekAssignment.team.projects;
+            const projects = weekAssignment.team.jiraBoards.flatMap(
+              (board) => board.projects
+            );
             let remainingToDistribute = remainingHours;
 
             // Calculate base hours per project

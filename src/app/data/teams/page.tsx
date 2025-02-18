@@ -230,7 +230,12 @@ export default function TeamsPage() {
                 <TableRow key={team.id}>
                   <TableCell>{team.name}</TableCell>
                   <TableCell>{team.description}</TableCell>
-                  <TableCell>{team.projects.length}</TableCell>
+                  <TableCell>
+                    {team.jiraBoards.reduce(
+                      (sum, board) => sum + board.projects.length,
+                      0
+                    )}
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-2">
                       {team.jiraBoards.map((board) => (
