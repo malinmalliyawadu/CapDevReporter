@@ -1,7 +1,17 @@
 "use client";
 
+import * as React from "react";
 import { useState } from "react";
-import { Pencil, Trash2, ClipboardList, RefreshCw } from "lucide-react";
+import {
+  RefreshCw,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Search,
+  ChevronDown,
+  ChevronRight,
+  Calendar,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,16 +23,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogDescription,
-  DialogClose,
-} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -32,197 +32,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  SortingState,
+  ColumnFiltersState,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  useReactTable,
+  ExpandedState,
+  getExpandedRowModel,
+} from "@tanstack/react-table";
+import { format } from "date-fns";
 import { RouterOutputs, trpc } from "@/trpc/client";
 
 type Project = RouterOutputs["project"]["getAll"][number];
-
-interface EditProjectDialogProps {
-  project: Project;
-  onSave: (project: Project) => void;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  teams: RouterOutputs["team"]["getAll"];
-}
-
-function EditProjectDialog({
-  project,
-  onSave,
-  open,
-  onOpenChange,
-  teams,
-}: EditProjectDialogProps) {
-  const [editedProject, setEditedProject] = useState<Project>(project);
-
-  const handleSave = () => {
-    onSave(editedProject);
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Project</DialogTitle>
-          <DialogDescription>
-            Make changes to the project details here.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="edit-project-name">Project Name</Label>
-            <Input
-              id="edit-project-name"
-              value={editedProject.name}
-              onChange={(e) =>
-                setEditedProject({ ...editedProject, name: e.target.value })
-              }
-            />
-          </div>
-          <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="edit-project-description">Description</Label>
-            <Input
-              id="edit-project-description"
-              value={editedProject.description ?? ""}
-              onChange={(e) =>
-                setEditedProject({
-                  ...editedProject,
-                  description: e.target.value || null,
-                })
-              }
-            />
-          </div>
-          <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="edit-project-jira">Jira ID</Label>
-            <div className="flex gap-2 items-center">
-              <Input
-                id="edit-project-jira"
-                value={editedProject.jiraId}
-                onChange={(e) =>
-                  setEditedProject({
-                    ...editedProject,
-                    jiraId: e.target.value,
-                  })
-                }
-              />
-              <a
-                href={`${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${editedProject.jiraId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:text-blue-700 hover:underline whitespace-nowrap"
-              >
-                Open in Jira
-              </a>
-            </div>
-          </div>
-          <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="edit-project-capdev">CapDev Status</Label>
-            <Select
-              value={editedProject.isCapDev.toString()}
-              onValueChange={(value) =>
-                setEditedProject({
-                  ...editedProject,
-                  isCapDev: value === "true",
-                })
-              }
-            >
-              <SelectTrigger id="edit-project-capdev">
-                <SelectValue placeholder="Select CapDev status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="true">CapDev</SelectItem>
-                <SelectItem value="false">Non-CapDev</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="edit-project-team">Team</Label>
-            <Select
-              value={editedProject.teamId}
-              onValueChange={(value) =>
-                setEditedProject({ ...editedProject, teamId: value })
-              }
-            >
-              <SelectTrigger id="edit-project-team">
-                <SelectValue placeholder="Select a team" />
-              </SelectTrigger>
-              <SelectContent>
-                {teams.map((team) => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="flex justify-end gap-4">
-          <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DialogClose>
-          <Button onClick={handleSave}>Save changes</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 export default function ProjectsPage() {
   const { toast } = useToast();
   const utils = trpc.useContext();
   const { data: projects, isLoading: isLoadingProjects } =
     trpc.project.getAll.useQuery();
-  const { data: teams, isLoading: isLoadingTeams } =
-    trpc.team.getAll.useQuery();
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [newProject, setNewProject] = useState({
-    name: "",
-    description: null as string | null,
-    teamId: "",
-    jiraId: "",
-    isCapDev: false,
-  });
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { data: teams } = trpc.team.getAll.useQuery();
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [expanded, setExpanded] = useState<ExpandedState>({});
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  const createProject = trpc.project.create.useMutation({
-    onSuccess: () => {
-      utils.project.getAll.invalidate();
-      setIsAddDialogOpen(false);
-      setNewProject({
-        name: "",
-        description: null,
-        teamId: "",
-        jiraId: "",
-        isCapDev: false,
-      });
-      toast({
-        title: "Success",
-        description: "Project created successfully",
-      });
-    },
-  });
-
-  const updateProject = trpc.project.update.useMutation({
-    onSuccess: () => {
-      utils.project.getAll.invalidate();
-      setEditingProject(null);
-      toast({
-        title: "Success",
-        description: "Project updated successfully",
-      });
-    },
-  });
-
-  const deleteProject = trpc.project.delete.useMutation({
-    onSuccess: () => {
-      utils.project.getAll.invalidate();
-      toast({
-        title: "Success",
-        description: "Project deleted successfully",
-      });
-    },
-  });
 
   const syncProjects = trpc.project.sync.useMutation({
     onSuccess: (data) => {
@@ -244,283 +82,349 @@ export default function ProjectsPage() {
     },
   });
 
-  const handleCreateProject = () => {
-    if (!newProject.name.trim() || !newProject.teamId || !newProject.jiraId) {
-      toast({
-        title: "Error",
-        description: "Project name, team, and Jira ID are required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createProject.mutate(newProject);
-  };
-
-  const handleUpdateProject = (project: Project) => {
-    updateProject.mutate({
-      id: project.id,
-      name: project.name,
-      description: project.description,
-      teamId: project.teamId,
-      jiraId: project.jiraId,
-      isCapDev: project.isCapDev,
-    });
-  };
-
   const handleSync = () => {
     setIsSyncing(true);
     syncProjects.mutate();
   };
 
-  if (isLoadingProjects || isLoadingTeams) {
-    return <div>Loading...</div>;
-  }
+  const columns: ColumnDef<Project>[] = [
+    {
+      id: "expander",
+      header: () => null,
+      cell: ({ row }) => {
+        return (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => {
+              row.toggleExpanded();
+            }}
+          >
+            {row.getIsExpanded() ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </Button>
+        );
+      },
+    },
+    {
+      accessorKey: "name",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="group"
+          >
+            Project Name
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            )}
+          </Button>
+        );
+      },
+    },
+    {
+      accessorKey: "jiraId",
+      header: "Jira ID",
+      cell: ({ row }) => (
+        <a
+          href={`${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${row.original.jiraId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 hover:text-blue-700 hover:underline"
+        >
+          {row.original.jiraId}
+        </a>
+      ),
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+    },
+    {
+      accessorKey: "team.name",
+      id: "teamName",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="group"
+          >
+            Team
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            )}
+          </Button>
+        );
+      },
+    },
+    {
+      accessorKey: "isCapDev",
+      header: "Type",
+      cell: ({ row }) => (
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+            row.original.isCapDev
+              ? "bg-blue-100 text-blue-700"
+              : "bg-gray-100 text-gray-700"
+          }`}
+        >
+          {row.original.isCapDev ? "CapDev" : "Non-CapDev"}
+        </span>
+      ),
+    },
+  ];
 
-  if (!teams) {
-    return <div>No teams found</div>;
+  const renderSubRow = (row: Project) => {
+    const activityDates = row.timeEntries
+      .map((entry) => new Date(entry.date))
+      .sort((a, b) => b.getTime() - a.getTime());
+
+    const uniqueDates = Array.from(
+      new Set(activityDates.map((date) => date.toISOString().split("T")[0]))
+    ).map((dateStr) => new Date(dateStr));
+
+    return (
+      <TableRow key={`${row.id}-expanded`} className="bg-muted/50">
+        <TableCell colSpan={columns.length} className="p-4">
+          <div className="rounded-md border">
+            <div className="bg-muted px-4 py-2 font-medium border-b flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>Activity Dates</span>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                {uniqueDates.map((date, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 p-2 rounded-md bg-background"
+                  >
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      {format(date, "dd MMM yyyy")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {uniqueDates.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  No activity dates recorded
+                </p>
+              )}
+            </div>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
+  const table = useReactTable({
+    data: projects ?? [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    onExpandedChange: setExpanded,
+    state: {
+      sorting,
+      columnFilters,
+      expanded,
+    },
+  });
+
+  if (isLoadingProjects) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white" />
+          <p className="text-sm text-muted-foreground">Loading projects...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="">
+    <div className="space-y-6">
       <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <ClipboardList className="h-6 w-6 text-indigo-500" />
-            Projects
-          </span>
-        }
-        description="Manage your projects and their assignments."
+        title="Projects"
+        description="View and manage projects synced from Jira."
       />
 
-      <div className="mb-6 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          {lastSynced && (
-            <span className="text-sm text-muted-foreground">
-              Last synced: {lastSynced.toLocaleString("en-NZ")}
-            </span>
-          )}
-          <Button onClick={handleSync} disabled={isSyncing}>
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Filter projects..."
+              value={
+                (table.getColumn("name")?.getFilterValue() as string) ?? ""
+              }
+              onChange={(event) =>
+                table.getColumn("name")?.setFilterValue(event.target.value)
+              }
+              className="pl-8 max-w-sm"
             />
-            Sync with Jira
-          </Button>
+          </div>
+          <Select
+            value={
+              (table.getColumn("teamName")?.getFilterValue() as string) ?? "all"
+            }
+            onValueChange={(value) =>
+              table
+                .getColumn("teamName")
+                ?.setFilterValue(value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by team" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Teams</SelectItem>
+              {teams?.map((team: RouterOutputs["team"]["getAll"][number]) => (
+                <SelectItem key={team.id} value={team.name}>
+                  {team.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={
+              (table.getColumn("isCapDev")?.getFilterValue() as string) ?? "all"
+            }
+            onValueChange={(value) => {
+              if (value === "all") {
+                table.getColumn("isCapDev")?.setFilterValue("");
+              } else {
+                table.getColumn("isCapDev")?.setFilterValue(value === "true");
+              }
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="true">CapDev</SelectItem>
+              <SelectItem value="false">Non-CapDev</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Add Project</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Project</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="project-name">Project Name</Label>
-                <Input
-                  id="project-name"
-                  value={newProject.name}
-                  onChange={(e) =>
-                    setNewProject({ ...newProject, name: e.target.value })
-                  }
-                  placeholder="Enter project name"
-                />
-              </div>
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="project-description">Description</Label>
-                <Input
-                  id="project-description"
-                  value={newProject.description ?? ""}
-                  onChange={(e) =>
-                    setNewProject({
-                      ...newProject,
-                      description: e.target.value || null,
-                    })
-                  }
-                  placeholder="Enter project description"
-                />
-              </div>
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="project-jira">Jira ID</Label>
-                <div className="flex gap-2 items-center">
-                  <Input
-                    id="project-jira"
-                    value={newProject.jiraId}
-                    onChange={(e) =>
-                      setNewProject({
-                        ...newProject,
-                        jiraId: e.target.value,
-                      })
-                    }
-                    placeholder="Enter Jira ID"
-                  />
-                  {newProject.jiraId && (
-                    <a
-                      href={`${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${newProject.jiraId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:text-blue-700 hover:underline whitespace-nowrap"
-                    >
-                      Open in Jira
-                    </a>
-                  )}
-                </div>
-              </div>
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="project-capdev">CapDev Status</Label>
-                <Select
-                  value={newProject.isCapDev.toString()}
-                  onValueChange={(value) =>
-                    setNewProject({
-                      ...newProject,
-                      isCapDev: value === "true",
-                    })
-                  }
-                >
-                  <SelectTrigger id="project-capdev">
-                    <SelectValue placeholder="Select CapDev status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">CapDev</SelectItem>
-                    <SelectItem value="false">Non-CapDev</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="project-team">Team</Label>
-                <Select
-                  value={newProject.teamId}
-                  onValueChange={(value) =>
-                    setNewProject({ ...newProject, teamId: value })
-                  }
-                >
-                  <SelectTrigger id="project-team">
-                    <SelectValue placeholder="Select a team" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Button
-                onClick={handleCreateProject}
-                disabled={createProject.isPending}
-              >
-                {createProject.isPending ? "Creating..." : "Create Project"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSync}
+          disabled={isSyncing}
+          className="ml-auto"
+        >
+          <RefreshCw
+            className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+          />
+          {isSyncing ? "Syncing..." : "Sync with Jira"}
+        </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Project List</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Project List</CardTitle>
+            {lastSynced && (
+              <p className="text-sm text-muted-foreground">
+                Last synced: {lastSynced.toLocaleString()}
+              </p>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead>Jira ID</TableHead>
-                <TableHead>CapDev</TableHead>
-                <TableHead>Time Entries</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {projects?.map((project) => (
-                <TableRow key={project.id}>
-                  <TableCell>{project.name}</TableCell>
-                  <TableCell>{project.description}</TableCell>
-                  <TableCell>{project.team.name}</TableCell>
-                  <TableCell>
-                    <a
-                      href={`${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${project.jiraId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:text-blue-700 hover:underline"
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <React.Fragment key={row.id}>
+                      <TableRow>
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                      {row.getIsExpanded() && renderSubRow(row.original)}
+                    </React.Fragment>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
                     >
-                      {project.jiraId}
-                    </a>
-                  </TableCell>
-                  <TableCell>
-                    {project.isCapDev ? (
-                      <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
-                        CapDev
-                      </span>
-                    ) : (
-                      ""
-                    )}
-                  </TableCell>
-                  <TableCell>{project.timeEntries.length}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingProject(project)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Are you absolutely sure?</DialogTitle>
-                            <DialogDescription>
-                              This action cannot be undone. This will
-                              permanently delete this project and all associated
-                              time entries.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="flex justify-end gap-4">
-                            <DialogClose asChild>
-                              <Button variant="outline">Cancel</Button>
-                            </DialogClose>
-                            <Button
-                              variant="destructive"
-                              onClick={() => deleteProject.mutate(project.id)}
-                              disabled={deleteProject.isPending}
-                            >
-                              {deleteProject.isPending
-                                ? "Deleting..."
-                                : "Delete"}
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                      No projects found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="flex items-center justify-between space-x-2 py-4">
+            <div className="flex-1 text-sm text-muted-foreground">
+              {table.getFilteredRowModel().rows.length} project(s) total
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
-
-      {editingProject && teams && (
-        <EditProjectDialog
-          project={editingProject}
-          onSave={handleUpdateProject}
-          open={!!editingProject}
-          onOpenChange={(open) => !open && setEditingProject(null)}
-          teams={teams}
-        />
-      )}
     </div>
   );
 }
