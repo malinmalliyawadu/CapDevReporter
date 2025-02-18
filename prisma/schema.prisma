@@ -17,6 +17,7 @@ model Team {
   description String?
   projects    Project[]
   employees   Employee[]
+  jiraBoards  JiraBoard[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -108,4 +109,16 @@ model GeneralTimeAssignment {
   updatedAt    DateTime @updatedAt
 
   @@unique([roleId, timeTypeId])
+}
+
+model JiraBoard {
+  id          String   @id @default(cuid())
+  name        String
+  boardId     String
+  team        Team     @relation(fields: [teamId], references: [id])
+  teamId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([teamId, boardId])
 } 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Users, Trash2 } from "lucide-react";
+import { Pencil, Users, Trash2, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -48,6 +48,12 @@ export default function TeamsPage() {
     description: "",
   });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isAddBoardDialogOpen, setIsAddBoardDialogOpen] = useState(false);
+  const [newBoard, setNewBoard] = useState({
+    name: "",
+    boardId: "",
+    teamId: "",
+  });
 
   const createTeam = trpc.team.create.useMutation({
     onSuccess: () => {
@@ -82,6 +88,28 @@ export default function TeamsPage() {
     },
   });
 
+  const addJiraBoard = trpc.team.addJiraBoard.useMutation({
+    onSuccess: () => {
+      utils.team.getAll.invalidate();
+      setIsAddBoardDialogOpen(false);
+      setNewBoard({ name: "", boardId: "", teamId: "" });
+      toast({
+        title: "Success",
+        description: "Jira board added successfully",
+      });
+    },
+  });
+
+  const removeJiraBoard = trpc.team.removeJiraBoard.useMutation({
+    onSuccess: () => {
+      utils.team.getAll.invalidate();
+      toast({
+        title: "Success",
+        description: "Jira board removed successfully",
+      });
+    },
+  });
+
   const handleCreateTeam = () => {
     if (!newTeam.name.trim()) {
       toast({
@@ -103,6 +131,19 @@ export default function TeamsPage() {
       name: selectedTeam.name,
       description: selectedTeam.description ?? undefined,
     });
+  };
+
+  const handleAddJiraBoard = () => {
+    if (!newBoard.name.trim() || !newBoard.boardId.trim() || !newBoard.teamId) {
+      toast({
+        title: "Error",
+        description: "All fields are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addJiraBoard.mutate(newBoard);
   };
 
   if (isLoading) {
@@ -181,6 +222,7 @@ export default function TeamsPage() {
                 <TableHead>Description</TableHead>
                 <TableHead>Members</TableHead>
                 <TableHead>Projects</TableHead>
+                <TableHead>Jira Boards</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -191,6 +233,38 @@ export default function TeamsPage() {
                   <TableCell>{team.description}</TableCell>
                   <TableCell>{team.employees.length}</TableCell>
                   <TableCell>{team.projects.length}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-2">
+                      {team.jiraBoards.map((board) => (
+                        <div key={board.id} className="flex items-center gap-2">
+                          <span>{board.name}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              removeJiraBoard.mutate({
+                                teamId: team.id,
+                                boardId: board.id,
+                              })
+                            }
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setNewBoard((prev) => ({ ...prev, teamId: team.id }));
+                          setIsAddBoardDialogOpen(true);
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Board
+                      </Button>
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Dialog
@@ -294,6 +368,49 @@ export default function TeamsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={isAddBoardDialogOpen}
+        onOpenChange={setIsAddBoardDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Jira Board</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="board-name">Board Name</Label>
+              <Input
+                id="board-name"
+                value={newBoard.name}
+                onChange={(e) =>
+                  setNewBoard((prev) => ({ ...prev, name: e.target.value }))
+                }
+                placeholder="Team Board"
+              />
+            </div>
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="board-id">Board ID</Label>
+              <Input
+                id="board-id"
+                value={newBoard.boardId}
+                onChange={(e) =>
+                  setNewBoard((prev) => ({ ...prev, boardId: e.target.value }))
+                }
+                placeholder="123"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={handleAddJiraBoard}
+              disabled={addJiraBoard.isPending}
+            >
+              {addJiraBoard.isPending ? "Adding..." : "Add Board"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
