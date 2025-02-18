@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { RouterOutputs, trpc } from "@/trpc/client";
+import { TableSkeleton } from "@/components/ui/skeleton";
 
 type Team = RouterOutputs["team"]["getAll"][number];
 
@@ -147,7 +148,42 @@ export default function TeamsPage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="space-y-8">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <Users className="h-6 w-6 text-indigo-500" />
+              Teams
+            </span>
+          }
+          description="View and manage teams and their Jira board assignments."
+        />
+
+        <div className="flex justify-end mb-8">
+          <div className="w-[120px] h-10 bg-muted animate-pulse rounded-md" />
+        </div>
+
+        <div className="grid gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="w-48 h-6 bg-muted animate-pulse rounded-md" />
+                  <div className="flex gap-2">
+                    <div className="w-10 h-10 bg-muted animate-pulse rounded-md" />
+                    <div className="w-10 h-10 bg-muted animate-pulse rounded-md" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <TableSkeleton rows={3} cols={4} />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

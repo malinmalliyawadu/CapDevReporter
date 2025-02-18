@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TableSkeleton } from "@/components/ui/skeleton";
 
 export default function EmployeesPage() {
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
@@ -35,12 +36,15 @@ export default function EmployeesPage() {
     hoursPerWeek: number;
   } | null>(null);
 
-  const { data: employees, refetch: refetchEmployees } =
-    trpc.employee.getAll.useQuery() as {
-      data: EmployeeWithRelations[] | undefined;
-      isLoading: boolean;
-      refetch: () => Promise<any>;
-    };
+  const {
+    data: employees,
+    refetch: refetchEmployees,
+    isLoading,
+  } = trpc.employee.getAll.useQuery() as {
+    data: EmployeeWithRelations[] | undefined;
+    isLoading: boolean;
+    refetch: () => Promise<any>;
+  };
 
   const { mutate: syncEmployees } = trpc.employee.sync.useMutation({
     onSuccess: () => {
@@ -85,6 +89,35 @@ export default function EmployeesPage() {
       hoursPerWeek: hours,
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <User className="h-6 w-6 text-green-500" />
+              Employees
+            </span>
+          }
+          description="View employee directory synced from iPayroll."
+        />
+
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-[180px] h-10 bg-muted animate-pulse rounded-md" />
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Employee List</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TableSkeleton rows={8} cols={4} />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="">

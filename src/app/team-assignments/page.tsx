@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { type EmployeeWithRelations } from "@/trpc/routers/employee";
+import { TableSkeleton, CardSkeleton } from "@/components/ui/skeleton";
 
 interface Team {
   id: string;
@@ -146,7 +147,41 @@ export default function TeamAssignmentsPage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="space-y-8">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <LayoutGrid className="h-6 w-6 text-orange-500" />
+              Team Assignments
+            </span>
+          }
+          description="Manage employee team assignments."
+        />
+
+        <div className="flex justify-end mb-8">
+          <div className="w-[120px] h-10 bg-muted animate-pulse rounded-md" />
+        </div>
+
+        <div className="grid gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="w-48 h-6 bg-muted animate-pulse rounded-md" />
+                  <div className="flex gap-2">
+                    <div className="w-10 h-10 bg-muted animate-pulse rounded-md" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <TableSkeleton rows={3} cols={4} />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -10,6 +10,7 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
+  FolderGit2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { RouterOutputs, trpc } from "@/trpc/client";
+import { TableSkeleton } from "@/components/ui/skeleton";
 
 type Project = RouterOutputs["project"]["getAll"][number] & {
   timeEntries: TimeEntry[];
@@ -250,11 +252,33 @@ export default function ProjectsPage() {
 
   if (isLoadingProjects) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white" />
-          <p className="text-sm text-muted-foreground">Loading projects...</p>
+      <div className="space-y-8">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <FolderGit2 className="h-6 w-6 text-blue-500" />
+              Projects
+            </span>
+          }
+          description="View and manage projects synced from Jira."
+        />
+
+        <div className="flex items-center gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-[180px] h-10 bg-muted animate-pulse rounded-md" />
+            <div className="w-[180px] h-10 bg-muted animate-pulse rounded-md" />
+          </div>
+          <div className="w-[120px] h-10 bg-muted animate-pulse rounded-md ml-auto" />
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Project List</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TableSkeleton rows={6} cols={5} />
+          </CardContent>
+        </Card>
       </div>
     );
   }

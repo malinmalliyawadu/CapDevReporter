@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Timer, Plus, Trash2 } from "lucide-react";
+import { Timer, Plus, Trash2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,6 +30,7 @@ import {
 import { PageHeader } from "@/components/ui/page-header";
 import { toast } from "sonner";
 import { trpc } from "@/trpc/client";
+import { TableSkeleton } from "@/components/ui/skeleton";
 
 interface Role {
   id: string;
@@ -109,7 +110,32 @@ export default function GeneralTimeAssignmentsPage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="space-y-8">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <Clock className="h-6 w-6 text-purple-500" />
+              General Time Assignments
+            </span>
+          }
+          description="Manage default time assignments for roles."
+        />
+
+        <div className="flex justify-end mb-8">
+          <div className="w-[120px] h-10 bg-muted animate-pulse rounded-md" />
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Role Assignments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TableSkeleton rows={6} cols={4} />
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

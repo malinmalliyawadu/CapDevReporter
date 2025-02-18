@@ -25,6 +25,7 @@ import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
 import { createColumns } from "@/components/reports/TableColumns";
 import { XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TableSkeleton, CardSkeleton } from "@/components/ui/skeleton";
 
 function ErrorFallback({ error }: { error: Error }) {
   return (
@@ -106,10 +107,35 @@ function ReportsContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white" />
-          <p className="text-sm text-muted-foreground">Loading reports...</p>
+      <div className="space-y-8">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <BarChart className="h-6 w-6 text-rose-500" />
+              Time Reports
+            </span>
+          }
+          description="View and analyze time tracking reports."
+        />
+
+        <div className="sticky top-4 z-10 mb-8">
+          <div className="rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-72 h-10 bg-muted animate-pulse rounded-md" />
+              <div className="w-48 h-10 bg-muted animate-pulse rounded-md" />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-8">
+          <div className="grid gap-4 md:grid-cols-2">
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
+
+          <CardSkeleton />
+
+          <TableSkeleton rows={8} cols={6} />
         </div>
       </div>
     );
