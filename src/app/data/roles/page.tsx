@@ -69,11 +69,13 @@ export default function RolesPage() {
         <PageHeader
           title={
             <span className="flex items-center gap-2">
-              <Drama className="h-6 w-6 text-purple-500" />
-              Roles
+              <Drama className="h-7 w-7 text-purple-500" />
+              <span className="bg-gradient-to-r from-purple-500 to-fuchsia-500 bg-clip-text text-transparent">
+                Roles
+              </span>
             </span>
           }
-          description="Manage employee roles and responsibilities."
+          description="View and manage employee roles."
         />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>

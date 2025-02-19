@@ -195,21 +195,25 @@ export default function HolidaysPage() {
   }, [dateRange, table]);
 
   return (
-    <div className="">
+    <div className="space-y-6">
       <PageHeader
         title={
           <span className="flex items-center gap-2">
-            <PartyPopper className="h-6 w-6 text-pink-500" />
-            Holidays
+            <PartyPopper className="h-7 w-7 text-pink-500" />
+            <span className="bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent">
+              Holidays
+            </span>
           </span>
         }
         description="View and manage public holidays."
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Holiday Calendar</CardTitle>
-          <div className="flex items-center gap-4 py-4">
+      <Card className="border-none shadow-lg">
+        <CardHeader className="space-y-4 pb-6">
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            Holiday Calendar
+          </CardTitle>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 py-2">
             <Input
               placeholder="Search holidays..."
               value={
@@ -218,7 +222,7 @@ export default function HolidaysPage() {
               onChange={(event) =>
                 table.getColumn("name")?.setFilterValue(event.target.value)
               }
-              className="max-w-sm"
+              className="max-w-sm transition-all duration-200 focus:ring-2 focus:ring-pink-500"
             />
             <DateRangePicker
               dateRange={dateRange}
@@ -228,49 +232,66 @@ export default function HolidaysPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
+          <div className="rounded-lg border shadow-sm">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id} className="bg-muted/50">
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id} className="font-semibold">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
                     ))}
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row, index) => (
+                    <TableRow
+                      key={row.id}
+                      className={`
+                        transition-colors hover:bg-muted/50
+                        ${index % 2 === 0 ? "bg-background" : "bg-muted/20"}
+                      `}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} className="py-3">
+                          {cell.column.id === "name" ? (
+                            <span className="font-medium text-pink-600">
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </span>
+                          ) : (
+                            flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-32 text-center animate-pulse"
+                    >
+                      No holidays found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

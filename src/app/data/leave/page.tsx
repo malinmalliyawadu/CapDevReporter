@@ -48,8 +48,10 @@ export default function LeavePage() {
         <PageHeader
           title={
             <span className="flex items-center gap-2">
-              <Palmtree className="h-6 w-6 text-teal-500" />
-              Leave
+              <Palmtree className="h-7 w-7 text-teal-500" />
+              <span className="bg-gradient-to-r from-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                Leave
+              </span>
             </span>
           }
           description="View and manage employee leave."

@@ -147,8 +147,10 @@ export default function TeamsPage() {
           <PageHeader
             title={
               <span className="flex items-center gap-2">
-                <Users className="h-6 w-6 text-indigo-500" />
-                Teams
+                <Users className="h-7 w-7 text-blue-500" />
+                <span className="bg-gradient-to-r from-blue-500 to-sky-500 bg-clip-text text-transparent">
+                  Teams
+                </span>
               </span>
             }
             description="View and manage teams and their Jira board assignments."
@@ -184,8 +186,10 @@ export default function TeamsPage() {
         <PageHeader
           title={
             <span className="flex items-center gap-2">
-              <Users className="h-6 w-6 text-indigo-500" />
-              Teams
+              <Users className="h-7 w-7 text-blue-500" />
+              <span className="bg-gradient-to-r from-blue-500 to-sky-500 bg-clip-text text-transparent">
+                Teams
+              </span>
             </span>
           }
           description="View and manage teams and their Jira board assignments."

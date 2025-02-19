@@ -245,11 +245,13 @@ export default function ProjectsPage() {
         <PageHeader
           title={
             <span className="flex items-center gap-2">
-              <ClipboardList className="h-6 w-6 text-blue-500" />
-              Projects
+              <ClipboardList className="h-7 w-7 text-indigo-500" />
+              <span className="bg-gradient-to-r from-indigo-500 to-blue-500 bg-clip-text text-transparent">
+                Projects
+              </span>
             </span>
           }
-          description="View and manage Jira projects."
+          description="View and manage project assignments."
         />
         <div className="flex items-center gap-4">
           {lastSynced && (

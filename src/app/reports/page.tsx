@@ -84,11 +84,13 @@ export default function ReportsPage() {
       <PageHeader
         title={
           <span className="flex items-center gap-2">
-            <BarChart className="h-6 w-6 text-rose-500" />
-            Time Reports
+            <BarChart className="h-7 w-7 text-rose-500" />
+            <span className="bg-gradient-to-r from-rose-500 to-red-500 bg-clip-text text-transparent">
+              Time Reports
+            </span>
           </span>
         }
-        description="View and analyze time tracking reports."
+        description="View and analyze time tracking data."
       />
 
       <div className="sticky top-4 z-10">

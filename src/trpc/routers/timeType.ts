@@ -5,7 +5,26 @@ export const timeTypeRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.prisma.timeType.findMany({
       include: {
-        timeEntries: true,
+        timeEntries: {
+          select: {
+            id: true,
+            date: true,
+            hours: true,
+            description: true,
+            employeeId: true,
+            projectId: true,
+          },
+        },
+        generalAssignments: {
+          include: {
+            role: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
   }),

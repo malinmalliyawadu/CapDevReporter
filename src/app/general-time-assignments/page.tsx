@@ -11,6 +11,7 @@ import {
   Filter,
   ChevronDown,
   ChevronRight,
+  Timer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -215,8 +216,10 @@ export default function GeneralTimeAssignmentsPage() {
           <PageHeader
             title={
               <span className="flex items-center gap-2">
-                <Clock className="h-6 w-6 text-orange-500" />
-                General Time Assignments
+                <Timer className="h-7 w-7 text-violet-500" />
+                <span className="bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
+                  General Time Assignments
+                </span>
               </span>
             }
             description="Manage general time hours per week based on role."
@@ -245,8 +248,10 @@ export default function GeneralTimeAssignmentsPage() {
         <PageHeader
           title={
             <span className="flex items-center gap-2">
-              <Clock className="h-6 w-6 text-orange-500" />
-              General Time Assignments
+              <Timer className="h-7 w-7 text-violet-500" />
+              <span className="bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
+                General Time Assignments
+              </span>
             </span>
           }
           description="Manage general time hours per week based on role."
