@@ -20,16 +20,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { RouterOutputs, trpc } from "@/trpc/client";
 import { TableSkeleton } from "@/components/ui/skeleton";
 
 type Team = RouterOutputs["team"]["getAll"][number];
 
 export default function TeamsPage() {
-  const { toast } = useToast();
   const utils = trpc.useContext();
   const { data: teams, isLoading } = trpc.team.getAll.useQuery();
   const [newTeam, setNewTeam] = useState({
@@ -57,10 +55,7 @@ export default function TeamsPage() {
       utils.team.getAll.invalidate();
       setIsAddTeamDialogOpen(false);
       setNewTeam({ name: "", description: "" });
-      toast({
-        title: "Success",
-        description: "Team created successfully",
-      });
+      toast.success("Team created successfully");
     },
   });
 
@@ -69,20 +64,17 @@ export default function TeamsPage() {
       utils.team.getAll.invalidate();
       setIsAddBoardDialogOpen(false);
       setNewBoard({ name: "", boardId: "", teamId: "" });
-      toast({
-        title: "Success",
-        description: "Jira board added successfully",
-      });
+      toast.success("Jira board added successfully");
     },
   });
 
   const deleteJiraBoard = trpc.team.removeJiraBoard.useMutation({
     onSuccess: () => {
       utils.team.getAll.invalidate();
-      toast({
-        title: "Success",
-        description: "Jira board removed successfully",
-      });
+      toast.success("Jira board removed successfully");
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
@@ -91,10 +83,12 @@ export default function TeamsPage() {
       utils.team.getAll.invalidate();
       setIsDeleteDialogOpen(false);
       setTeamToDelete(null);
-      toast({
-        title: "Success",
-        description: "Team deleted successfully",
-      });
+      toast.success("Team deleted successfully");
+    },
+    onError: (error) => {
+      setIsDeleteDialogOpen(false);
+      setTeamToDelete(null);
+      toast.error(error.message);
     },
   });
 
@@ -103,20 +97,16 @@ export default function TeamsPage() {
       utils.team.getAll.invalidate();
       setIsEditDialogOpen(false);
       setSelectedTeam(null);
-      toast({
-        title: "Success",
-        description: "Team updated successfully",
-      });
+      toast.success("Team updated successfully");
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
   const handleCreateTeam = () => {
     if (!newTeam.name.trim()) {
-      toast({
-        title: "Error",
-        description: "Team name is required",
-        variant: "destructive",
-      });
+      toast.error("Team name is required");
       return;
     }
 
@@ -125,11 +115,7 @@ export default function TeamsPage() {
 
   const handleAddJiraBoard = () => {
     if (!newBoard.name.trim() || !newBoard.boardId.trim() || !newBoard.teamId) {
-      toast({
-        title: "Error",
-        description: "All fields are required",
-        variant: "destructive",
-      });
+      toast.error("All fields are required");
       return;
     }
 
@@ -143,11 +129,7 @@ export default function TeamsPage() {
 
   const handleUpdateTeam = () => {
     if (!selectedTeam || !editTeamData.name.trim()) {
-      toast({
-        title: "Error",
-        description: "Team name is required",
-        variant: "destructive",
-      });
+      toast.error("Team name is required");
       return;
     }
 
@@ -397,6 +379,10 @@ export default function TeamsPage() {
               Are you sure you want to delete {teamToDelete?.name}? This action
               cannot be undone. All associated Jira board assignments will also
               be removed.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Note: You cannot delete a team if it has boards with associated
+              projects. Please delete or reassign all projects first.
             </p>
           </div>
           <div className="flex justify-end gap-2">

@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { Context, createTRPCRouter, publicProcedure } from "../init";
+import { TRPCError } from "@trpc/server";
+import { Prisma } from "@prisma/client";
 
 export const teamRouter = createTRPCRouter({
   getAll: publicProcedure.query(({ ctx }) => {
@@ -76,9 +78,22 @@ export const teamRouter = createTRPCRouter({
   delete: publicProcedure
     .input(z.string())
     .mutation(async ({ ctx, input }: { ctx: Context; input: string }) => {
-      return ctx.prisma.team.delete({
-        where: { id: input },
-      });
+      try {
+        return await ctx.prisma.team.delete({
+          where: { id: input },
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          if (error.code === "P2003") {
+            throw new TRPCError({
+              code: "PRECONDITION_FAILED",
+              message:
+                "Cannot delete team as it has associated boards with projects",
+            });
+          }
+        }
+        throw error;
+      }
     }),
 
   addJiraBoard: publicProcedure
@@ -122,12 +137,24 @@ export const teamRouter = createTRPCRouter({
         ctx: Context;
         input: { teamId: string; boardId: string };
       }) => {
-        return ctx.prisma.jiraBoard.delete({
-          where: {
-            id: input.boardId,
-            teamId: input.teamId,
-          },
-        });
+        try {
+          return await ctx.prisma.jiraBoard.delete({
+            where: {
+              id: input.boardId,
+              teamId: input.teamId,
+            },
+          });
+        } catch (error) {
+          if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === "P2003") {
+              throw new TRPCError({
+                code: "PRECONDITION_FAILED",
+                message: "Cannot delete board as it has associated projects",
+              });
+            }
+          }
+          throw error;
+        }
       }
     ),
 });
