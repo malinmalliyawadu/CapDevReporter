@@ -9,7 +9,17 @@ import {
 } from "@/components/ui/table";
 import type { TimeReport } from "@/types/timeReport";
 import { Badge } from "@/components/ui/badge";
-import { TrendingDown, TrendingUp, Clock, Briefcase } from "lucide-react";
+import {
+  TrendingDown,
+  TrendingUp,
+  Clock,
+  Briefcase,
+  Calendar,
+  Plane,
+  Wrench,
+  Code,
+  ExternalLink,
+} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -33,6 +43,16 @@ export function TimeReportExpandedRow({
   timeTypes,
   deviations,
 }: TimeReportExpandedRowProps) {
+  const getEntryIcon = (entry: TimeReport["timeEntries"][0]) => {
+    if (entry.isPublicHoliday)
+      return <Calendar className="h-4 w-4 text-blue-500" />;
+    if (entry.isLeave) return <Plane className="h-4 w-4 text-amber-500" />;
+    if (entry.projectName)
+      return <Briefcase className="h-4 w-4 text-violet-500" />;
+    if (entry.isCapDev) return <Code className="h-4 w-4 text-green-500" />;
+    return <Wrench className="h-4 w-4 text-slate-500" />;
+  };
+
   return (
     <TooltipProvider>
       <div className="p-4 space-y-6 bg-muted/5">
@@ -53,21 +73,33 @@ export function TimeReportExpandedRow({
                     : entry.isPublicHoliday
                     ? `Public Holiday (${entry.publicHolidayName})`
                     : entry.projectName
-                    ? `Project - ${entry.projectName} (${entry.jiraId})`
+                    ? `Project - ${entry.projectName}`
                     : timeType;
                   return (
-                    <TableRow key={entry.id}>
-                      <TableCell className="py-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
-                            {displayType}
-                          </span>
-                          <span className="font-medium">
-                            {entry.hours.toFixed(1)}h
-                          </span>
+                    <TableRow key={entry.id} className="hover:bg-muted/50">
+                      <TableCell className="py-3">
+                        <div className="flex items-center gap-3">
+                          {getEntryIcon(entry)}
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">{displayType}</span>
+                            {entry.jiraId && (
+                              <a
+                                href={entry.jiraUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                              >
+                                {entry.jiraId}
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                            <span className="font-medium text-muted-foreground">
+                              {entry.hours.toFixed(1)}h
+                            </span>
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell className="py-2 text-right">
+                      <TableCell className="py-3 text-right">
                         <div className="flex gap-2 justify-end">
                           {entry.isCapDev && (
                             <Badge variant="default" className="text-xs">

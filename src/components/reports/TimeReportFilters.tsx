@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,9 +11,35 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { startOfYear } from "date-fns";
+import {
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  subMonths,
+  addDays,
+} from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+
+// Custom hook for debouncing values
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 interface TimeReportFiltersProps {
   teams: Array<{ id: string; name: string }>;
@@ -37,7 +63,51 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
       : defaultEndDate,
   });
 
-  // Update URL when filters change
+  // Add local state for search input
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") ?? ""
+  );
+  const debouncedSearch = useDebounce(searchInput, 300); // 300ms delay
+
+  const datePresets = [
+    {
+      label: "This Week",
+      value: {
+        from: startOfWeek(new Date(), { weekStartsOn: 1 }),
+        to: endOfWeek(new Date(), { weekStartsOn: 1 }),
+      },
+    },
+    {
+      label: "Last Two Weeks",
+      value: {
+        from: startOfWeek(addDays(new Date(), -14), { weekStartsOn: 1 }),
+        to: endOfWeek(new Date(), { weekStartsOn: 1 }),
+      },
+    },
+    {
+      label: "This Month",
+      value: {
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date()),
+      },
+    },
+    {
+      label: "Last Month",
+      value: {
+        from: startOfMonth(subMonths(new Date(), 1)),
+        to: endOfMonth(subMonths(new Date(), 1)),
+      },
+    },
+    {
+      label: "This Year",
+      value: {
+        from: startOfYear(new Date()),
+        to: endOfYear(new Date()),
+      },
+    },
+  ];
+
+  // Update URL for non-search filters (immediate)
   const updateFilters = (key: string, value: string | undefined | null) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value) {
@@ -48,15 +118,40 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  // Update URL for search (debounced)
+  const updateSearch = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set("search", value);
+    } else {
+      params.delete("search");
+    }
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  // Apply debounced search
+  useEffect(() => {
+    updateSearch(debouncedSearch);
+  }, [debouncedSearch]);
+
   // Handle date range changes
   const handleDateRangeChange = (newRange: DateRange | undefined) => {
     setDateRange(newRange);
+    const params = new URLSearchParams(searchParams.toString());
+
     if (newRange?.from) {
-      updateFilters("from", newRange.from.toISOString());
+      params.set("from", newRange.from.toISOString());
+    } else {
+      params.delete("from");
     }
+
     if (newRange?.to) {
-      updateFilters("to", newRange.to.toISOString());
+      params.set("to", newRange.to.toISOString());
+    } else {
+      params.delete("to");
     }
+
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   return (
@@ -67,8 +162,8 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
           <Input
             placeholder="Search by name or payroll ID..."
             className="max-w-sm"
-            value={searchParams.get("search") ?? ""}
-            onChange={(e) => updateFilters("search", e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-2">
@@ -114,6 +209,7 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
           <DateRangePicker
             dateRange={dateRange}
             onDateRangeChange={handleDateRangeChange}
+            presets={datePresets}
           />
         </div>
       </CardContent>
