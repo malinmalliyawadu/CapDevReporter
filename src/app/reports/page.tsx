@@ -1,83 +1,61 @@
-"use client";
-
-export const dynamic = "force-dynamic";
-
-import React, { useState, useEffect } from "react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getExpandedRowModel,
-  SortingState,
-  ColumnFiltersState,
-  ExpandedState,
-} from "@tanstack/react-table";
 import { BarChart } from "lucide-react";
-import { DateRange } from "react-day-picker";
 import { startOfYear } from "date-fns";
-import { trpc } from "@/trpc/client";
 import { PageHeader } from "@/components/ui/page-header";
 import { TimeReportFilters } from "@/components/reports/TimeReportFilters";
 import { TimeDistributionCharts } from "@/components/reports/TimeDistributionCharts";
 import { TimeReportTable } from "@/components/reports/TimeReportTable";
 import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
-import { createColumns } from "@/components/reports/TableColumns";
 
-export default function ReportsPage() {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [expanded, setExpanded] = useState<ExpandedState>({});
+export const dynamic = "force-dynamic";
+
+async function getTimeReportData(searchParams: URLSearchParams) {
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : `http://localhost:${process.env.PORT || 3000}`;
+
+  const response = await fetch(
+    `${baseUrl}/api/reports?${searchParams.toString()}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch time reports: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   const defaultStartDate = startOfYear(new Date());
   const defaultEndDate = new Date();
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: defaultStartDate,
-    to: defaultEndDate,
-  });
 
-  const [data] = trpc.timeReports.getAll.useSuspenseQuery({
-    dateRange: {
-      from: (dateRange.from ?? defaultStartDate).toDateString(),
-      to: (dateRange.to ?? defaultEndDate).toDateString(),
-    },
-  });
-
-  const timeReport = data?.timeReports ?? [];
-  const timeTypes = data?.timeTypes ?? [];
-  const teams = data?.teams ?? [];
-  const roles = data?.roles ?? [];
-
-  const columns = createColumns();
-
-  const table = useReactTable({
-    data: timeReport,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    onExpandedChange: setExpanded,
-    state: {
-      sorting,
-      columnFilters,
-      expanded,
-    },
-  });
-
-  useEffect(() => {
-    if (dateRange?.from) {
-      table.getColumn("week")?.setFilterValue(dateRange);
+  // Convert searchParams to URLSearchParams
+  const params = new URLSearchParams();
+  Object.entries(searchParams).forEach(([key, value]) => {
+    if (value) {
+      params.set(key, Array.isArray(value) ? value[0] : value);
     }
-  }, [dateRange, table]);
+  });
 
-  // Get filtered data for charts
-  const filteredData = table
-    .getFilteredRowModel()
-    .rows.map((row) => row.original);
+  // Set default date range if not provided
+  if (!params.has("from")) {
+    params.set("from", defaultStartDate.toISOString());
+  }
+  if (!params.has("to")) {
+    params.set("to", defaultEndDate.toISOString());
+  }
+
+  // Fetch data from the API
+  const data = await getTimeReportData(params);
 
   return (
     <div className="">
@@ -94,20 +72,24 @@ export default function ReportsPage() {
       />
 
       <div className="sticky top-4 z-10">
-        <TimeReportFilters
-          table={table}
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-          teams={teams}
-          roles={roles}
-        />
+        <TimeReportFilters teams={data.teams} roles={data.roles} />
       </div>
 
-      <TimeDistributionCharts timeReport={filteredData} timeTypes={timeTypes} />
+      <TimeDistributionCharts
+        timeReport={data.timeReports}
+        timeTypes={data.timeTypes}
+      />
 
-      <UtilizationIssues timeReports={filteredData} />
+      <UtilizationIssues
+        timeReports={data.timeReports}
+        generalTimeAssignments={data.generalAssignments}
+      />
 
-      <TimeReportTable table={table} timeTypes={timeTypes} />
+      <TimeReportTable
+        timeReports={data.timeReports}
+        timeTypes={data.timeTypes}
+        generalTimeAssignments={data.generalAssignments}
+      />
     </div>
   );
 }

@@ -1,117 +1,92 @@
 "use client";
 
 import { TableCell, TableRow } from "@/components/ui/table";
-import type { TimeReport, TimeReportEntry } from "@/types/timeReport";
+import type { TimeReport } from "@/types/timeReport";
+import { Badge } from "@/components/ui/badge";
+import { TrendingDown, TrendingUp } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface TimeReportExpandedRowProps {
   report: TimeReport;
   timeTypes: Array<{ id: string; name: string }>;
-  columnsLength: number;
+  deviations: Array<{
+    timeTypeName: string;
+    expectedHours: number;
+    actualHours: number;
+    deviation: number;
+  }>;
 }
 
 export function TimeReportExpandedRow({
   report,
   timeTypes,
-  columnsLength,
+  deviations,
 }: TimeReportExpandedRowProps) {
   return (
-    <TableRow key={`${report.id}-expanded`} className="bg-muted/50">
-      <TableCell colSpan={columnsLength} className="p-4">
-        <div className="rounded-md border">
-          <div className="bg-muted px-4 py-2 font-medium border-b">
-            <span>Time Entries</span>
-          </div>
-          <div className="divide-y">
-            {report.timeEntries.map((entry: TimeReportEntry, index) => {
-              if (entry.isPublicHoliday) {
-                return (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-purple-600 dark:text-purple-400">
-                        {entry.publicHolidayName}
-                      </span>
-                      <span className="inline-flex items-center rounded-full bg-purple-100 dark:bg-purple-900 px-2 py-0.5 text-xs font-medium text-purple-800 dark:text-purple-100">
-                        Public Holiday
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-purple-600 dark:text-purple-400">
-                        {entry.hours} hours
-                      </span>
-                    </div>
-                  </div>
-                );
-              }
+    <div className="p-4 space-y-4">
+      <div className="space-y-2">
+        <h4 className="font-medium">Time Entries</h4>
+        <div className="space-y-1">
+          {report.timeEntries.map((entry) => (
+            <div key={entry.id} className="flex items-center gap-2">
+              <span className="font-medium">{entry.hours.toFixed(1)}h</span>
+              <span>-</span>
+              <span>
+                {timeTypes.find((t) => t.id === entry.timeTypeId)?.name}
+              </span>
+              {entry.isCapDev && (
+                <Badge variant="default" className="ml-2">
+                  CapDev
+                </Badge>
+              )}
+              {entry.projectName && (
+                <Badge variant="secondary" className="ml-2">
+                  {entry.projectName}
+                </Badge>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
-              if (entry.isLeave) {
-                return (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4"
+      {deviations.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="font-medium">Deviations from Expected Hours</h4>
+          <div className="flex gap-2 flex-wrap">
+            {deviations.map((deviation) => (
+              <Tooltip key={deviation.timeTypeName}>
+                <TooltipTrigger>
+                  <Badge
+                    variant={deviation.deviation > 0 ? "default" : "secondary"}
+                    className="flex items-center gap-1"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-orange-600 dark:text-orange-400">
-                        {entry.leaveType}
-                      </span>
-                      <span className="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-900 px-2 py-0.5 text-xs font-medium text-orange-800 dark:text-orange-100">
-                        Leave
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-orange-600 dark:text-orange-400">
-                        {Math.abs(entry.hours / 8)} day(s)
-                      </span>
-                    </div>
-                  </div>
-                );
-              }
-
-              const timeType = timeTypes.find((t) => t.id === entry.timeTypeId);
-              return (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4"
-                >
-                  <div className="flex items-center gap-2">
-                    {entry.jiraId ? (
-                      <>
-                        <a
-                          href={entry.jiraUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 hover:underline"
-                        >
-                          {entry.jiraId}
-                        </a>
-                        <span className="text-muted-foreground">
-                          {entry.projectName}
-                        </span>
-                      </>
+                    {deviation.timeTypeName}
+                    {deviation.deviation > 0 ? (
+                      <TrendingUp className="h-3 w-3" />
                     ) : (
-                      <span className="font-medium">
-                        {timeType?.name || "Projects"}
-                      </span>
+                      <TrendingDown className="h-3 w-3" />
                     )}
-                    {entry.isCapDev && (
-                      <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
-                        CapDev
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">
-                      {entry.hours.toFixed(1)} hours
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    Expected: {deviation.expectedHours}h, Actual:{" "}
+                    {deviation.actualHours}h
+                  </p>
+                  <p>
+                    Deviation: {deviation.deviation > 0 ? "+" : ""}
+                    {deviation.deviation}h
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
           </div>
         </div>
-      </TableCell>
-    </TableRow>
+      )}
+    </div>
   );
 }

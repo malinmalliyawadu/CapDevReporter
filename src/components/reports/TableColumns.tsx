@@ -53,58 +53,51 @@ export const createColumns = (): ColumnDef<TimeReport>[] => [
   },
   {
     accessorKey: "employeeName",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="group"
-        >
-          Employee
-          {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" />
-          ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" />
-          ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-          )}
-        </Button>
-      );
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Employee
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
   },
   {
     accessorKey: "week",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="group"
-        >
-          Week
-          {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" />
-          ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" />
-          ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-          )}
-        </Button>
-      );
-    },
-    filterFn: (row, columnId, value: { from: Date; to: Date }) => {
-      if (!value?.from) return true;
-      const date = new Date(row.getValue(columnId));
-      return date >= value.from && date <= (value.to || new Date());
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Week
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
   },
   {
     accessorKey: "payrollId",
-    header: "Payroll ID",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Payroll ID
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
   },
   {
     accessorKey: "fullHours",
-    header: "Total Hours",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Total Hours
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => {
       const hours = row.original.fullHours;
       const expectedHours = row.original.expectedHours;
@@ -162,44 +155,26 @@ export const createColumns = (): ColumnDef<TimeReport>[] => [
   },
   {
     accessorKey: "team",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="group"
-        >
-          Team
-          {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" />
-          ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" />
-          ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-          )}
-        </Button>
-      );
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Team
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
   },
   {
     accessorKey: "role",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="group"
-        >
-          Role
-          {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" />
-          ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" />
-          ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-          )}
-        </Button>
-      );
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Role
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
   },
 ];

@@ -13,6 +13,7 @@ import {
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { startOfYear } from "date-fns";
 import type { DateRange } from "react-day-picker";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 interface TimeReportFiltersProps {
   teams: Array<{ id: string; name: string }>;
@@ -20,12 +21,43 @@ interface TimeReportFiltersProps {
 }
 
 export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Initialize state from URL params
   const defaultStartDate = startOfYear(new Date());
   const defaultEndDate = new Date();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: defaultStartDate,
-    to: defaultEndDate,
+    from: searchParams.get("from")
+      ? new Date(searchParams.get("from")!)
+      : defaultStartDate,
+    to: searchParams.get("to")
+      ? new Date(searchParams.get("to")!)
+      : defaultEndDate,
   });
+
+  // Update URL when filters change
+  const updateFilters = (key: string, value: string | undefined | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  // Handle date range changes
+  const handleDateRangeChange = (newRange: DateRange | undefined) => {
+    setDateRange(newRange);
+    if (newRange?.from) {
+      updateFilters("from", newRange.from.toISOString());
+    }
+    if (newRange?.to) {
+      updateFilters("to", newRange.to.toISOString());
+    }
+  };
 
   return (
     <Card>
@@ -35,11 +67,16 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
           <Input
             placeholder="Search by name or payroll ID..."
             className="max-w-sm"
+            value={searchParams.get("search") ?? ""}
+            onChange={(e) => updateFilters("search", e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">Team</label>
-          <Select>
+          <Select
+            value={searchParams.get("team") ?? "all"}
+            onValueChange={(value) => updateFilters("team", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="All teams" />
             </SelectTrigger>
@@ -55,7 +92,10 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
         </div>
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">Role</label>
-          <Select>
+          <Select
+            value={searchParams.get("role") ?? "all"}
+            onValueChange={(value) => updateFilters("role", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="All roles" />
             </SelectTrigger>
@@ -73,7 +113,7 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
           <label className="text-sm font-medium">Date Range</label>
           <DateRangePicker
             dateRange={dateRange}
-            onDateRangeChange={setDateRange}
+            onDateRangeChange={handleDateRangeChange}
           />
         </div>
       </CardContent>

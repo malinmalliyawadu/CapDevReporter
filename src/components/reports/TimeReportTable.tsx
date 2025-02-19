@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,15 +11,22 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, TrendingDown, TrendingUp } from "lucide-react";
+import { Download } from "lucide-react";
 import type { TimeReport } from "@/types/timeReport";
 import { TimeReportExpandedRow } from "./TimeReportExpandedRow";
-import { Badge } from "@/components/ui/badge";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getExpandedRowModel,
+  SortingState,
+  ColumnFiltersState,
+  ExpandedState,
+  flexRender,
+} from "@tanstack/react-table";
+import { createColumns } from "./TableColumns";
 
 interface TimeReportTableProps {
   timeReports: TimeReport[];
@@ -42,6 +49,25 @@ export function TimeReportTable({
   timeTypes,
   generalTimeAssignments,
 }: TimeReportTableProps) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [expanded, setExpanded] = useState<ExpandedState>({});
+
+  const columns = createColumns();
+
+  const table = useReactTable({
+    data: timeReports,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    onExpandedChange: setExpanded,
+    state: {
+      sorting,
+      expanded,
+    },
+  });
+
   const getTimeTypeDeviations = (report: TimeReport) => {
     const roleAssignments = generalTimeAssignments.filter(
       (a) => a.roleId === report.roleId
@@ -79,68 +105,10 @@ export function TimeReportTable({
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle>Time Report</CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const headers = [
-                "Employee",
-                "Week",
-                "Payroll ID",
-                "Full Hours",
-                "CapDev Time",
-                "Non-CapDev Time",
-                "Team",
-                "Role",
-                "Deviations",
-              ];
-
-              const csvData = timeReports.map((row) => {
-                const capDevTime = row.timeEntries
-                  .filter((entry) => entry.isCapDev)
-                  .reduce((sum, entry) => sum + entry.hours, 0);
-                const nonCapDevTime = row.timeEntries
-                  .filter((entry) => !entry.isCapDev)
-                  .reduce((sum, entry) => sum + entry.hours, 0);
-
-                return [
-                  row.employeeName,
-                  row.week,
-                  row.payrollId,
-                  row.fullHours,
-                  capDevTime,
-                  nonCapDevTime,
-                  row.team,
-                  row.role,
-                  row.deviations?.join("; ") ?? "",
-                ];
-              });
-
-              const csvContent = [
-                headers.join(","),
-                ...csvData.map((row) => row.join(",")),
-              ].join("\n");
-
-              const blob = new Blob([csvContent], {
-                type: "text/csv;charset=utf-8;",
-              });
-              const link = document.createElement("a");
-              const url = URL.createObjectURL(blob);
-              link.setAttribute("href", url);
-              link.setAttribute(
-                "download",
-                `time-report-${new Date().toISOString()}.csv`
-              );
-              link.style.visibility = "hidden";
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }}
-            className="ml-auto"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
+          <CardTitle>Time Reports</CardTitle>
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export
           </Button>
         </div>
       </CardHeader>
@@ -148,77 +116,51 @@ export function TimeReportTable({
         <div className="rounded-md border">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Week</TableHead>
-                <TableHead>Payroll ID</TableHead>
-                <TableHead>Full Hours</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Deviations</TableHead>
-              </TableRow>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
             </TableHeader>
             <TableBody>
-              {timeReports.length > 0 ? (
-                timeReports.map((report) => (
+              {table.getRowModel().rows.map((row) => (
+                <React.Fragment key={row.id}>
                   <TableRow
-                    key={`${report.employeeName}-${report.week}`}
                     className={
-                      report.isUnderutilized
+                      row.original.isUnderutilized
                         ? "bg-amber-50 dark:bg-amber-950/20"
                         : ""
                     }
                   >
-                    <TableCell>{report.employeeName}</TableCell>
-                    <TableCell>{report.week}</TableCell>
-                    <TableCell>{report.payrollId}</TableCell>
-                    <TableCell>{report.fullHours}</TableCell>
-                    <TableCell>{report.team}</TableCell>
-                    <TableCell>{report.role}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2 flex-wrap">
-                        {getTimeTypeDeviations(report).map((deviation) => (
-                          <Tooltip key={deviation.timeTypeName}>
-                            <TooltipTrigger>
-                              <Badge
-                                variant={
-                                  deviation.deviation > 0
-                                    ? "default"
-                                    : "secondary"
-                                }
-                                className="flex items-center gap-1"
-                              >
-                                {deviation.timeTypeName}
-                                {deviation.deviation > 0 ? (
-                                  <TrendingUp className="h-3 w-3" />
-                                ) : (
-                                  <TrendingDown className="h-3 w-3" />
-                                )}
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>
-                                Expected: {deviation.expectedHours}h, Actual:{" "}
-                                {deviation.actualHours}h
-                              </p>
-                              <p>
-                                Deviation: {deviation.deviation > 0 ? "+" : ""}
-                                {deviation.deviation}h
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        ))}
-                      </div>
-                    </TableCell>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
+                  {row.getIsExpanded() && (
+                    <TableRow>
+                      <TableCell colSpan={row.getVisibleCells().length}>
+                        <TimeReportExpandedRow
+                          report={row.original}
+                          timeTypes={timeTypes}
+                          deviations={getTimeTypeDeviations(row.original)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
+              ))}
             </TableBody>
           </Table>
         </div>
