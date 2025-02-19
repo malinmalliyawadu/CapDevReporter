@@ -153,19 +153,6 @@ export default function TeamAssignmentsPage() {
           }
           description="Track and manage employee team assignments across your organization."
         />
-        <Button
-          onClick={() =>
-            setEditingAssignment({
-              employeeId: "",
-              teamId: "",
-              startDate: new Date(),
-              endDate: undefined,
-            })
-          }
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Assignment
-        </Button>
       </div>
 
       <Card>
