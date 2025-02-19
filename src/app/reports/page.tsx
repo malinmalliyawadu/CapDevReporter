@@ -8,7 +8,9 @@ import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
 
 export const dynamic = "force-dynamic";
 
-async function getTimeReportData(searchParams: URLSearchParams) {
+async function getTimeReportData(searchParams: {
+  [key: string]: string | string[] | undefined;
+}) {
   const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : `http://localhost:${process.env.PORT || 3000}`;
@@ -33,25 +35,19 @@ async function getTimeReportData(searchParams: URLSearchParams) {
 export default async function ReportsPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const defaultStartDate = startOfYear(new Date());
   const defaultEndDate = new Date();
 
-  // Convert searchParams to URLSearchParams
-  const params = new URLSearchParams();
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (value) {
-      params.set(key, Array.isArray(value) ? value[0] : value);
-    }
-  });
+  const params = await searchParams;
 
   // Set default date range if not provided
-  if (!params.has("from")) {
-    params.set("from", defaultStartDate.toISOString());
+  if (!params["from"]) {
+    params["from"] = defaultStartDate.toISOString();
   }
-  if (!params.has("to")) {
-    params.set("to", defaultEndDate.toISOString());
+  if (!params["to"]) {
+    params["to"] = defaultEndDate.toISOString();
   }
 
   // Fetch data from the API
