@@ -395,8 +395,9 @@ export default function GeneralTimeTypesPage() {
           </DialogHeader>
           <div className="py-4">
             <p>
-              Are you sure you want to delete the time type "
-              <span className="font-medium">{timeTypeToDelete?.name}</span>"?
+              Are you sure you want to delete the time type &quot
+              <span className="font-medium">{timeTypeToDelete?.name}</span>
+              &quot?
             </p>
             <p className="text-sm text-muted-foreground mt-2">
               This action cannot be undone.

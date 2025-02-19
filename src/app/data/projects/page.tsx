@@ -57,7 +57,6 @@ export default function ProjectsPage() {
   const { toast } = useToast();
   const utils = trpc.useContext();
   const { data: projects } = trpc.project.getAll.useQuery();
-  const { data: teams } = trpc.team.getAll.useQuery();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [expanded, setExpanded] = useState<ExpandedState>({});

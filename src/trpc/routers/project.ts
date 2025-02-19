@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../init";
-import { jiraClient, isCapDevProject } from "@/utils/jira";
-import type { JiraProject } from "@/utils/jira";
+import { jiraClient } from "@/utils/jira";
 
 export const projectRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {

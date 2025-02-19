@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { PartyPopper } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
