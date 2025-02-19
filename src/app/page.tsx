@@ -1,24 +1,100 @@
-"use client";
-
 import { Card, CardContent } from "@/components/ui/card";
-import { trpc } from "@/trpc/client";
 import { AlertTriangle, UserX, FolderX, AlertCircle } from "lucide-react";
 import { startOfWeek, endOfWeek } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { prisma } from "@/lib/prisma";
 
-export default function Home() {
-  const { data: teams } = trpc.team.getAll.useQuery();
-  const { data: timeReports } = trpc.timeReports.getAll.useQuery({
-    dateRange: {
-      from: startOfWeek(new Date(), { weekStartsOn: 1 }).toDateString(),
-      to: endOfWeek(new Date(), { weekStartsOn: 1 }).toDateString(),
-    },
-  });
+async function getDashboardData() {
+  const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const endDate = endOfWeek(new Date(), { weekStartsOn: 1 });
 
-  if (!teams || !timeReports) {
-    return null;
-  }
+  const [teams, timeEntries] = await Promise.all([
+    prisma.team.findMany({
+      include: {
+        jiraBoards: {
+          include: {
+            projects: true,
+          },
+        },
+      },
+    }),
+    prisma.timeEntry.findMany({
+      where: {
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        employee: {
+          include: {
+            role: true,
+            assignments: {
+              where: {
+                startDate: {
+                  lte: endDate,
+                },
+                OR: [{ endDate: null }, { endDate: { gte: startDate } }],
+              },
+              include: {
+                team: true,
+              },
+              orderBy: {
+                startDate: "desc",
+              },
+              take: 1,
+            },
+          },
+        },
+        timeType: true,
+      },
+    }),
+  ]);
+
+  // Group time entries by employee
+  const timeReports = Object.values(
+    timeEntries.reduce((acc, entry) => {
+      const key = entry.employee.id;
+      if (!acc[key]) {
+        const currentTeam = entry.employee.assignments[0]?.team;
+        acc[key] = {
+          id: key,
+          employeeName: entry.employee.name,
+          employeeId: entry.employee.id,
+          fullHours: 0,
+          expectedHours: entry.employee.hoursPerWeek,
+          isUnderutilized: false,
+          missingHours: 0,
+          team: currentTeam?.name ?? "Unassigned",
+          role: entry.employee.role.name,
+          timeEntries: [],
+        };
+      }
+
+      acc[key].timeEntries.push({
+        id: entry.id,
+        timeTypeId: entry.timeType.id,
+        hours: entry.hours,
+        isCapDev: entry.timeType.isCapDev,
+      });
+
+      acc[key].fullHours += entry.hours;
+      acc[key].isUnderutilized = acc[key].fullHours < acc[key].expectedHours;
+      acc[key].missingHours = Math.max(
+        0,
+        acc[key].expectedHours - acc[key].fullHours
+      );
+
+      return acc;
+    }, {} as Record<string, any>)
+  );
+
+  return { teams, timeReports };
+}
+
+export default async function Home() {
+  const { teams, timeReports } = await getDashboardData();
 
   // Teams without Jira boards
   const teamsWithoutBoards = teams.filter(
@@ -31,12 +107,12 @@ export default function Home() {
   );
 
   // Employees with missing hours this week
-  const employeesWithMissingHours = timeReports.timeReports.filter(
+  const employeesWithMissingHours = timeReports.filter(
     (report) => report.isUnderutilized
   );
 
   // Employees not assigned to teams (check current assignments)
-  const employeesWithoutTeams = timeReports.timeReports.filter(
+  const employeesWithoutTeams = timeReports.filter(
     (report) => report.team === "Unassigned"
   );
 
@@ -135,13 +211,12 @@ export default function Home() {
                     <div className="space-y-2">
                       <div className="font-medium">{report.employeeName}</div>
                       <div className="text-sm text-muted-foreground">
-                        {report.fullHours} / {report.expectedHours} hours logged
+                        {report.fullHours.toFixed(1)} / {report.expectedHours}{" "}
+                        hours logged
                       </div>
-                      {report.underutilizationReason && (
-                        <div className="text-sm text-yellow-600">
-                          {report.underutilizationReason}
-                        </div>
-                      )}
+                      <div className="text-sm text-yellow-600">
+                        {report.missingHours.toFixed(1)} hours under target
+                      </div>
                     </div>
                     <Link href="/reports">
                       <Button variant="outline" size="sm">

@@ -1,9 +1,15 @@
-import { TableLoading } from "@/components/loading/TableLoading";
-import { PageHeader } from "@/components/ui/page-header";
-import { Palmtree, RefreshCw } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Palmtree } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function Loading() {
   return (
@@ -20,42 +26,80 @@ export default function Loading() {
           }
           description="View and manage employee leave records"
         />
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-5 w-48" />
-          <Button disabled>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Sync with iPayroll
-          </Button>
-        </div>
       </div>
 
       <Card className="shadow-lg">
-        <CardHeader className="border-b">
-          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-            <CardTitle className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-              Leave Records
-            </CardTitle>
-            <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-2 md:space-y-0">
-              <Skeleton className="h-10 w-[200px]" />
-              <Skeleton className="h-10 w-[140px]" />
-              <Skeleton className="h-10 w-[140px]" />
-            </div>
-          </div>
+        <CardHeader>
+          <CardTitle>Leave Records</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <TableLoading rows={8} cols={5} />
-          <div className="flex items-center justify-between p-4 border-t">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-9 w-[80px]" />
-              <Skeleton className="h-9 w-[80px]" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-10 w-[100px]" />
-            </div>
-          </div>
+        <CardContent>
+          <LeaveTableSkeleton />
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+export function LeaveTableSkeleton() {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-10 w-[200px]" />
+          <Skeleton className="h-10 w-[140px]" />
+          <Skeleton className="h-10 w-[140px]" />
+        </div>
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-4 w-[200px]" />
+          <Skeleton className="h-10 w-[150px]" />
+        </div>
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50 dark:bg-gray-800/50">
+              <TableHead>Employee</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Duration</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <Skeleton className="h-4 w-[150px]" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-[100px]" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-6 w-[100px] rounded-full" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-6 w-[80px] rounded-full" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-[60px]" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex items-center justify-between p-4 border-t">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-[80px]" />
+          <Skeleton className="h-8 w-[80px]" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-[100px]" />
+          <Skeleton className="h-10 w-[100px]" />
+        </div>
+      </div>
     </div>
   );
 }

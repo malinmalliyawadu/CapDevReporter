@@ -18,6 +18,8 @@ export interface TimeReport {
   underutilizationReason?: string;
   team: string;
   role: string;
+  roleId: string;
+  deviations?: string[];
   timeEntries: TimeReportEntry[];
 }
 
