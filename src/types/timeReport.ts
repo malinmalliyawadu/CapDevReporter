@@ -55,4 +55,5 @@ export interface TimeReportEntry {
   jiraUrl?: string;
   isPublicHoliday?: boolean;
   publicHolidayName?: string;
+  date: string;
 }
