@@ -13,7 +13,17 @@ async function getLeaveRecords() {
       employee: true,
     },
   });
-  return leaveRecords;
+  return leaveRecords.map((record) => ({
+    ...record,
+    date: record.date.toISOString(),
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+    employee: {
+      ...record.employee,
+      createdAt: record.employee.createdAt.toISOString(),
+      updatedAt: record.employee.updatedAt.toISOString(),
+    },
+  }));
 }
 
 export default async function LeavePage() {

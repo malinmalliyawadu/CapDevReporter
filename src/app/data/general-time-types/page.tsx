@@ -18,7 +18,17 @@ async function getTimeTypes() {
       },
     },
   });
-  return timeTypes;
+  return timeTypes.map((type) => ({
+    ...type,
+    createdAt: type.createdAt.toISOString(),
+    updatedAt: type.updatedAt.toISOString(),
+    timeEntries: type.timeEntries.map((entry) => ({
+      ...entry,
+      date: entry.date.toISOString(),
+      createdAt: entry.createdAt.toISOString(),
+      updatedAt: entry.updatedAt.toISOString(),
+    })),
+  }));
 }
 
 export default async function GeneralTimeTypesPage() {
