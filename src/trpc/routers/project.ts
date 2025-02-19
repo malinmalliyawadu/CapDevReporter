@@ -189,8 +189,12 @@ export const projectRouter = createTRPCRouter({
 
   sync: publicProcedure.mutation(async ({ ctx }) => {
     try {
-      // 1. Fetch all projects from Jira
-      const jiraProjects = (await jiraClient.listProjects()) as JiraProject[];
+      // 1. Get all boards from our database
+      const boards = await ctx.prisma.jiraBoard.findMany({
+        where: {
+          boardId: "TF",
+        },
+      });
 
       // 2. Get all existing projects from our database
       const existingProjects = await ctx.prisma.project.findMany({
@@ -206,61 +210,93 @@ export const projectRouter = createTRPCRouter({
       );
       const processedJiraIds = new Set();
 
-      // 3. Process each Jira project
-      for (const jiraProject of jiraProjects) {
-        processedJiraIds.add(jiraProject.key);
+      // 3. Process each board and its projects
+      for (const board of boards) {
+        // Get all Jira projects with the board's ID
+        console.log(board);
+        const jiraBoard = await jiraClient.getAllBoards(
+          undefined,
+          undefined,
+          undefined,
+          "Toe-Fu"
+        );
 
-        // Get detailed project information including description and category
-        const projectDetails = (await jiraClient.getProject(
-          jiraProject.key
-        )) as JiraProject;
+        const jiraIssues = await jiraClient.getIssuesForBoard(
+          jiraBoard.values[0].id
+        );
 
-        // Find the corresponding board based on the Jira project key prefix
-        const boardId = jiraProject.key.split("-")[0];
-        const board = await ctx.prisma.jiraBoard.findFirst({
-          where: { boardId },
-        });
-
-        if (!board) {
-          console.warn(
-            `No matching board found for project ${jiraProject.key}`
+        for (const iss of jiraIssues.issues.slice(0, 100)) {
+          const issue = await jiraClient.getIssue(
+            iss.key,
+            ["summary", "description"],
+            "changelog"
           );
-          continue;
-        }
 
-        if (existingProjectMap.has(jiraProject.key)) {
-          // Update existing project
-          await ctx.prisma.project.update({
-            where: { id: existingProjectMap.get(jiraProject.key) },
-            data: {
-              name: projectDetails.name,
-              description: projectDetails.description || null,
-              isCapDev: isCapDevProject(projectDetails),
-              boardId: board.id,
+          processedJiraIds.add(jiraIssues.key);
+
+          console.log(issue.key);
+          console.log(existingProjectMap.has(issue.key));
+          if (existingProjectMap.has(issue.key)) {
+            // Update existing project
+            await ctx.prisma.project.update({
+              where: { id: existingProjectMap.get(issue.key) },
+              data: {
+                name: issue.fields.summary,
+                description: issue.fields.description || null,
+                isCapDev: false,
+                boardId: board.id,
+              },
+            });
+            console.log("updated");
+          } else {
+            // Create new project
+            await ctx.prisma.project.create({
+              data: {
+                name: issue.fields.summary,
+                description: issue.fields.description || null,
+                jiraId: issue.key,
+                isCapDev: false,
+                boardId: board.id,
+              },
+            });
+            console.log("created");
+          }
+          console.log(issue.changelog.histories[0].created);
+
+          // clear existing activities
+          await ctx.prisma.projectActivity.deleteMany({
+            where: {
+              jiraIssueId: issue.key,
             },
           });
-        } else {
-          // Create new project
-          await ctx.prisma.project.create({
-            data: {
-              name: projectDetails.name,
-              description: projectDetails.description || null,
-              jiraId: projectDetails.key,
-              isCapDev: isCapDevProject(projectDetails),
-              boardId: board.id,
-            },
+
+          // create new activities
+          const activityDates = new Set<string>(
+            issue.changelog.histories.map(
+              (history: { created: string }) =>
+                new Date(history.created).toISOString().split("T")[0] // Only keep the date part
+            )
+          );
+
+          await ctx.prisma.projectActivity.createMany({
+            data: Array.from(activityDates).map((activityDate) => ({
+              jiraIssueId: issue.key,
+              activityDate: new Date(activityDate),
+            })),
           });
         }
       }
 
       // 4. Delete projects that no longer exist in Jira
-      for (const [jiraId, projectId] of existingProjectMap.entries()) {
-        if (!processedJiraIds.has(jiraId)) {
-          await ctx.prisma.project.delete({
-            where: { id: projectId },
-          });
-        }
-      }
+      // for (const [jiraId, projectId] of existingProjectMap.entries()) {
+      //   if (!processedJiraIds.has(jiraId)) {
+      //     await ctx.prisma.project.delete({
+      //       where: { id: projectId },
+      //     });
+      //   }
+      // }
+
+      console.log(processedJiraIds);
 
       return {
         success: true,

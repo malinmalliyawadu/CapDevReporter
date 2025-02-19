@@ -44,6 +44,8 @@ export default function TeamsPage() {
   });
   const [isAddTeamDialogOpen, setIsAddTeamDialogOpen] = useState(false);
   const [isAddBoardDialogOpen, setIsAddBoardDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
 
   const createTeam = trpc.team.create.useMutation({
     onSuccess: () => {
@@ -79,6 +81,18 @@ export default function TeamsPage() {
     },
   });
 
+  const deleteTeam = trpc.team.delete.useMutation({
+    onSuccess: () => {
+      utils.team.getAll.invalidate();
+      setIsDeleteDialogOpen(false);
+      setTeamToDelete(null);
+      toast({
+        title: "Success",
+        description: "Team deleted successfully",
+      });
+    },
+  });
+
   const handleCreateTeam = () => {
     if (!newTeam.name.trim()) {
       toast({
@@ -103,6 +117,11 @@ export default function TeamsPage() {
     }
 
     addJiraBoard.mutate(newBoard);
+  };
+
+  const handleDeleteTeam = () => {
+    if (!teamToDelete) return;
+    deleteTeam.mutate(teamToDelete.id);
   };
 
   if (isLoading) {
@@ -193,6 +212,16 @@ export default function TeamsPage() {
                     }}
                   >
                     <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setTeamToDelete(team);
+                      setIsDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -315,6 +344,36 @@ export default function TeamsPage() {
               disabled={addJiraBoard.isPending}
             >
               {addJiraBoard.isPending ? "Adding..." : "Add Board"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Team</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete {teamToDelete?.name}? This action
+              cannot be undone. All associated Jira board assignments will also
+              be removed.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteTeam}
+              disabled={deleteTeam.isPending}
+            >
+              {deleteTeam.isPending ? "Deleting..." : "Delete Team"}
             </Button>
           </div>
         </DialogContent>
