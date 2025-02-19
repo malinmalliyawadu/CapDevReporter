@@ -1,9 +1,15 @@
-import { TableLoading } from "@/components/loading/TableLoading";
-import { PageHeader } from "@/components/ui/page-header";
-import { UserCog } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Drama } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function Loading() {
   return (
@@ -12,45 +18,61 @@ export default function Loading() {
         <PageHeader
           title={
             <span className="flex items-center gap-2">
-              <UserCog className="h-8 w-8 text-violet-500" />
-              <span className="bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent text-3xl font-bold">
+              <Drama className="h-7 w-7 text-purple-500" />
+              <span className="bg-gradient-to-r from-purple-500 to-fuchsia-500 bg-clip-text text-transparent">
                 Roles
               </span>
             </span>
           }
-          description="View and manage employee roles"
+          description="View and manage employee roles."
         />
-        <Button disabled>
-          <Skeleton className="h-4 w-4 mr-2" />
-          Add Role
-        </Button>
       </div>
 
-      <Card className="shadow-lg">
-        <CardHeader className="border-b">
-          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-            <CardTitle className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-              Role List
-            </CardTitle>
-            <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-x-2 md:space-y-0">
-              <Skeleton className="h-10 w-[200px]" />
-            </div>
-          </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Role List</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <TableLoading rows={6} cols={3} />
-          <div className="flex items-center justify-between p-4 border-t">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-9 w-[80px]" />
-              <Skeleton className="h-9 w-[80px]" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-10 w-[100px]" />
-            </div>
-          </div>
+        <CardContent>
+          <RolesTableSkeleton />
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+export function RolesTableSkeleton() {
+  return (
+    <div>
+      <div className="flex justify-end mb-4">
+        <Skeleton className="h-9 w-[120px]" />
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Role Name</TableHead>
+              <TableHead>Employees</TableHead>
+              <TableHead className="w-[100px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <Skeleton className="h-4 w-[200px]" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-5 w-[100px] rounded-full" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-8 w-[80px]" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
