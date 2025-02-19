@@ -210,7 +210,7 @@ export default function LeavePage() {
   );
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <PageHeader
           title={
