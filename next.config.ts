@@ -6,7 +6,9 @@ const nextConfig: NextConfig = {
   output: "standalone",
 };
 
-export default MillionLint.next({
-  enabled: true,
-  rsc: true,
-})(nextConfig);
+export default process.env.DISABLE_MILLION
+  ? nextConfig
+  : MillionLint.next({
+      enabled: true,
+      rsc: true,
+    })(nextConfig);

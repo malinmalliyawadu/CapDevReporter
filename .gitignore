@@ -42,3 +42,10 @@ next-env.d.ts
 
 # Million Lint
 .million
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
