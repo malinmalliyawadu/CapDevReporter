@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 
 export async function POST() {
   try {
@@ -7,6 +6,7 @@ export async function POST() {
     // For now, just return success
     return NextResponse.json({ timestamp: new Date().toISOString() });
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to sync leave records" },
       { status: 500 }

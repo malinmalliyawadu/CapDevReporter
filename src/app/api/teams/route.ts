@@ -10,6 +10,7 @@ export async function GET() {
     });
     return NextResponse.json(teams);
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to fetch teams" },
       { status: 500 }
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(team);
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to create team" },
       { status: 500 }

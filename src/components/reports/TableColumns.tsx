@@ -5,8 +5,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { TimeReport } from "@/types/timeReport";
 import {
   ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   ChevronDown,
   ChevronRight,
   AlertTriangle,

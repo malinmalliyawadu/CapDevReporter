@@ -16,6 +16,7 @@ export async function GET() {
     });
     return NextResponse.json(projects);
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to fetch projects" },
       { status: 500 }
@@ -31,6 +32,7 @@ export async function POST() {
 
     return NextResponse.json({ timestamp });
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to sync projects with Jira" },
       { status: 500 }

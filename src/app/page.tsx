@@ -5,6 +5,24 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 
+interface TimeReport {
+  id: string;
+  employeeName: string;
+  employeeId: string;
+  fullHours: number;
+  expectedHours: number;
+  isUnderutilized: boolean;
+  missingHours: number;
+  team: string;
+  role: string;
+  timeEntries: Array<{
+    id: string;
+    timeTypeId: string;
+    hours: number;
+    isCapDev: boolean;
+  }>;
+}
+
 async function getDashboardData() {
   const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
   const endDate = endOfWeek(new Date(), { weekStartsOn: 1 });
@@ -54,7 +72,7 @@ async function getDashboardData() {
 
   // Group time entries by employee
   const timeReports = Object.values(
-    timeEntries.reduce((acc, entry) => {
+    timeEntries.reduce<Record<string, TimeReport>>((acc, entry) => {
       const key = entry.employee.id;
       if (!acc[key]) {
         const currentTeam = entry.employee.assignments[0]?.team;
@@ -87,7 +105,7 @@ async function getDashboardData() {
       );
 
       return acc;
-    }, {} as Record<string, any>)
+    }, {})
   );
 
   return { teams, timeReports };

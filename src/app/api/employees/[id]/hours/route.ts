@@ -30,6 +30,7 @@ export async function PATCH(
 
     return NextResponse.json(employee);
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to update employee hours" },
       { status: 500 }

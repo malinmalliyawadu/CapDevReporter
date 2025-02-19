@@ -90,6 +90,7 @@ export function ProjectsTable({ initialProjects }: ProjectsTableProps) {
         description: "Projects synced with Jira",
       });
     } catch (error) {
+      console.error(error);
       toast({
         title: "Error",
         description: "Failed to sync projects with Jira",

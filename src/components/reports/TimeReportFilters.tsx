@@ -118,21 +118,21 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // Update URL for search (debounced)
-  const updateSearch = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set("search", value);
-    } else {
-      params.delete("search");
-    }
-    router.push(`${pathname}?${params.toString()}`);
-  };
-
   // Apply debounced search
   useEffect(() => {
+    // Update URL for search (debounced)
+    const updateSearch = (value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) {
+        params.set("search", value);
+      } else {
+        params.delete("search");
+      }
+      router.push(`${pathname}?${params.toString()}`);
+    };
+
     updateSearch(debouncedSearch);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, pathname, router, searchParams]);
 
   // Handle date range changes
   const handleDateRangeChange = (newRange: DateRange | undefined) => {

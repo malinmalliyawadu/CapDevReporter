@@ -279,6 +279,7 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
       setIsCapDev(false);
       toast.success("Time type created successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to create time type");
     }
   };
@@ -308,6 +309,7 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
       setTimeTypeToDelete(null);
       toast.success("Time type deleted successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to delete time type");
     }
   };

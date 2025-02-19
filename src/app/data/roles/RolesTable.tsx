@@ -26,7 +26,10 @@ import {
 interface Role {
   id: string;
   name: string;
-  employees: any[];
+  employees: {
+    id: string;
+    name: string;
+  }[];
 }
 
 interface RolesTableProps {
@@ -86,6 +89,7 @@ export function RolesTable({ initialRoles }: RolesTableProps) {
         description: "Role created successfully",
       });
     } catch (error) {
+      console.error(error);
       toast({
         title: "Error",
         description: "Failed to create role",
@@ -111,6 +115,7 @@ export function RolesTable({ initialRoles }: RolesTableProps) {
         description: "Role deleted successfully",
       });
     } catch (error) {
+      console.error(error);
       toast({
         title: "Error",
         description: "Failed to delete role",

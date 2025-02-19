@@ -189,6 +189,7 @@ export function EmployeesTable({ initialEmployees }: EmployeesTableProps) {
       setLastSynced(new Date());
       toast.success("Employees synced with iPayroll");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to sync employees");
     } finally {
       setIsSyncing(false);
@@ -224,6 +225,7 @@ export function EmployeesTable({ initialEmployees }: EmployeesTableProps) {
       setEditingEmployee(null);
       toast.success("Hours updated successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to update hours");
     }
   };

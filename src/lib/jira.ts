@@ -57,7 +57,7 @@ export class JiraClient {
         });
 
         // Create or update the project
-        const project = await prisma.project.upsert({
+        await prisma.project.upsert({
           where: { jiraId: jiraProject.key },
           update: {
             name: jiraProject.name,

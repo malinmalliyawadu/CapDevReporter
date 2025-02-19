@@ -191,6 +191,7 @@ export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
       setLastSynced(new Date());
       toast.success("Leave data synced successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to sync leave data");
     } finally {
       setIsSyncing(false);

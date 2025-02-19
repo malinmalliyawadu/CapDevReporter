@@ -87,6 +87,7 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
       setNewTeam({ name: "", description: "" });
       toast.success("Team created successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to create team");
     }
   };
@@ -118,6 +119,7 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
       setNewBoard({ name: "", boardId: "", teamId: "" });
       toast.success("Board added successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to add board");
     }
   };
@@ -139,6 +141,7 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
       setTeamToDelete(null);
       toast.success("Team deleted successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to delete team");
     }
   };
@@ -167,6 +170,7 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
       setSelectedTeam(null);
       toast.success("Team updated successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to update team");
     }
   };
@@ -184,6 +188,7 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
       setTeams(updatedTeams);
       toast.success("Board deleted successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to delete board");
     }
   };

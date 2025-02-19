@@ -52,6 +52,7 @@ export async function POST(
 
     return NextResponse.json(board);
   } catch (error) {
+    console.error(error);
     return NextResponse.json({ error: "Failed to add board" }, { status: 500 });
   }
 }

@@ -15,6 +15,7 @@ export async function GET() {
     });
     return NextResponse.json(timeTypes);
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to fetch time types" },
       { status: 500 }
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(timeType);
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to create time type" },
       { status: 500 }

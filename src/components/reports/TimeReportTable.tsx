@@ -18,11 +18,8 @@ import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getExpandedRowModel,
   SortingState,
-  ColumnFiltersState,
   ExpandedState,
   flexRender,
 } from "@tanstack/react-table";
