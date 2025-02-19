@@ -187,16 +187,17 @@ export function Navigation() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/reports">
-                  <NavigationMenuLink
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/reports"
                     className={cn(
                       "bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/80 dark:to-zinc-900/50 hover:from-white hover:to-white/80 dark:hover:from-zinc-800 dark:hover:to-zinc-800/80 px-4 py-2 rounded-lg inline-flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 transition-all duration-200 shadow-sm",
                       "hover:scale-105"
                     )}
                   >
                     Report
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
