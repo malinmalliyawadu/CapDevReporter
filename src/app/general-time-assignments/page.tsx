@@ -1,7 +1,17 @@
 "use client";
 
+import * as React from "react";
 import { useState } from "react";
-import { Plus, Trash2, Clock, ArrowUpDown, Search, Filter } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Clock,
+  ArrowUpDown,
+  Search,
+  Filter,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -133,12 +143,42 @@ export default function GeneralTimeAssignmentsPage() {
     return sortOrder === "asc" ? comparison : -comparison;
   });
 
-  // Paginate assignments
-  const totalPages = Math.ceil(sortedAssignments.length / itemsPerPage);
-  const paginatedAssignments = sortedAssignments.slice(
+  // Group assignments by role
+  const groupedAssignments = sortedAssignments.reduce((groups, assignment) => {
+    const roleId = assignment.role.id;
+    if (!groups[roleId]) {
+      groups[roleId] = {
+        role: assignment.role,
+        assignments: [],
+        totalHours: 0,
+      };
+    }
+    groups[roleId].assignments.push(assignment);
+    groups[roleId].totalHours += assignment.hoursPerWeek;
+    return groups;
+  }, {} as Record<string, { role: Role; assignments: GeneralTimeAssignment[]; totalHours: number }>);
+
+  // Paginate grouped assignments
+  const groupedEntries = Object.entries(groupedAssignments);
+  const totalPages = Math.ceil(groupedEntries.length / itemsPerPage);
+  const paginatedGroups = groupedEntries.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const [expandedRoles, setExpandedRoles] = useState<Set<string>>(new Set());
+
+  const toggleRole = (roleId: string) => {
+    setExpandedRoles((prev) => {
+      const next = new Set(prev);
+      if (next.has(roleId)) {
+        next.delete(roleId);
+      } else {
+        next.add(roleId);
+      }
+      return next;
+    });
+  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -352,7 +392,8 @@ export default function GeneralTimeAssignmentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>
+                  <TableHead className="w-[30px]" />
+                  <TableHead className="w-[300px]">
                     <Button
                       variant="ghost"
                       onClick={() => handleSort("role")}
@@ -362,33 +403,15 @@ export default function GeneralTimeAssignmentsPage() {
                       <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
                     </Button>
                   </TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort("timeType")}
-                      className="group -ml-4"
-                    >
-                      Time Type
-                      <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort("hours")}
-                      className="group -ml-4"
-                    >
-                      Hours Per Week
-                      <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-                    </Button>
-                  </TableHead>
+                  <TableHead>Time Types</TableHead>
+                  <TableHead className="w-[120px]">Total Hours</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedAssignments.length === 0 ? (
+                {paginatedGroups.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       <div className="text-muted-foreground">
                         No assignments found
                       </div>
@@ -398,38 +421,114 @@ export default function GeneralTimeAssignmentsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedAssignments.map(
-                    (assignment: GeneralTimeAssignment) => (
-                      <TableRow key={assignment.id}>
-                        <TableCell>{assignment.role.name}</TableCell>
-                        <TableCell>
-                          <span
-                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                              assignment.timeType.isCapDev
-                                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200"
-                                : "bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-200"
-                            }`}
-                          >
-                            {assignment.timeType.name}
-                          </span>
-                        </TableCell>
-                        <TableCell>{assignment.hoursPerWeek}</TableCell>
+                  paginatedGroups.map(([roleId, group]) => (
+                    <React.Fragment key={roleId}>
+                      <TableRow className="group">
                         <TableCell>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => {
-                              setAssignmentToDelete(assignment);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                            className="hover:text-red-500"
+                            className="h-8 w-8 p-0"
+                            onClick={() => toggleRole(roleId)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {expandedRoles.has(roleId) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{group.role.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {group.assignments.length} time type
+                            {group.assignments.length === 1 ? "" : "s"}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1.5">
+                            {group.assignments.map((assignment) => (
+                              <span
+                                key={assignment.id}
+                                className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                                  assignment.timeType.isCapDev
+                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200"
+                                    : "bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-200"
+                                }`}
+                                title={`${assignment.timeType.name}: ${assignment.hoursPerWeek} hours per week`}
+                              >
+                                {assignment.timeType.name}
+                              </span>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{group.totalHours}</div>
+                          <div className="text-sm text-muted-foreground">
+                            hours per week
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setNewAssignment((prev) => ({
+                                ...prev,
+                                roleId: roleId,
+                              }));
+                              setIsDialogOpen(true);
+                            }}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Type
                           </Button>
                         </TableCell>
                       </TableRow>
-                    )
-                  )
+                      {expandedRoles.has(roleId) && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="p-0">
+                            <div className="bg-muted/50 border-t">
+                              <div className="divide-y">
+                                {group.assignments.map((assignment) => (
+                                  <div
+                                    key={assignment.id}
+                                    className="flex items-center justify-between p-4"
+                                  >
+                                    <div className="flex items-center gap-4">
+                                      <span
+                                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                                          assignment.timeType.isCapDev
+                                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200"
+                                            : "bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-200"
+                                        }`}
+                                      >
+                                        {assignment.timeType.name}
+                                      </span>
+                                      <span className="text-sm">
+                                        {assignment.hoursPerWeek} hours per week
+                                      </span>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        setAssignmentToDelete(assignment);
+                                        setIsDeleteDialogOpen(true);
+                                      }}
+                                      className="hover:text-red-500"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  ))
                 )}
               </TableBody>
             </Table>
@@ -439,11 +538,10 @@ export default function GeneralTimeAssignmentsPage() {
               Showing{" "}
               {Math.min(
                 (currentPage - 1) * itemsPerPage + 1,
-                sortedAssignments.length
+                groupedEntries.length
               )}{" "}
-              to{" "}
-              {Math.min(currentPage * itemsPerPage, sortedAssignments.length)}{" "}
-              of {sortedAssignments.length} assignments
+              to {Math.min(currentPage * itemsPerPage, groupedEntries.length)}{" "}
+              of {groupedEntries.length} roles
             </div>
             <div className="flex items-center gap-2 order-1 sm:order-2">
               <Button
