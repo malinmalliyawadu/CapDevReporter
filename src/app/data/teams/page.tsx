@@ -143,17 +143,16 @@ export default function TeamsPage() {
   if (isLoading) {
     return (
       <div className="space-y-8">
-        <PageHeader
-          title={
-            <span className="flex items-center gap-2">
-              <Users className="h-6 w-6 text-indigo-500" />
-              Teams
-            </span>
-          }
-          description="View and manage teams and their Jira board assignments."
-        />
-
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <PageHeader
+            title={
+              <span className="flex items-center gap-2">
+                <Users className="h-6 w-6 text-indigo-500" />
+                Teams
+              </span>
+            }
+            description="View and manage teams and their Jira board assignments."
+          />
           <div className="w-[120px] h-10 bg-muted animate-pulse rounded-md" />
         </div>
 
@@ -181,17 +180,16 @@ export default function TeamsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <Users className="h-6 w-6 text-indigo-500" />
-            Teams
-          </span>
-        }
-        description="View and manage teams and their Jira board assignments."
-      />
-
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <Users className="h-6 w-6 text-indigo-500" />
+              Teams
+            </span>
+          }
+          description="View and manage teams and their Jira board assignments."
+        />
         <Button onClick={() => setIsAddTeamDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Team
