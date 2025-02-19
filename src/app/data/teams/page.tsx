@@ -32,7 +32,6 @@ export default function TeamsPage() {
   const { toast } = useToast();
   const utils = trpc.useContext();
   const { data: teams, isLoading } = trpc.team.getAll.useQuery();
-  const [, setSelectedTeam] = useState<Team | null>(null);
   const [newTeam, setNewTeam] = useState({
     name: "",
     description: "",
@@ -45,7 +44,13 @@ export default function TeamsPage() {
   const [isAddTeamDialogOpen, setIsAddTeamDialogOpen] = useState(false);
   const [isAddBoardDialogOpen, setIsAddBoardDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [editTeamData, setEditTeamData] = useState({
+    name: "",
+    description: "",
+  });
 
   const createTeam = trpc.team.create.useMutation({
     onSuccess: () => {
@@ -93,6 +98,18 @@ export default function TeamsPage() {
     },
   });
 
+  const updateTeam = trpc.team.update.useMutation({
+    onSuccess: () => {
+      utils.team.getAll.invalidate();
+      setIsEditDialogOpen(false);
+      setSelectedTeam(null);
+      toast({
+        title: "Success",
+        description: "Team updated successfully",
+      });
+    },
+  });
+
   const handleCreateTeam = () => {
     if (!newTeam.name.trim()) {
       toast({
@@ -122,6 +139,23 @@ export default function TeamsPage() {
   const handleDeleteTeam = () => {
     if (!teamToDelete) return;
     deleteTeam.mutate(teamToDelete.id);
+  };
+
+  const handleUpdateTeam = () => {
+    if (!selectedTeam || !editTeamData.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Team name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateTeam.mutate({
+      id: selectedTeam.id,
+      name: editTeamData.name,
+      description: editTeamData.description,
+    });
   };
 
   if (isLoading) {
@@ -199,7 +233,14 @@ export default function TeamsPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setSelectedTeam(team)}
+                    onClick={() => {
+                      setSelectedTeam(team);
+                      setEditTeamData({
+                        name: team.name,
+                        description: team.description || "",
+                      });
+                      setIsEditDialogOpen(true);
+                    }}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -264,9 +305,6 @@ export default function TeamsPage() {
       </div>
 
       <Dialog open={isAddTeamDialogOpen} onOpenChange={setIsAddTeamDialogOpen}>
-        <DialogTrigger asChild>
-          <Button>Add Team</Button>
-        </DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Team</DialogTitle>
@@ -374,6 +412,52 @@ export default function TeamsPage() {
               disabled={deleteTeam.isPending}
             >
               {deleteTeam.isPending ? "Deleting..." : "Delete Team"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Team</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="edit-team-name">Team Name</Label>
+              <Input
+                id="edit-team-name"
+                value={editTeamData.name}
+                onChange={(e) =>
+                  setEditTeamData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                placeholder="Engineering Team"
+              />
+            </div>
+            <div className="grid w-full items-center gap-1.5">
+              <Label htmlFor="edit-description">Description</Label>
+              <Input
+                id="edit-description"
+                value={editTeamData.description}
+                onChange={(e) =>
+                  setEditTeamData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                placeholder="Team description"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateTeam} disabled={updateTeam.isPending}>
+              {updateTeam.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </DialogContent>
