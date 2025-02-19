@@ -74,10 +74,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const { id } = context.params;
 
     // Check if assignment exists
     const assignment = await prisma.employeeAssignment.findUnique({
