@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, Clock, Plus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Clock, Plus } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -13,179 +11,146 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { trpc } from "@/trpc/client";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogClose,
+  DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { PageHeader } from "@/components/ui/page-header";
-import { useToast } from "@/hooks/use-toast";
-import { trpc, type RouterOutputs } from "@/trpc/client";
+import { toast } from "sonner";
 
-type TimeType = RouterOutputs["timeType"]["getAll"][number];
+export default function GeneralTimeTypesPage() {
+  const [newTypeName, setNewTypeName] = useState("");
+  const [open, setOpen] = useState(false);
 
-interface EditTimeTypeDialogProps {
-  timeType: TimeType;
-  onSave: (timeType: TimeType) => void;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-function EditTimeTypeDialog({
-  timeType,
-  onSave,
-  open,
-  onOpenChange,
-}: EditTimeTypeDialogProps) {
-  const [editedTimeType, setEditedTimeType] = useState<TimeType>(timeType);
-
-  const handleSave = () => {
-    onSave(editedTimeType);
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Time Type</DialogTitle>
-          <DialogDescription>
-            Make changes to the time type details here.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="edit-time-type-name">Time Type Name</Label>
-            <Input
-              id="edit-time-type-name"
-              value={editedTimeType.name}
-              onChange={(e) =>
-                setEditedTimeType({ ...editedTimeType, name: e.target.value })
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="edit-is-capdev">CapDev Time</Label>
-            <Switch
-              id="edit-is-capdev"
-              checked={editedTimeType.isCapDev ?? false}
-              onCheckedChange={(checked) =>
-                setEditedTimeType((prev) => ({
-                  ...prev,
-                  isCapDev: checked,
-                }))
-              }
-            />
-          </div>
-        </div>
-        <div className="flex justify-end gap-4">
-          <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DialogClose>
-          <Button onClick={handleSave}>Save changes</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-export default function TimeTypesPage() {
-  const { toast } = useToast();
-  const utils = trpc.useContext();
-  const { data: timeTypes } = trpc.timeType.getAll.useQuery();
-  const [editingTimeType, setEditingTimeType] = useState<TimeType | null>(null);
-  const [, setIsAddDialogOpen] = useState(false);
-
-  const updateTimeType = trpc.timeType.update.useMutation({
+  const { data: timeTypes, refetch: refetchTimeTypes } =
+    trpc.timeType.getAll.useQuery();
+  const { mutate: createTimeType } = trpc.timeType.create.useMutation({
     onSuccess: () => {
-      utils.timeType.getAll.invalidate();
-      setEditingTimeType(null);
-      toast({
-        title: "Success",
-        description: "Time type updated successfully",
-      });
+      refetchTimeTypes();
+      setNewTypeName("");
+      toast.success("Time type created successfully");
+    },
+    onError: () => {
+      toast.error("Failed to create time type");
+    },
+  });
+  const { mutate: deleteTimeType } = trpc.timeType.delete.useMutation({
+    onSuccess: () => {
+      refetchTimeTypes();
+      toast.success("Time type deleted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to delete time type");
     },
   });
 
-  const deleteTimeType = trpc.timeType.delete.useMutation({
-    onSuccess: () => {
-      utils.timeType.getAll.invalidate();
-      toast({
-        title: "Success",
-        description: "Time type deleted successfully",
-      });
-    },
-  });
+  const handleAddTimeType = () => {
+    if (!newTypeName.trim()) {
+      toast.error("Please enter a time type name");
+      return;
+    }
 
-  const handleUpdateTimeType = (timeType: TimeType) => {
-    updateTimeType.mutate({
-      id: timeType.id,
-      name: timeType.name,
-      isCapDev: timeType.isCapDev ?? false,
+    if (
+      timeTypes?.some(
+        (type) => type.name.toLowerCase() === newTypeName.trim().toLowerCase()
+      )
+    ) {
+      toast.error("This time type already exists");
+      return;
+    }
+
+    createTimeType({
+      name: newTypeName.trim(),
     });
+    setOpen(false);
   };
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <Clock className="h-6 w-6 text-purple-500" />
-            Time Types
-          </span>
-        }
-        description="Manage time tracking categories."
-      />
-
-      <div className="flex justify-end">
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Time Type
-        </Button>
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <Clock className="h-6 w-6 text-orange-500" />
+              General Time Types
+            </span>
+          }
+          description="Manage general time tracking categories."
+        />
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Time Type
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Time Type</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="time-type-name">Time Type Name</Label>
+                <Input
+                  id="time-type-name"
+                  type="text"
+                  placeholder="Administrative"
+                  value={newTypeName}
+                  onChange={(e) => setNewTypeName(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={handleAddTimeType}
+                disabled={!newTypeName.trim()}
+              >
+                Add Time Type
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Time Types</CardTitle>
+          <CardTitle>Time Type List</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
+                <TableHead>Type Name</TableHead>
+                <TableHead>Time Entries</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {timeTypes?.map((timeType) => (
-                <TableRow key={timeType.id}>
-                  <TableCell>{timeType.name}</TableCell>
+              {timeTypes?.map((type) => (
+                <TableRow key={type.id}>
+                  <TableCell>{type.name}</TableCell>
                   <TableCell>
-                    {timeType.isCapDev ? "CapDev" : "Non-CapDev"}
+                    <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
+                      {type.timeEntries.length} entries
+                    </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditingTimeType(timeType)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteTimeType.mutate(timeType.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      className="text-red-600"
+                      onClick={() => deleteTimeType(type.id)}
+                      disabled={type.timeEntries.length > 0}
+                    >
+                      Delete
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -193,15 +158,6 @@ export default function TimeTypesPage() {
           </Table>
         </CardContent>
       </Card>
-
-      {editingTimeType && (
-        <EditTimeTypeDialog
-          timeType={editingTimeType}
-          onSave={handleUpdateTimeType}
-          open={!!editingTimeType}
-          onOpenChange={(open) => !open && setEditingTimeType(null)}
-        />
-      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Timer, Plus, Trash2, Clock } from "lucide-react";
+import { Plus, Trash2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -112,18 +112,84 @@ export default function GeneralTimeAssignmentsPage() {
   if (isLoading) {
     return (
       <div className="space-y-8">
-        <PageHeader
-          title={
-            <span className="flex items-center gap-2">
-              <Clock className="h-6 w-6 text-purple-500" />
-              General Time Assignments
-            </span>
-          }
-          description="Manage default time assignments for roles."
-        />
+        <div className="flex items-center justify-between">
+          <PageHeader
+            title={
+              <span className="flex items-center gap-2">
+                <Clock className="h-6 w-6 text-orange-500" />
+                General Time Assignments
+              </span>
+            }
+            description="Manage general time hours per week based on role."
+          />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Assignment
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Assignment</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <Select
+                  value={newAssignment.roleId}
+                  onValueChange={(value) =>
+                    setNewAssignment({ ...newAssignment, roleId: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role: Role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-        <div className="flex justify-end mb-8">
-          <div className="w-[120px] h-10 bg-muted animate-pulse rounded-md" />
+                <Select
+                  value={newAssignment.timeTypeId}
+                  onValueChange={(value) =>
+                    setNewAssignment({ ...newAssignment, timeTypeId: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Time Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeTypes.map((type: TimeType) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Input
+                  type="number"
+                  min={0}
+                  value={newAssignment.hoursPerWeek || ""}
+                  onChange={(e) =>
+                    setNewAssignment({
+                      ...newAssignment,
+                      hoursPerWeek: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  placeholder="Hours per week"
+                />
+
+                <Button onClick={handleAdd} className="w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Assignment
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Card>
@@ -139,18 +205,17 @@ export default function GeneralTimeAssignmentsPage() {
   }
 
   return (
-    <div className="">
-      <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <Timer className="h-6 w-6 text-rose-500" />
-            General Time Assignments
-          </span>
-        }
-        description="Manage general time hours per week based on role."
-      />
-
-      <div className="mb-6">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <Clock className="h-6 w-6 text-orange-500" />
+              General Time Assignments
+            </span>
+          }
+          description="Manage general time hours per week based on role."
+        />
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>

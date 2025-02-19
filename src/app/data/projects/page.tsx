@@ -7,13 +7,11 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Search,
   ChevronDown,
   ChevronRight,
   ClipboardList,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -25,13 +23,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   ColumnDef,
   flexRender,
@@ -249,99 +240,36 @@ export default function ProjectsPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <ClipboardList className="h-6 w-6 text-indigo-500" />
-            Projects
-          </span>
-        }
-        description="View and manage projects synced from Jira."
-      />
-
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Filter projects..."
-              value={
-                (table.getColumn("name")?.getFilterValue() as string) ?? ""
-              }
-              onChange={(event) =>
-                table.getColumn("name")?.setFilterValue(event.target.value)
-              }
-              className="pl-8 max-w-sm"
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <ClipboardList className="h-6 w-6 text-blue-500" />
+              Projects
+            </span>
+          }
+          description="View and manage Jira projects."
+        />
+        <div className="flex items-center gap-4">
+          {lastSynced && (
+            <span className="text-sm text-muted-foreground">
+              Last synced: {lastSynced.toLocaleString("en-NZ")}
+            </span>
+          )}
+          <Button onClick={handleSync} disabled={isSyncing}>
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
             />
-          </div>
-          <Select
-            value={
-              (table.getColumn("teamName")?.getFilterValue() as string) ?? "all"
-            }
-            onValueChange={(value) =>
-              table
-                .getColumn("teamName")
-                ?.setFilterValue(value === "all" ? "" : value)
-            }
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by team" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Teams</SelectItem>
-              {teams?.map((team: RouterOutputs["team"]["getAll"][number]) => (
-                <SelectItem key={team.id} value={team.name}>
-                  {team.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={
-              (table.getColumn("isCapDev")?.getFilterValue() as string) ?? "all"
-            }
-            onValueChange={(value) => {
-              if (value === "all") {
-                table.getColumn("isCapDev")?.setFilterValue("");
-              } else {
-                table.getColumn("isCapDev")?.setFilterValue(value === "true");
-              }
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="true">CapDev</SelectItem>
-              <SelectItem value="false">Non-CapDev</SelectItem>
-            </SelectContent>
-          </Select>
+            Sync with Jira
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSync}
-          disabled={isSyncing}
-          className="ml-auto"
-        >
-          <RefreshCw
-            className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
-          />
-          {isSyncing ? "Syncing..." : "Sync with Jira"}
-        </Button>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Project List</CardTitle>
-            {lastSynced && (
-              <p className="text-sm text-muted-foreground">
-                Last synced: {lastSynced.toLocaleString()}
-              </p>
-            )}
           </div>
         </CardHeader>
         <CardContent>

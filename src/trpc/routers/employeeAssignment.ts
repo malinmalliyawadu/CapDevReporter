@@ -21,6 +21,7 @@ export const employeeAssignmentRouter = createTRPCRouter({
         },
         include: {
           team: true,
+          employee: true,
         },
       });
     }),
@@ -41,6 +42,7 @@ export const employeeAssignmentRouter = createTRPCRouter({
         data,
         include: {
           team: true,
+          employee: true,
         },
       });
     }),
@@ -52,8 +54,25 @@ export const employeeAssignmentRouter = createTRPCRouter({
         where: { employeeId: input },
         include: {
           team: true,
+          employee: true,
         },
         orderBy: { startDate: "desc" },
       });
     }),
+
+  getAll: publicProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.employeeAssignment.findMany({
+      include: {
+        team: true,
+        employee: true,
+      },
+      orderBy: { startDate: "desc" },
+    });
+  }),
+
+  delete: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+    return ctx.prisma.employeeAssignment.delete({
+      where: { id: input },
+    });
+  }),
 });

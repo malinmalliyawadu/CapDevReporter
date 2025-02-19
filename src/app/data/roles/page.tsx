@@ -64,44 +64,45 @@ export default function RolesPage() {
   };
 
   return (
-    <div className="">
-      <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <Drama className="h-6 w-6 text-purple-500" />
-            Roles
-          </span>
-        }
-        description="Manage employee roles and responsibilities."
-      />
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button className="mb-6">Add New Role</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Role</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="role-name">Role Name</Label>
-              <Input
-                id="role-name"
-                type="text"
-                placeholder="Software Engineer"
-                value={newRoleName}
-                onChange={(e) => setNewRoleName(e.target.value)}
-              />
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <Drama className="h-6 w-6 text-purple-500" />
+              Roles
+            </span>
+          }
+          description="Manage employee roles and responsibilities."
+        />
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button>Add New Role</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Role</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="role-name">Role Name</Label>
+                <Input
+                  id="role-name"
+                  type="text"
+                  placeholder="Software Engineer"
+                  value={newRoleName}
+                  onChange={(e) => setNewRoleName(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleAddRole} disabled={!newRoleName.trim()}>
-              Add Role
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button onClick={handleAddRole} disabled={!newRoleName.trim()}>
+                Add Role
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <Card>
         <CardHeader>

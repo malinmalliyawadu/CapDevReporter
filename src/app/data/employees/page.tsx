@@ -82,32 +82,30 @@ export default function EmployeesPage() {
   };
 
   return (
-    <div className="">
-      <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <User className="h-6 w-6 text-green-500" />
-            Employees
-          </span>
-        }
-        description="View employee directory synced from iPayroll."
-      />
-
-      <div className="mb-8 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          {lastSynced && (
-            <span className="text-sm text-muted-foreground">
-              Last synced: {lastSynced.toLocaleString("en-NZ")}
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <User className="h-6 w-6 text-green-500" />
+              Employees
             </span>
-          )}
-          <Button onClick={handleSync} disabled={isSyncing}>
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
-            />
-            Sync with iPayroll
-          </Button>
-        </div>
+          }
+          description="View employee directory synced from iPayroll."
+        />
+        <Button onClick={handleSync} disabled={isSyncing}>
+          <RefreshCw
+            className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
+          />
+          Sync with iPayroll
+        </Button>
       </div>
+
+      {lastSynced && (
+        <div className="text-sm text-muted-foreground">
+          Last synced: {lastSynced.toLocaleString("en-NZ")}
+        </div>
+      )}
 
       <Card>
         <CardHeader>

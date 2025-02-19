@@ -13,12 +13,11 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { trpc } from "@/trpc/client";
 import { format } from "date-fns";
 
 export default function LeavePage() {
-  const { toast } = useToast();
   const utils = trpc.useContext();
   const { data: leaveRecords } = trpc.leave.getAll.useQuery();
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
@@ -27,18 +26,11 @@ export default function LeavePage() {
     onSuccess: () => {
       utils.leave.getAll.invalidate();
       setLastSynced(new Date());
-      toast({
-        title: "Success",
-        description: "Leave data synced successfully",
-      });
+      toast.success("Leave data synced successfully");
     },
     onError: (error) => {
       console.error("Failed to sync leave data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to sync leave data",
-        variant: "destructive",
-      });
+      toast.error("Failed to sync leave data");
     },
     onSettled: () => {
       setIsSyncing(false);
@@ -52,17 +44,16 @@ export default function LeavePage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <Palmtree className="h-6 w-6 text-teal-500" />
-            Leave
-          </span>
-        }
-        description="View and manage employee leave."
-      />
-
-      <div className="mb-8 flex justify-between items-center">
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <Palmtree className="h-6 w-6 text-teal-500" />
+              Leave
+            </span>
+          }
+          description="View and manage employee leave."
+        />
         <div className="flex items-center gap-4">
           {lastSynced && (
             <span className="text-sm text-muted-foreground">
