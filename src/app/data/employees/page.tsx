@@ -16,8 +16,13 @@ async function getEmployees() {
   return employees;
 }
 
+async function getRoles() {
+  const roles = await prisma.role.findMany();
+  return roles;
+}
+
 export default async function EmployeesPage() {
-  const employees = await getEmployees();
+  const [employees, roles] = await Promise.all([getEmployees(), getRoles()]);
 
   return (
     <div className="space-y-8">
@@ -41,7 +46,7 @@ export default async function EmployeesPage() {
         </CardHeader>
         <CardContent>
           <Suspense fallback={<EmployeesTableSkeleton />}>
-            <EmployeesTable initialEmployees={employees} />
+            <EmployeesTable initialEmployees={employees} roles={roles} />
           </Suspense>
         </CardContent>
       </Card>

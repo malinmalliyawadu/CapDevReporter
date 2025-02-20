@@ -46,6 +46,7 @@ import {
   SortingState,
   ColumnFiltersState,
   flexRender,
+  FilterFn,
 } from "@tanstack/react-table";
 
 interface Employee {
@@ -58,11 +59,20 @@ interface Employee {
   hoursPerWeek: number;
 }
 
-interface EmployeesTableProps {
-  initialEmployees: Employee[];
+interface Role {
+  id: string;
+  name: string;
 }
 
-export function EmployeesTable({ initialEmployees }: EmployeesTableProps) {
+interface EmployeesTableProps {
+  initialEmployees: Employee[];
+  roles: Role[];
+}
+
+export function EmployeesTable({
+  initialEmployees,
+  roles,
+}: EmployeesTableProps) {
   const [employees, setEmployees] = useState(initialEmployees);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -97,7 +107,8 @@ export function EmployeesTable({ initialEmployees }: EmployeesTableProps) {
       header: () => "Payroll ID",
     },
     {
-      accessorKey: "role.name",
+      id: "role",
+      accessorFn: (row) => row.role.name,
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -111,6 +122,10 @@ export function EmployeesTable({ initialEmployees }: EmployeesTableProps) {
           ) : null}
         </Button>
       ),
+      filterFn: (row, columnId, filterValue) => {
+        const roleName = row.getValue(columnId) as string;
+        return filterValue === "all" || roleName === filterValue;
+      },
     },
     {
       accessorKey: "hoursPerWeek",
@@ -247,13 +262,12 @@ export function EmployeesTable({ initialEmployees }: EmployeesTableProps) {
           </div>
           <Select
             value={
-              (table.getColumn("role.name")?.getFilterValue() as string) ??
-              "all"
+              (table.getColumn("role")?.getFilterValue() as string) ?? "all"
             }
             onValueChange={(value) =>
               table
-                .getColumn("role.name")
-                ?.setFilterValue(value === "all" ? "" : value)
+                .getColumn("role")
+                ?.setFilterValue(value === "all" ? undefined : value)
             }
           >
             <SelectTrigger className="w-[180px]">
@@ -261,13 +275,11 @@ export function EmployeesTable({ initialEmployees }: EmployeesTableProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All roles</SelectItem>
-              {Array.from(new Set(employees.map((emp) => emp.role.name))).map(
-                (role) => (
-                  <SelectItem key={role} value={role}>
-                    {role}
-                  </SelectItem>
-                )
-              )}
+              {roles.map((role) => (
+                <SelectItem key={role.id} value={role.name}>
+                  {role.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
