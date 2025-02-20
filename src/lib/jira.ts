@@ -1,12 +1,6 @@
 import JiraApi from "jira-client";
 import { prisma } from "./prisma";
-
-interface JiraProject {
-  id: string;
-  key: string;
-  name: string;
-  description?: string;
-}
+import { jiraClient } from "@/utils/jira";
 
 export class JiraClient {
   private client: JiraApi;
@@ -24,66 +18,129 @@ export class JiraClient {
 
   async syncProjects() {
     try {
-      // Get all Jira projects
-      const jiraProjects = (await this.client.getProjects("")) as JiraProject[];
-
-      // Get or create the default team
-      const defaultTeam = await prisma.team.upsert({
-        where: { name: "Default Team" },
-        update: {},
-        create: {
-          name: "Default Team",
-          description: "Default team for new projects",
+      // 1. Get all boards from our database
+      const boards = await prisma.jiraBoard.findMany({
+        where: {
+          boardId: "TF",
         },
       });
 
-      for (const jiraProject of jiraProjects) {
-        // Create or get the Jira board
-        const board = await prisma.jiraBoard.upsert({
-          where: {
-            teamId_boardId: {
-              teamId: defaultTeam.id,
-              boardId: jiraProject.id,
+      // 2. Get all existing projects from our database
+      const existingProjects = await prisma.project.findMany({
+        select: {
+          id: true,
+          jiraId: true,
+        },
+      });
+
+      // Create a map for faster lookups
+      const existingProjectMap = new Map(
+        existingProjects.map((p) => [p.jiraId, p.id])
+      );
+      const processedJiraIds = new Set();
+
+      // 3. Process each board and its projects
+      for (const board of boards) {
+        // Get all Jira projects with the board's ID
+        console.log(board);
+        const jiraBoard = await jiraClient.getAllBoards(
+          undefined,
+          undefined,
+          undefined,
+          "Toe-Fu"
+        );
+
+        const jiraIssues = await jiraClient.getIssuesForBoard(
+          jiraBoard.values[0].id,
+          0,
+          100,
+          "ORDER BY updatedDate desc"
+        );
+
+        for (const iss of jiraIssues.issues) {
+          const issue = await jiraClient.getIssue(
+            iss.key,
+            ["summary", "description"],
+            "changelog"
+          );
+
+          processedJiraIds.add(issue.key);
+
+          console.log(issue.key);
+          console.log(existingProjectMap.has(issue.key));
+          if (existingProjectMap.has(issue.key)) {
+            // Update existing project
+            await prisma.project.update({
+              where: { id: existingProjectMap.get(issue.key) },
+              data: {
+                name: issue.fields.summary,
+                description: issue.fields.description || null,
+                isCapDev: false,
+                boardId: board.id,
+              },
+            });
+            console.log("updated");
+          } else {
+            // Create new project
+            await prisma.project.create({
+              data: {
+                name: issue.fields.summary,
+                description: issue.fields.description || null,
+                jiraId: issue.key,
+                isCapDev: false,
+                boardId: board.id,
+              },
+            });
+            console.log("created");
+          }
+
+          // clear existing activities
+          await prisma.projectActivity.deleteMany({
+            where: {
+              jiraIssueId: issue.key,
             },
-          },
-          update: {
-            name: jiraProject.name,
-          },
-          create: {
-            name: jiraProject.name,
-            boardId: jiraProject.id,
-            teamId: defaultTeam.id,
-          },
-        });
+          });
 
-        // Create or update the project
-        await prisma.project.upsert({
-          where: { jiraId: jiraProject.key },
-          update: {
-            name: jiraProject.name,
-            description: jiraProject.description || "",
-            boardId: board.id,
-          },
-          create: {
-            jiraId: jiraProject.key,
-            name: jiraProject.name,
-            description: jiraProject.description || "",
-            isCapDev: false,
-            boardId: board.id,
-          },
-        });
+          // create new activities from changelog
+          if (issue.changelog && issue.changelog.histories) {
+            const activityDates = new Set<string>(
+              issue.changelog.histories.map(
+                (history: { created: string }) =>
+                  new Date(history.created).toISOString().split("T")[0] // Only keep the date part
+              )
+            );
 
-        // Record the sync activity
-        await prisma.projectActivity.create({
-          data: {
-            jiraIssueId: jiraProject.key,
-            activityDate: new Date(),
-          },
-        });
+            if (activityDates.size > 0) {
+              await prisma.projectActivity.createMany({
+                data: Array.from(activityDates).map((activityDate) => ({
+                  jiraIssueId: issue.key,
+                  activityDate: new Date(activityDate),
+                })),
+              });
+            }
+          }
+        }
       }
+
+      // 4. Delete projects that no longer exist in Jira
+      // for (const [jiraId, projectId] of existingProjectMap.entries()) {
+      //   if (!processedJiraIds.has(jiraId)) {
+      //     await ctx.prisma.project.delete({
+      //       where: { id: projectId },
+      //     });
+      //   }
+      // }
+
+      console.log(processedJiraIds);
+
+      return {
+        success: true,
+        message: "Projects synced with Jira",
+        timestamp: new Date(),
+      };
     } catch (error) {
-      console.error("Error syncing projects:", error);
-      throw error;
+      console.error("Failed to sync with Jira:", error);
+      throw new Error("Failed to sync with Jira");
     }
   }
 }

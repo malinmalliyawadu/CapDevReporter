@@ -12,6 +12,11 @@ export async function GET() {
           },
         },
         timeEntries: true,
+        activities: {
+          orderBy: {
+            activityDate: "desc",
+          },
+        },
       },
     });
     return NextResponse.json(projects);

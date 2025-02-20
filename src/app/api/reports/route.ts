@@ -142,8 +142,8 @@ export async function GET(request: NextRequest) {
             end: weekEnd,
           });
 
-          // Get assignment for this week
-          const weekAssignment = employee.assignments.find((a) => {
+          // Get assignments for this week
+          const weekAssignments = employee.assignments.filter((a) => {
             const assignmentStart = new Date(a.startDate);
             const assignmentEnd = a.endDate ? new Date(a.endDate) : new Date();
             return assignmentStart <= weekEnd && assignmentEnd >= weekStart;
@@ -172,7 +172,10 @@ export async function GET(request: NextRequest) {
             isUnderutilized: false,
             missingHours: 0,
             underutilizationReason: "",
-            team: weekAssignment?.team.name ?? "Unassigned",
+            team:
+              weekAssignments.length > 0
+                ? weekAssignments.map((wa) => wa.team.name).join(", ")
+                : "Unassigned",
             role: employee.role.name,
             roleId: employee.role.id,
             timeEntries: [] as Array<{
@@ -272,33 +275,36 @@ export async function GET(request: NextRequest) {
             (availableHours - totalAssignedHours) * roleAssignmentRatio
           );
 
-          // If there are remaining hours and employee has a team assignment, distribute them among team projects
+          // If there are remaining hours and employee has team assignments, distribute them among team projects
           if (
             remainingHours > 0 &&
-            weekAssignment &&
-            weekAssignment.team.jiraBoards.some(
-              (board) => board.projects.length > 0
+            weekAssignments.length > 0 &&
+            weekAssignments.some((assignment) =>
+              assignment.team.jiraBoards.some(
+                (board) => board.projects.length > 0
+              )
             )
           ) {
-            // Get projects only from the boards of the assigned team
-            const allProjects = weekAssignment.team.jiraBoards.flatMap(
-              (board) => board.projects
+            // Get projects from all boards of all assigned teams
+            const allProjects = weekAssignments.flatMap((assignment) =>
+              assignment.team.jiraBoards.flatMap((board) => board.projects)
             );
 
             if (allProjects.length === 0) {
               report.isUnderutilized = true;
               report.missingHours = remainingHours;
               report.underutilizationReason =
-                "No active projects in team's boards";
+                "No active projects in teams' boards";
               return report;
             }
 
             let remainingToDistribute = remainingHours;
             const baseHoursPerProject = remainingHours / allProjects.length;
 
-            // Distribute hours with jitter for all but the last project
+            // Distribute hours evenly among projects
             allProjects.forEach((project, index) => {
               if (index === allProjects.length - 1) {
+                // Last project gets any remaining hours to ensure we total exactly to remainingHours
                 report.timeEntries.push({
                   id: `${employee.id}-${weekKey}-${project.id}`,
                   hours: remainingToDistribute,
@@ -314,12 +320,8 @@ export async function GET(request: NextRequest) {
                 });
                 report.fullHours += remainingToDistribute;
               } else {
-                const jitterFactor = 0.8 + Math.random() * 0.4;
-                const jitteredHours = Math.min(
-                  remainingToDistribute,
-                  baseHoursPerProject * jitterFactor
-                );
-                const roundedHours = Math.round(jitteredHours * 4) / 4;
+                // Round to nearest quarter hour for all other projects
+                const roundedHours = Math.round(baseHoursPerProject * 4) / 4;
 
                 report.timeEntries.push({
                   id: `${employee.id}-${weekKey}-${project.id}`,
@@ -342,9 +344,10 @@ export async function GET(request: NextRequest) {
           } else if (remainingHours > 0) {
             report.isUnderutilized = true;
             report.missingHours = remainingHours;
-            report.underutilizationReason = !weekAssignment
-              ? "No team assignment for this period"
-              : "No active projects in team's boards";
+            report.underutilizationReason =
+              weekAssignments.length === 0
+                ? "No team assignment for this period"
+                : "No active projects in teams' boards";
           }
 
           // After all time entries are added, check if we met the expected hours

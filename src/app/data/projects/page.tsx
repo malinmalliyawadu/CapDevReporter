@@ -16,6 +16,11 @@ async function getProjects() {
         },
       },
       timeEntries: true,
+      activities: {
+        orderBy: {
+          activityDate: "desc",
+        },
+      },
     },
   });
   return projects;

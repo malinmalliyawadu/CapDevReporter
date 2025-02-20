@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const id = searchParams.get("id");
+    const { id } = params;
 
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
@@ -22,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // Check if team exists
     const team = await prisma.team.findUnique({
-      where: { id },
+      where: { id: id },
     });
 
     if (!team) {
