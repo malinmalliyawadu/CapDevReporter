@@ -33,6 +33,7 @@
     "class-variance-authority": "^0.7.1",
     "client-only": "^0.0.1",
     "clsx": "^2.1.1",
+    "copy-webpack-plugin": "^12.0.2",
     "date-fns": "^4.1.0",
     "date-holidays": "^3.23.22",
     "jira-client": "^8.2.2",
