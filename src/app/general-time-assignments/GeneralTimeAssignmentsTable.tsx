@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Search,
   Filter,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +64,12 @@ interface GeneralTimeAssignment {
   createdAt: Date;
   updatedAt: Date;
   timeType: TimeType;
+}
+
+interface TimeBreakdown {
+  timeType: TimeType;
+  hoursPerWeek: number;
+  percentage: number;
 }
 
 interface GeneralTimeAssignmentsTableProps {
@@ -181,6 +188,81 @@ export function GeneralTimeAssignmentsTable({
     }
   };
 
+  const calculateTimeBreakdown = (
+    assignments: GeneralTimeAssignment[]
+  ): { total: number; breakdown: TimeBreakdown[] } => {
+    const total = assignments.reduce(
+      (sum, assignment) => sum + assignment.hoursPerWeek,
+      0
+    );
+
+    const breakdown = assignments.map((assignment) => ({
+      timeType: assignment.timeType,
+      hoursPerWeek: assignment.hoursPerWeek,
+      percentage: (assignment.hoursPerWeek / 40) * 100,
+    }));
+
+    return {
+      total,
+      breakdown: breakdown.sort((a, b) => b.hoursPerWeek - a.hoursPerWeek),
+    };
+  };
+
+  // Color utility function for progress bar
+  const getProgressBarColor = (percentage: number): string => {
+    if (percentage > 100) return "bg-red-500";
+    if (percentage > 90) return "bg-amber-500";
+    if (percentage > 75) return "bg-yellow-500";
+    return "bg-emerald-500";
+  };
+
+  // Color utility function for time types
+  const getTimeTypeColor = (
+    timeType: TimeType
+  ): { bg: string; text: string; dot: string } => {
+    if (timeType.isCapDev) {
+      return {
+        bg: "bg-blue-100 dark:bg-blue-900/50",
+        text: "text-blue-700 dark:text-blue-200",
+        dot: "bg-blue-500 dark:bg-blue-400",
+      };
+    }
+
+    // Create a hash of the time type name to consistently assign colors
+    const hash = timeType.name
+      .split("")
+      .reduce((acc, char) => char.charCodeAt(0) + acc, 0);
+    const colors = [
+      {
+        bg: "bg-purple-100 dark:bg-purple-900/50",
+        text: "text-purple-700 dark:text-purple-200",
+        dot: "bg-purple-500 dark:bg-purple-400",
+      },
+      {
+        bg: "bg-green-100 dark:bg-green-900/50",
+        text: "text-green-700 dark:text-green-200",
+        dot: "bg-green-500 dark:bg-green-400",
+      },
+      {
+        bg: "bg-orange-100 dark:bg-orange-900/50",
+        text: "text-orange-700 dark:text-orange-200",
+        dot: "bg-orange-500 dark:bg-orange-400",
+      },
+      {
+        bg: "bg-rose-100 dark:bg-rose-900/50",
+        text: "text-rose-700 dark:text-rose-200",
+        dot: "bg-rose-500 dark:bg-rose-400",
+      },
+      {
+        bg: "bg-teal-100 dark:bg-teal-900/50",
+        text: "text-teal-700 dark:text-teal-200",
+        dot: "bg-teal-500 dark:bg-teal-400",
+      },
+    ];
+
+    return colors[hash % colors.length];
+  };
+
   const filteredRoles = roles.filter((role) => {
     const matchesSearch = role.name
       .toLowerCase()
@@ -230,98 +312,149 @@ export function GeneralTimeAssignmentsTable({
       </div>
 
       <div className="grid gap-6">
-        {filteredRoles.map((role) => (
-          <Card key={role.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => toggleRole(role.id)}
-                  >
-                    {expandedRoles.has(role.id) ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <div>
-                    <h4 className="text-lg font-semibold">{role.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {role.generalAssignments.length} time type
-                      {role.generalAssignments.length === 1 ? "" : "s"} assigned
-                    </p>
+        {filteredRoles.map((role) => {
+          const { total: totalHours, breakdown } = calculateTimeBreakdown(
+            role.generalAssignments
+          );
+          const totalPercentage = (totalHours / 40) * 100; // Using 40 hours as the baseline work week
+
+          return (
+            <Card key={role.id}>
+              <CardHeader>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleRole(role.id)}
+                      >
+                        {expandedRoles.has(role.id) ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <div>
+                        <h4 className="text-lg font-semibold">{role.name}</h4>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          <span>
+                            {totalHours} hours/week (
+                            {Math.round(totalPercentage)}% of 40hr week)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setNewAssignment((prev) => ({
+                          ...prev,
+                          roleId: role.id,
+                        }));
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Time Type
+                    </Button>
+                  </div>
+
+                  {/* Time breakdown visualization */}
+                  <div className="space-y-3">
+                    <div className="h-3 w-full bg-secondary/30 rounded-full overflow-hidden shadow-inner">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${getProgressBarColor(
+                          totalPercentage
+                        )}`}
+                        style={{
+                          width: `${Math.min(totalPercentage, 100)}%`,
+                          boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.1)",
+                        }}
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {breakdown.map(
+                        ({ timeType, hoursPerWeek, percentage }) => {
+                          const colors = getTimeTypeColor(timeType);
+                          return (
+                            <div
+                              key={timeType.id}
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${colors.bg} ${colors.text}`}
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${colors.dot}`}
+                              />
+                              <span className="text-sm font-medium">
+                                {timeType.name}: {hoursPerWeek}h (
+                                {Math.round(percentage)}%)
+                              </span>
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setNewAssignment((prev) => ({
-                      ...prev,
-                      roleId: role.id,
-                    }));
-                    setIsDialogOpen(true);
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Time Type
-                </Button>
-              </div>
-            </CardHeader>
-            {expandedRoles.has(role.id) && (
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Time Type</TableHead>
-                      <TableHead>Hours per Week</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {role.generalAssignments.map((assignment) => (
-                      <TableRow key={assignment.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                                assignment.timeType.isCapDev
-                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200"
-                                  : "bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-200"
-                              }`}
-                            >
-                              {assignment.timeType.name}
-                            </span>
-                            {assignment.timeType.description && (
-                              <span className="text-sm text-muted-foreground">
-                                {assignment.timeType.description}
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>{assignment.hoursPerWeek}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setAssignmentToDelete(assignment);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                            className="hover:text-red-500"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
+              </CardHeader>
+              {expandedRoles.has(role.id) && (
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Time Type</TableHead>
+                        <TableHead>Hours per Week</TableHead>
+                        <TableHead className="w-[100px]">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            )}
-          </Card>
-        ))}
+                    </TableHeader>
+                    <TableBody>
+                      {role.generalAssignments.map((assignment) => (
+                        <TableRow key={assignment.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {(() => {
+                                const colors = getTimeTypeColor(
+                                  assignment.timeType
+                                );
+                                return (
+                                  <span
+                                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${colors.bg} ${colors.text}`}
+                                  >
+                                    {assignment.timeType.name}
+                                  </span>
+                                );
+                              })()}
+                              {assignment.timeType.description && (
+                                <span className="text-sm text-muted-foreground">
+                                  {assignment.timeType.description}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{assignment.hoursPerWeek}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setAssignmentToDelete(assignment);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                              className="hover:text-red-500"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
