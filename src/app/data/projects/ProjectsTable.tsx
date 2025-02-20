@@ -101,6 +101,29 @@ export function ProjectsTable({
     return Array.from(teams).sort();
   }, [projects]);
 
+  // Effect to handle automatic row expansion when projectId is present
+  useEffect(() => {
+    if (searchParams.projectId) {
+      const projectToExpand = projects.find(
+        (p) => p.id === searchParams.projectId
+      );
+      if (projectToExpand) {
+        setExpanded({ [searchParams.projectId]: true });
+      }
+    }
+  }, [searchParams.projectId, projects]);
+
+  // Effect to handle automatic row expansion when jira: search is present
+  useEffect(() => {
+    if (debouncedSearch.toLowerCase().startsWith("jira:")) {
+      const jiraId = debouncedSearch.slice(5).trim();
+      const projectToExpand = projects.find((p) => p.jiraId === jiraId);
+      if (projectToExpand) {
+        setExpanded({ [projectToExpand.id]: true });
+      }
+    }
+  }, [debouncedSearch, projects]);
+
   // Helper function to format search query
   const formatSearchQuery = (query: string) => {
     if (query.toLowerCase().startsWith("jira:")) {
@@ -329,9 +352,15 @@ export function ProjectsTable({
       sorting,
       columnFilters,
       expanded,
+      pagination: {
+        pageIndex: page - 1,
+        pageSize: Number(searchParams.size) || 10,
+      },
     },
     manualPagination: true,
     pageCount: Math.ceil(totalProjects / (Number(searchParams.size) || 10)),
+    enableExpanding: true,
+    getRowId: (row) => row.id,
   });
 
   return (

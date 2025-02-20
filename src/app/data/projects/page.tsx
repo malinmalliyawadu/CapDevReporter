@@ -66,6 +66,7 @@ export type ProjectsPageQueryString = {
   search?: string;
   page?: string;
   size?: string;
+  projectId?: string;
 };
 
 export default async function ProjectsPage(props: {
@@ -73,6 +74,7 @@ export default async function ProjectsPage(props: {
     search?: string;
     page?: string;
     size?: string;
+    projectId?: string;
   }>;
 }) {
   const params = await props.searchParams;
