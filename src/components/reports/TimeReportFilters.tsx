@@ -226,7 +226,6 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
             dateRange={dateRange}
             onDateRangeChange={handleDateRangeChange}
             presets={datePresets}
-            disabled={isPending}
             className={isPending ? "opacity-50" : ""}
           />
         </div>
