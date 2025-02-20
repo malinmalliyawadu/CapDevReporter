@@ -228,7 +228,6 @@ export async function GET(request: Request) {
                   undefined,
                   board.name
                 );
-                console.log(jiraBoards);
 
                 jiraBoard = jiraBoards?.values?.[0];
 
@@ -389,19 +388,36 @@ export async function GET(request: Request) {
                     issueDetails.changelog &&
                     issueDetails.changelog.histories
                   ) {
+                    console.log(issueDetails);
                     const activityDates = new Set<string>(
-                      issueDetails.changelog.histories.map(
-                        (history: { created: string }) =>
-                          new Date(history.created).toISOString().split("T")[0]
-                      )
+                      issueDetails.changelog.histories
+                        .filter(
+                          (history: { author: { displayName: string } }) => {
+                            const authorName = history.author.displayName;
+                            return (
+                              authorName !== "Recurring Tasks for Jira Cloud" &&
+                              authorName !== "VCS Automation"
+                            );
+                          }
+                        )
+                        .map((history: { created: string }) => {
+                          // Store the original date string to preserve timezone
+                          return history.created;
+                        })
                     );
 
                     if (activityDates.size > 0) {
                       await prisma.projectActivity.createMany({
-                        data: Array.from(activityDates).map((activityDate) => ({
-                          jiraIssueId: issueDetails.key,
-                          activityDate: new Date(activityDate),
-                        })),
+                        data: Array.from(activityDates).map(
+                          (dateString: string) => {
+                            // Create a date object that preserves the timezone
+                            const date = new Date(dateString);
+                            return {
+                              jiraIssueId: issueDetails.key,
+                              activityDate: date,
+                            };
+                          }
+                        ),
                       });
                     }
                   }

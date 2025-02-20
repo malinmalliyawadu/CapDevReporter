@@ -329,6 +329,20 @@ export async function GET(request: NextRequest) {
               },
             });
 
+            // Only include projects that have activity during this week
+            const activeProjects = allProjects.filter((project) =>
+              projectActivities.some(
+                (activity) => activity.jiraIssueId === project.jiraId
+              )
+            );
+
+            if (activeProjects.length === 0) {
+              report.isUnderutilized = true;
+              report.missingHours = remainingHours;
+              report.underutilizationReason = "No project activity this week";
+              return report;
+            }
+
             // Create a map of project jiraId to most recent activity date
             const projectActivityMap = new Map<string, Date>();
             projectActivities.forEach((activity) => {
@@ -341,10 +355,10 @@ export async function GET(request: NextRequest) {
             });
 
             let remainingToDistribute = remainingHours;
-            const baseHoursPerProject = remainingHours / allProjects.length;
+            const baseHoursPerProject = remainingHours / activeProjects.length;
 
             // Distribute hours evenly among projects
-            allProjects.forEach((project, index) => {
+            activeProjects.forEach((project, index) => {
               // Find which team this project belongs to
               const teamAssignment = weekAssignments.find((wa) =>
                 wa.team.jiraBoards.some((board) =>
@@ -358,7 +372,7 @@ export async function GET(request: NextRequest) {
                 ? format(projectActivityMap.get(project.jiraId)!, "yyyy-MM-dd")
                 : format(weekStart, "yyyy-MM-dd");
 
-              if (index === allProjects.length - 1) {
+              if (index === activeProjects.length - 1) {
                 // Last project gets any remaining hours to ensure we total exactly to remainingHours
                 report.timeEntries.push({
                   id: `${employee.id}-${weekKey}-${project.id}`,
