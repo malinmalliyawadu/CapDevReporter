@@ -2,9 +2,7 @@ import { BarChart } from "lucide-react";
 import { startOfYear } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { TimeReportFilters } from "@/components/reports/TimeReportFilters";
-import { TimeDistributionCharts } from "@/components/reports/TimeDistributionCharts";
-import { TimeReportTable } from "@/components/reports/TimeReportTable";
-import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
+import { ReportDataDisplay } from "@/components/reports/ReportDataDisplay";
 import { GET } from "@/app/api/reports/route";
 import { NextRequest } from "next/server";
 
@@ -55,7 +53,7 @@ export default async function ReportsPage({
   const data = await getTimeReportData(params);
 
   return (
-    <div className="">
+    <div className="space-y-8">
       <PageHeader
         title={
           <span className="flex items-center gap-2">
@@ -72,21 +70,7 @@ export default async function ReportsPage({
         <TimeReportFilters teams={data.teams} roles={data.roles} />
       </div>
 
-      <TimeDistributionCharts
-        timeReport={data.timeReports}
-        timeTypes={data.timeTypes}
-      />
-
-      <UtilizationIssues
-        timeReports={data.timeReports}
-        generalTimeAssignments={data.generalAssignments}
-      />
-
-      <TimeReportTable
-        timeReports={data.timeReports}
-        timeTypes={data.timeTypes}
-        generalTimeAssignments={data.generalAssignments}
-      />
+      <ReportDataDisplay initialData={data} />
     </div>
   );
 }

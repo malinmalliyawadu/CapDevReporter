@@ -23,6 +23,8 @@ import {
 } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { useTransition } from "react";
 
 // Custom hook for debouncing values
 function useDebounce<T>(value: T, delay: number): T {
@@ -50,6 +52,7 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   // Initialize state from URL params
   const defaultStartDate = startOfYear(new Date());
@@ -109,26 +112,30 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
 
   // Update URL for non-search filters (immediate)
   const updateFilters = (key: string, value: string | undefined | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    router.push(`${pathname}?${params.toString()}`);
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    });
   };
 
   // Apply debounced search
   useEffect(() => {
     // Update URL for search (debounced)
     const updateSearch = (value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (value) {
-        params.set("search", value);
-      } else {
-        params.delete("search");
-      }
-      router.push(`${pathname}?${params.toString()}`);
+      startTransition(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (value) {
+          params.set("search", value);
+        } else {
+          params.delete("search");
+        }
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      });
     };
 
     updateSearch(debouncedSearch);
@@ -137,25 +144,32 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
   // Handle date range changes
   const handleDateRangeChange = (newRange: DateRange | undefined) => {
     setDateRange(newRange);
-    const params = new URLSearchParams(searchParams.toString());
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams.toString());
 
-    if (newRange?.from) {
-      params.set("from", newRange.from.toISOString());
-    } else {
-      params.delete("from");
-    }
+      if (newRange?.from) {
+        params.set("from", newRange.from.toISOString());
+      } else {
+        params.delete("from");
+      }
 
-    if (newRange?.to) {
-      params.set("to", newRange.to.toISOString());
-    } else {
-      params.delete("to");
-    }
+      if (newRange?.to) {
+        params.set("to", newRange.to.toISOString());
+      } else {
+        params.delete("to");
+      }
 
-    router.push(`${pathname}?${params.toString()}`);
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    });
   };
 
   return (
-    <Card>
+    <Card className="relative">
+      {isPending && (
+        <div className="absolute top-0 right-0 p-4">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
       <CardContent className="p-4 grid gap-4 md:grid-cols-4">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">Search</label>
@@ -171,8 +185,9 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
           <Select
             value={searchParams.get("team") ?? "all"}
             onValueChange={(value) => updateFilters("team", value)}
+            disabled={isPending}
           >
-            <SelectTrigger>
+            <SelectTrigger className={isPending ? "opacity-50" : ""}>
               <SelectValue placeholder="All teams" />
             </SelectTrigger>
             <SelectContent>
@@ -190,8 +205,9 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
           <Select
             value={searchParams.get("role") ?? "all"}
             onValueChange={(value) => updateFilters("role", value)}
+            disabled={isPending}
           >
-            <SelectTrigger>
+            <SelectTrigger className={isPending ? "opacity-50" : ""}>
               <SelectValue placeholder="All roles" />
             </SelectTrigger>
             <SelectContent>
@@ -210,6 +226,8 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
             dateRange={dateRange}
             onDateRangeChange={handleDateRangeChange}
             presets={datePresets}
+            disabled={isPending}
+            className={isPending ? "opacity-50" : ""}
           />
         </div>
       </CardContent>
