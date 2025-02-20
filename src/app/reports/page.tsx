@@ -5,25 +5,26 @@ import { TimeReportFilters } from "@/components/reports/TimeReportFilters";
 import { TimeDistributionCharts } from "@/components/reports/TimeDistributionCharts";
 import { TimeReportTable } from "@/components/reports/TimeReportTable";
 import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
+import { GET } from "@/app/api/reports/route";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 async function getTimeReportData(searchParams: {
   [key: string]: string | string[] | undefined;
 }) {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : `http://localhost:${process.env.PORT || 3000}`;
-
-  const response = await fetch(
-    `${baseUrl}/api/reports?${searchParams.toString()}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+  // Create a mock request object with the search params
+  const url = new URL("/api/reports", "http://localhost");
+  Object.entries(searchParams).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      value.forEach((v) => url.searchParams.append(key, v));
+    } else if (value !== undefined) {
+      url.searchParams.append(key, String(value));
     }
-  );
+  });
+
+  const mockRequest = new NextRequest(url);
+  const response = await GET(mockRequest);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch time reports: ${response.statusText}`);
