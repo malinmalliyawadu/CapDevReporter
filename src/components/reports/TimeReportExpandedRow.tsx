@@ -1,6 +1,13 @@
 "use client";
 
-import { TableCell, TableRow, Table, TableBody } from "@/components/ui/table";
+import {
+  TableCell,
+  TableRow,
+  Table,
+  TableBody,
+  TableHeader,
+  TableHead,
+} from "@/components/ui/table";
 import type { TimeReport } from "@/types/timeReport";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -57,6 +64,17 @@ export function TimeReportExpandedRow({
           </h4>
           <div className="rounded-lg border">
             <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-8"></TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Team</TableHead>
+                  <TableHead>JIRA</TableHead>
+                  <TableHead>Activity Date</TableHead>
+                  <TableHead className="text-right">Hours</TableHead>
+                  <TableHead className="text-right">Tags</TableHead>
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {report.timeEntries.map((entry) => {
                   const timeType = timeTypes.find(
@@ -69,38 +87,50 @@ export function TimeReportExpandedRow({
                     : entry.projectName
                     ? `Project - ${entry.projectName}`
                     : timeType;
+
                   return (
                     <TableRow key={entry.id} className="hover:bg-muted/50">
                       <TableCell className="py-3">
-                        <div className="flex items-center gap-3">
-                          {getEntryIcon(entry)}
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">{displayType}</span>
-                            {entry.jiraId && (
-                              <a
-                                href={entry.jiraUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-                              >
-                                {entry.jiraId}
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            )}
-                            <span className="font-medium text-muted-foreground">
-                              {entry.hours.toFixed(1)}h
-                            </span>
-                          </div>
-                        </div>
+                        {getEntryIcon(entry)}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <span className="text-sm">{displayType}</span>
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <span className="text-sm text-muted-foreground">
+                          {entry.teamName ||
+                            (entry.projectName ? "Unknown Team" : "-")}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3">
+                        {entry.jiraId && (
+                          <a
+                            href={entry.jiraUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                          >
+                            {entry.jiraId}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <span className="text-sm text-muted-foreground">
+                          {entry.activityDate}
+                        </span>
                       </TableCell>
                       <TableCell className="py-3 text-right">
-                        <div className="flex gap-2 justify-end">
-                          {entry.isCapDev && (
-                            <Badge variant="default" className="text-xs">
-                              CapDev
-                            </Badge>
-                          )}
-                        </div>
+                        <span className="font-medium text-muted-foreground">
+                          {entry.hours.toFixed(1)}h
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 text-right">
+                        {entry.isCapDev && (
+                          <Badge variant="default" className="text-xs">
+                            CapDev
+                          </Badge>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

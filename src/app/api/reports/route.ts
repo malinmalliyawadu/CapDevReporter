@@ -166,6 +166,8 @@ export async function GET(request: NextRequest) {
             employeeId: employee.id,
             employeeName: employee.name,
             week: weekKey,
+            weekStart: format(weekStart, "yyyy-MM-dd"),
+            weekEnd: format(weekEnd, "yyyy-MM-dd"),
             payrollId: employee.payrollId,
             fullHours: 0,
             expectedHours: availableHours,
@@ -192,6 +194,12 @@ export async function GET(request: NextRequest) {
               isPublicHoliday?: boolean;
               publicHolidayName?: string;
               date: string;
+              teamName?: string;
+              dateRange?: {
+                start: string;
+                end: string;
+              };
+              activityDate: string;
             }>,
           };
 
@@ -223,6 +231,7 @@ export async function GET(request: NextRequest) {
                 isPublicHoliday: true,
                 publicHolidayName: holiday[0].name,
                 date: dateKey,
+                activityDate: dateKey,
               });
               report.fullHours += 8;
             }
@@ -236,6 +245,7 @@ export async function GET(request: NextRequest) {
                 isLeave: true,
                 leaveType: leaveRecord.type,
                 date: dateKey,
+                activityDate: dateKey,
               });
               report.fullHours += 8;
               leaveDays++;
@@ -261,6 +271,11 @@ export async function GET(request: NextRequest) {
               timeTypeId: assignment.timeTypeId,
               isCapDev: assignment.timeType.isCapDev,
               date: weekKey,
+              activityDate: weekKey,
+              dateRange: {
+                start: format(weekStart, "yyyy-MM-dd"),
+                end: format(weekEnd, "yyyy-MM-dd"),
+              },
             });
             report.fullHours += adjustedHours;
           });
@@ -298,11 +313,51 @@ export async function GET(request: NextRequest) {
               return report;
             }
 
+            // Fetch project activities for this week
+            const projectActivities = await prisma.projectActivity.findMany({
+              where: {
+                jiraIssueId: {
+                  in: allProjects.map((p) => p.jiraId),
+                },
+                activityDate: {
+                  gte: weekStart,
+                  lte: weekEnd,
+                },
+              },
+              orderBy: {
+                activityDate: "desc",
+              },
+            });
+
+            // Create a map of project jiraId to most recent activity date
+            const projectActivityMap = new Map<string, Date>();
+            projectActivities.forEach((activity) => {
+              if (!projectActivityMap.has(activity.jiraIssueId)) {
+                projectActivityMap.set(
+                  activity.jiraIssueId,
+                  activity.activityDate
+                );
+              }
+            });
+
             let remainingToDistribute = remainingHours;
             const baseHoursPerProject = remainingHours / allProjects.length;
 
             // Distribute hours evenly among projects
             allProjects.forEach((project, index) => {
+              // Find which team this project belongs to
+              const teamAssignment = weekAssignments.find((wa) =>
+                wa.team.jiraBoards.some((board) =>
+                  board.projects.some((p) => p.id === project.id)
+                )
+              );
+              const teamName = teamAssignment?.team.name ?? "Unknown Team";
+
+              // Get the most recent activity date for this project in the week, or use week start if none found
+              const activityDate = projectActivityMap.has(project.jiraId)
+                ? format(projectActivityMap.get(project.jiraId)!, "yyyy-MM-dd")
+                : format(weekStart, "yyyy-MM-dd");
+
               if (index === allProjects.length - 1) {
                 // Last project gets any remaining hours to ensure we total exactly to remainingHours
                 report.timeEntries.push({
@@ -317,6 +372,8 @@ export async function GET(request: NextRequest) {
                   jiraId: project.jiraId,
                   jiraUrl: `${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${project.jiraId}`,
                   date: weekKey,
+                  activityDate,
+                  teamName,
                 });
                 report.fullHours += remainingToDistribute;
               } else {
@@ -335,6 +392,12 @@ export async function GET(request: NextRequest) {
                   jiraId: project.jiraId,
                   jiraUrl: `${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${project.jiraId}`,
                   date: weekKey,
+                  activityDate,
+                  teamName,
+                  dateRange: {
+                    start: format(weekStart, "yyyy-MM-dd"),
+                    end: format(weekEnd, "yyyy-MM-dd"),
+                  },
                 });
 
                 remainingToDistribute -= roundedHours;

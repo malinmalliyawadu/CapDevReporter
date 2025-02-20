@@ -56,4 +56,6 @@ export interface TimeReportEntry {
   isPublicHoliday?: boolean;
   publicHolidayName?: string;
   date: string;
+  teamName?: string;
+  activityDate?: string;
 }
