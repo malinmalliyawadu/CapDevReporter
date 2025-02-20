@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   RefreshCw,
   ArrowUpDown,
@@ -19,6 +19,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
   ColumnDef,
@@ -34,6 +42,9 @@ import {
   getExpandedRowModel,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
+import { useRouter, usePathname } from "next/navigation";
+import { useDebounce } from "@/hooks/use-debounce";
+import { ProjectsPageQueryString } from "./page";
 
 interface Project {
   id: string;
@@ -61,16 +72,90 @@ interface ProjectActivity {
 
 interface ProjectsTableProps {
   initialProjects: Project[];
+  totalProjects: number;
+  searchParams: ProjectsPageQueryString;
 }
 
-export function ProjectsTable({ initialProjects }: ProjectsTableProps) {
+export function ProjectsTable({
+  initialProjects,
+  totalProjects,
+  searchParams,
+}: ProjectsTableProps) {
   const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
   const [projects, setProjects] = useState(initialProjects);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(searchParams.search || "");
+  const debouncedSearch = useDebounce(searchQuery, 500);
+  const [selectedTeam, setSelectedTeam] = useState("all");
+  const [selectedType, setSelectedType] = useState("all");
+  const [page, setPage] = useState(Number(searchParams.page) || 1);
+
+  const uniqueTeams = useMemo(() => {
+    const teams = new Set(projects.map((p) => p.board.team.name));
+    return Array.from(teams).sort();
+  }, [projects]);
+
+  // Helper function to format search query
+  const formatSearchQuery = (query: string) => {
+    if (query.toLowerCase().startsWith("jira:")) {
+      // Remove any spaces after the colon
+      return query.replace(/^jira:\s*/i, "jira:");
+    }
+    return query;
+  };
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  // Update URL for pagination and search
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    if (searchParams.size) {
+      params.set("size", searchParams.size);
+    }
+    if (debouncedSearch) {
+      params.set("search", formatSearchQuery(debouncedSearch));
+    }
+
+    const newQueryString = params.toString();
+    const currentQueryString = window.location.search.slice(1);
+
+    if (newQueryString !== currentQueryString) {
+      router.push(`${pathname}?${newQueryString}`, { scroll: false });
+    }
+  }, [page, debouncedSearch, searchParams.size, router, pathname]);
+
+  // Apply local filters
+  useEffect(() => {
+    const filters: { id: string; value: string | boolean }[] = [];
+
+    // Add team filter
+    if (selectedTeam !== "all") {
+      filters.push({
+        id: "teamName",
+        value: selectedTeam,
+      });
+    }
+
+    // Add type filter
+    if (selectedType !== "all") {
+      filters.push({
+        id: "isCapDev",
+        value: selectedType === "capdev",
+      });
+    }
+
+    setColumnFilters(filters);
+  }, [selectedTeam, selectedType]);
 
   const handleSync = async () => {
     try {
@@ -105,24 +190,20 @@ export function ProjectsTable({ initialProjects }: ProjectsTableProps) {
     {
       id: "expander",
       header: () => null,
-      cell: ({ row }) => {
-        return (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => {
-              row.toggleExpanded();
-            }}
-          >
-            {row.getIsExpanded() ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </Button>
-        );
-      },
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => row.toggleExpanded()}
+        >
+          {row.getIsExpanded() ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </Button>
+      ),
     },
     {
       accessorKey: "name",
@@ -143,6 +224,9 @@ export function ProjectsTable({ initialProjects }: ProjectsTableProps) {
             )}
           </Button>
         );
+      },
+      filterFn: (row, id, value) => {
+        return row.getValue<string>(id).toLowerCase().includes(value);
       },
     },
     {
@@ -203,7 +287,6 @@ export function ProjectsTable({ initialProjects }: ProjectsTableProps) {
   ];
 
   const renderSubRow = (row: Project) => {
-    // Sort activities by date in descending order
     const sortedActivities = [...(row.activities || [])].sort(
       (a, b) =>
         new Date(b.activityDate).getTime() - new Date(a.activityDate).getTime()
@@ -247,22 +330,61 @@ export function ProjectsTable({ initialProjects }: ProjectsTableProps) {
       columnFilters,
       expanded,
     },
+    manualPagination: true,
+    pageCount: Math.ceil(totalProjects / (Number(searchParams.size) || 10)),
   });
 
   return (
     <div>
-      <div className="flex items-center justify-end gap-4 mb-4">
-        {lastSynced && (
-          <span className="text-sm text-muted-foreground">
-            Last synced: {lastSynced.toLocaleString("en-NZ")}
-          </span>
-        )}
-        <Button onClick={handleSync} disabled={isSyncing}>
-          <RefreshCw
-            className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
-          />
-          Sync with Jira
-        </Button>
+      <div className="flex flex-col gap-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex w-full max-w-sm items-center space-x-2">
+              <Input
+                placeholder="Search projects... (use jira:TF-123 for exact Jira ID)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 w-[150px] lg:w-[250px]"
+              />
+              <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                <SelectTrigger className="h-8 w-[150px]">
+                  <SelectValue placeholder="Select team" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Teams</SelectItem>
+                  {uniqueTeams.map((team) => (
+                    <SelectItem key={team} value={team}>
+                      {team}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedType} onValueChange={setSelectedType}>
+                <SelectTrigger className="h-8 w-[150px]">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="capdev">CapDev</SelectItem>
+                  <SelectItem value="non-capdev">Non-CapDev</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {lastSynced && (
+              <span className="text-sm text-muted-foreground">
+                Last synced: {lastSynced.toLocaleString("en-NZ")}
+              </span>
+            )}
+            <Button onClick={handleSync} disabled={isSyncing} size="sm">
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
+              />
+              Sync with Jira
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className="rounded-md border">
@@ -315,22 +437,22 @@ export function ProjectsTable({ initialProjects }: ProjectsTableProps) {
       </div>
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} project(s) total
+          Showing {table.getRowModel().rows.length} of {totalProjects} projects
         </div>
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
           >
             Previous
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page >= Math.ceil(totalProjects / 10)}
           >
             Next
           </Button>

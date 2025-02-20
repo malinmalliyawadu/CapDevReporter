@@ -7,27 +7,76 @@ import { prisma } from "@/lib/prisma";
 import { ProjectsTableSkeleton } from "./loading";
 import { ProjectsTable } from "./ProjectsTable";
 
-async function getProjects() {
-  const projects = await prisma.project.findMany({
-    include: {
-      board: {
-        include: {
-          team: true,
+async function getProjects(searchParams: ProjectsPageQueryString) {
+  const page = Number(searchParams.page) || 1;
+  const size = Number(searchParams.size) || 10;
+  const search = searchParams.search || "";
+
+  let where = {};
+
+  if (search) {
+    if (search.toLowerCase().startsWith("jira:")) {
+      // Exact match for Jira ID
+      const jiraId = search.slice(5); // Remove "jira:" prefix
+      where = {
+        jiraId: {
+          equals: jiraId,
+        },
+      };
+    } else {
+      // Regular search across multiple fields
+      const searchLower = search.toLowerCase();
+      where = {
+        OR: [
+          { name: { contains: searchLower } },
+          { description: { contains: searchLower } },
+          { jiraId: { contains: searchLower } },
+        ],
+      };
+    }
+  }
+
+  const [projects, total] = await Promise.all([
+    prisma.project.findMany({
+      where,
+      include: {
+        board: {
+          include: {
+            team: true,
+          },
+        },
+        timeEntries: true,
+        activities: {
+          orderBy: {
+            activityDate: "desc",
+          },
         },
       },
-      timeEntries: true,
-      activities: {
-        orderBy: {
-          activityDate: "desc",
-        },
-      },
-    },
-  });
-  return projects;
+      orderBy: { name: "asc" },
+      skip: (page - 1) * size,
+      take: size,
+    }),
+    prisma.project.count({ where }),
+  ]);
+
+  return { projects, total };
 }
 
-export default async function ProjectsPage() {
-  const projects = await getProjects();
+export type ProjectsPageQueryString = {
+  search?: string;
+  page?: string;
+  size?: string;
+};
+
+export default async function ProjectsPage(props: {
+  searchParams?: Promise<{
+    search?: string;
+    page?: string;
+    size?: string;
+  }>;
+}) {
+  const params = await props.searchParams;
+  const { projects, total } = await getProjects(params ?? {});
 
   return (
     <div className="space-y-8">
@@ -51,7 +100,11 @@ export default async function ProjectsPage() {
         </CardHeader>
         <CardContent>
           <Suspense fallback={<ProjectsTableSkeleton />}>
-            <ProjectsTable initialProjects={projects} />
+            <ProjectsTable
+              initialProjects={projects}
+              totalProjects={total}
+              searchParams={params ?? {}}
+            />
           </Suspense>
         </CardContent>
       </Card>

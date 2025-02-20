@@ -94,7 +94,22 @@ export function TimeReportExpandedRow({
                         {getEntryIcon(entry)}
                       </TableCell>
                       <TableCell className="py-3">
-                        <span className="text-sm">{displayType}</span>
+                        <span className="text-sm">
+                          {entry.isLeave ? (
+                            `${timeType} (${entry.leaveType})`
+                          ) : entry.isPublicHoliday ? (
+                            `Public Holiday (${entry.publicHolidayName})`
+                          ) : entry.projectName && entry.jiraId ? (
+                            <a
+                              href={`/data/projects?search=jira%3A${entry.jiraId}`}
+                              className="hover:text-primary"
+                            >
+                              Project - {entry.projectName}
+                            </a>
+                          ) : (
+                            displayType
+                          )}
+                        </span>
                       </TableCell>
                       <TableCell className="py-3">
                         <span className="text-sm text-muted-foreground">
