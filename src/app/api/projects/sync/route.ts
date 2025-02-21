@@ -15,6 +15,8 @@ function sendSSEMessage(
     `[SSE] ${data.operation}: ${data.message} (Progress: ${data.progress}%)`
   );
   controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+  // Add a flush message to ensure real-time updates
+  controller.enqueue(": flush\n\n");
 }
 
 export async function GET(request: Request) {
@@ -264,87 +266,97 @@ export async function GET(request: Request) {
                 continue;
               }
 
+              // Get issues for this board
+              console.log(
+                `[Board ${board.boardId}] Fetching issues for board ${board.name}`
+              );
               sendSSEMessage(controller, {
-                message: `Fetching issues for board ${board.name} (${board.boardId})...`,
-                progress: Math.round(baseProgress + progressPerBoard * 0.1),
+                message: `Fetching issues from board ${board.name}...`,
+                progress: Math.round(baseProgress + progressPerBoard * 0.2),
                 type: "info",
-                operation: "fetch-issues",
+                operation: `fetch-issues-${board.boardId}`,
               });
 
-              let jiraIssues;
+              let issues;
               try {
-                console.log(
-                  `[Board ${board.boardId}] Fetching issues from Jira`
-                );
-                jiraIssues = await jiraClient.getIssuesForBoard(
+                issues = await jiraClient.getIssuesForBoard(
                   jiraBoard.id,
-                  0,
-                  maxIssuesPerBoard,
-                  "ORDER BY updatedDate desc"
+                  0, // startAt
+                  maxIssuesPerBoard, // maxResults
+                  "ORDER BY updatedDate DESC" // Get most recently updated issues
                 );
 
-                // Update progress after successful fetch
+                // Send success message to close out the fetch operation
                 sendSSEMessage(controller, {
-                  message: `Successfully fetched ${
-                    jiraIssues?.issues?.length || 0
-                  } issues from board ${board.name}`,
-                  progress: Math.round(baseProgress + progressPerBoard * 0.2),
+                  message: "Issues fetched successfully",
+                  progress: Math.round(baseProgress + progressPerBoard * 0.25),
                   type: "success",
-                  operation: "fetch-issues",
+                  operation: `fetch-issues-${board.boardId}`,
                 });
-
-                console.log(
-                  `[Board ${board.boardId}] Successfully fetched ${
-                    jiraIssues?.issues?.length || 0
-                  } issues`
-                );
               } catch (error) {
                 console.error(
                   `[Board ${board.boardId}] Error fetching issues:`,
                   error
                 );
                 sendSSEMessage(controller, {
-                  message: `Failed to fetch issues for board ${board.name}`,
-                  progress: Math.round(baseProgress + progressPerBoard * 0.3),
+                  message: `Error fetching issues: ${
+                    error instanceof Error ? error.message : "Unknown error"
+                  }`,
+                  progress: Math.round(baseProgress + progressPerBoard * 0.25),
                   type: "error",
-                  operation: "fetch-issues",
+                  operation: `fetch-issues-${board.boardId}`,
                 });
-                // Continue to next board instead of throwing
                 continue;
               }
 
-              if (!jiraIssues || !jiraIssues.issues) {
+              if (!issues?.issues?.length) {
+                console.log(
+                  `[Board ${board.boardId}] No issues found for board ${board.name}`
+                );
                 sendSSEMessage(controller, {
                   message: `No issues found for board ${board.name}`,
-                  progress: Math.round(baseProgress + progressPerBoard * 0.3),
+                  progress: Math.round(baseProgress + progressPerBoard * 0.5),
                   type: "warning",
-                  operation: "fetch-issues",
+                  operation: `board-status-${board.boardId}`,
                 });
                 continue;
               }
 
-              const totalIssues = jiraIssues.issues.length;
-              let processedCount = 0;
+              console.log(
+                `[Board ${board.boardId}] Found ${issues.issues.length} issues`
+              );
+              sendSSEMessage(controller, {
+                message: `Found ${issues.issues.length} issues in board ${board.name}`,
+                progress: Math.round(baseProgress + progressPerBoard * 0.3),
+                type: "success",
+                operation: `board-status-${board.boardId}`,
+              });
 
               // Process each issue
-              for (const issue of jiraIssues.issues) {
-                // Calculate progress within this board's allocation
-                // Start from 30% (after fetch) and use remaining 70% for processing
-                const issueProgressPercentage = processedCount / totalIssues;
-                const currentProgress = Math.round(
+              const progressPerIssue =
+                (progressPerBoard * 0.6) / issues.issues.length;
+              for (
+                let issueIndex = 0;
+                issueIndex < issues.issues.length;
+                issueIndex++
+              ) {
+                const issue = issues.issues[issueIndex];
+                const issueProgress = Math.round(
                   baseProgress +
-                    progressPerBoard * (0.3 + 0.7 * issueProgressPercentage)
+                    progressPerBoard * 0.3 +
+                    progressPerIssue * issueIndex
                 );
 
-                // Send progress message for every issue
-                sendSSEMessage(controller, {
-                  message: `Processing issues for ${board.name}\n${issue.key}\nCompleted: ${processedCount}/${totalIssues}`,
-                  progress: currentProgress,
-                  type: "info",
-                  operation: `process-issues-${board.boardId}`,
-                });
-
                 try {
+                  sendSSEMessage(controller, {
+                    message: `Processing issue ${issue.key} (${
+                      issueIndex + 1
+                    }/${issues.issues.length})`,
+                    progress: issueProgress,
+                    type: "info",
+                    operation: `process-issue-${issue.key}`,
+                  });
+
                   console.log(
                     `[Issue ${issue.key}] Fetching issue details from Jira`
                   );
@@ -391,7 +403,6 @@ export async function GET(request: Request) {
                     issueDetails.changelog &&
                     issueDetails.changelog.histories
                   ) {
-                    console.log(issueDetails);
                     const activityDates = new Set<string>(
                       issueDetails.changelog.histories
                         .filter(
@@ -404,7 +415,6 @@ export async function GET(request: Request) {
                           }
                         )
                         .map((history: { created: string }) => {
-                          // Store the original date string to preserve timezone
                           return history.created;
                         })
                     );
@@ -413,7 +423,6 @@ export async function GET(request: Request) {
                       await prisma.projectActivity.createMany({
                         data: Array.from(activityDates).map(
                           (dateString: string) => {
-                            // Create a date object that preserves the timezone
                             const date = new Date(dateString);
                             return {
                               jiraIssueId: issueDetails.key,
@@ -425,39 +434,34 @@ export async function GET(request: Request) {
                     }
                   }
 
-                  console.log(`[Issue ${issue.key}] Successfully processed`);
-                  processedCount++;
-
-                  // Send progress message for the last item
-                  if (processedCount === totalIssues - 1) {
-                    sendSSEMessage(controller, {
-                      message: `Processing issues for ${board.name}\n${issue.key}\nCompleted: ${processedCount}/${totalIssues}`,
-                      progress: currentProgress,
-                      type: "info",
-                      operation: `process-issues-${board.boardId}`,
-                    });
-                  }
+                  sendSSEMessage(controller, {
+                    message: `Successfully processed issue ${issue.key} (${issueDetails.fields.summary})`,
+                    progress: issueProgress,
+                    type: "success",
+                    operation: `process-issue-${issue.key}`,
+                  });
                 } catch (error) {
                   console.error(
-                    `[Issue ${issue.key}] Error processing:`,
+                    `[Issue ${issue.key}] Error processing issue:`,
                     error
                   );
                   sendSSEMessage(controller, {
-                    message: `Failed to process issue\n${issue.key}\nCompleted: ${processedCount}/${totalIssues}`,
-                    progress: currentProgress,
+                    message: `Error processing issue ${issue.key}: ${
+                      error instanceof Error ? error.message : "Unknown error"
+                    }`,
+                    progress: issueProgress,
                     type: "error",
-                    operation: `process-issues-${board.boardId}`,
+                    operation: `process-issue-${issue.key}`,
                   });
-                  continue;
                 }
               }
 
-              // Send completion message for this board
+              // Board completion message
               sendSSEMessage(controller, {
-                message: `Completed processing ${board.name}\nAll ${totalIssues} issues processed`,
+                message: `Completed processing board ${board.name}`,
                 progress: Math.round(baseProgress + progressPerBoard),
                 type: "success",
-                operation: `process-issues-${board.boardId}`,
+                operation: "process-board",
               });
 
               console.log(

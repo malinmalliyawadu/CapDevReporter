@@ -7,21 +7,6 @@ interface PageHeaderProps {
 export function PageHeader({ title, description, className }: PageHeaderProps) {
   return (
     <div className={`relative pb-8 ${className}`}>
-      {/* Decorative gradient background */}
-      <div
-        className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-gray-950"
-        style={{
-          backgroundImage: `
-            radial-gradient(circle at top left, 
-              var(--gradient-color-1, rgba(247, 212, 181, 0.05)), 
-              transparent 25%),
-            radial-gradient(circle at bottom right, 
-              var(--gradient-color-2, rgba(236, 253, 245, 0.05)), 
-              transparent 25%)
-          `,
-        }}
-      />
-
       {/* Content */}
       <div className="relative">
         <h1 className="text-3xl font-bold tracking-tight animate-in fade-in duration-300">
