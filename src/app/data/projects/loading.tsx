@@ -52,8 +52,8 @@ export function ProjectsTableSkeleton() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]"></TableHead>
-              <TableHead>Project Name</TableHead>
               <TableHead>Jira ID</TableHead>
+              <TableHead>Project Name</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Team</TableHead>
               <TableHead>Type</TableHead>
@@ -66,10 +66,10 @@ export function ProjectsTableSkeleton() {
                   <Skeleton className="h-8 w-8" />
                 </TableCell>
                 <TableCell>
-                  <Skeleton className="h-4 w-[200px]" />
+                  <Skeleton className="h-6 w-[80px] rounded-full" />
                 </TableCell>
                 <TableCell>
-                  <Skeleton className="h-4 w-[100px]" />
+                  <Skeleton className="h-4 w-[200px]" />
                 </TableCell>
                 <TableCell>
                   <Skeleton className="h-4 w-[300px]" />

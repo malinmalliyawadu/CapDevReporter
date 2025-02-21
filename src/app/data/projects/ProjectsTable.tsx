@@ -17,6 +17,9 @@ import {
   Check,
   ChevronsUpDown,
   Download,
+  ChevronLeft,
+  ChevronRight as ChevronRightIcon,
+  X,
 } from "lucide-react";
 import {
   Table,
@@ -496,6 +499,25 @@ export function ProjectsTable({
       ),
     },
     {
+      accessorKey: "jiraId",
+      header: "Jira ID",
+      cell: ({ row }) => (
+        <a
+          href={`${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${row.original.jiraId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block whitespace-nowrap"
+        >
+          <Badge
+            variant="outline"
+            className="hover:bg-accent hover:text-accent-foreground transition-colors whitespace-nowrap max-w-[120px] overflow-hidden text-ellipsis"
+          >
+            {row.original.jiraId}
+          </Badge>
+        </a>
+      ),
+    },
+    {
       accessorKey: "name",
       header: ({ column }) => {
         return (
@@ -520,22 +542,18 @@ export function ProjectsTable({
       },
     },
     {
-      accessorKey: "jiraId",
-      header: "Jira ID",
-      cell: ({ row }) => (
-        <a
-          href={`${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${row.original.jiraId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 hover:text-blue-700 hover:underline"
-        >
-          {row.original.jiraId}
-        </a>
-      ),
-    },
-    {
       accessorKey: "description",
       header: "Description",
+      cell: ({ row }) => (
+        <div className="relative max-w-[300px]">
+          <p className="text-muted-foreground text-sm truncate pr-4">
+            {row.original.description || "—"}
+          </p>
+          {row.original.description && row.original.description.length > 50 && (
+            <div className="absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-background to-transparent" />
+          )}
+        </div>
+      ),
     },
     {
       accessorKey: "board.team.name",
@@ -699,45 +717,63 @@ export function ProjectsTable({
 
   return (
     <div>
-      <div className="flex flex-col gap-4 py-4">
+      <div className="flex flex-col gap-6 py-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex w-full items-center space-x-2">
-              <Input
-                placeholder="Search projects... (use jira:TF-123 for exact Jira ID)"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 w-[200px] lg:w-[400px]"
-              />
-              <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                <SelectTrigger className="h-8 w-[150px]">
-                  <SelectValue placeholder="Select team" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Teams</SelectItem>
-                  {uniqueTeams.map((team) => (
-                    <SelectItem key={team} value={team}>
-                      {team}
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="relative">
+                <Input
+                  placeholder="Search projects... (use jira:TF-123 for exact Jira ID)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-9 w-[250px] lg:w-[400px] transition-all duration-200 focus:w-[300px] lg:focus:w-[450px] pr-8"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 p-0 hover:bg-muted"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                  <SelectTrigger className="h-9 w-[140px] bg-background/50 hover:bg-background/80 transition-colors">
+                    <SelectValue placeholder="Select team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="text-muted-foreground">
+                      All Teams
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="h-8 w-[150px]">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="capdev">CapDev</SelectItem>
-                  <SelectItem value="non-capdev">Non-CapDev</SelectItem>
-                </SelectContent>
-              </Select>
+                    {uniqueTeams.map((team) => (
+                      <SelectItem key={team} value={team}>
+                        {team}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                  <SelectTrigger className="h-9 w-[140px] bg-background/50 hover:bg-background/80 transition-colors">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="text-muted-foreground">
+                      All Types
+                    </SelectItem>
+                    <SelectItem value="capdev">CapDev</SelectItem>
+                    <SelectItem value="non-capdev">Non-CapDev</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             {lastSynced && !isSyncing && (
-              <span className="text-sm text-muted-foreground flex items-center gap-2">
-                <Clock className="h-4 w-4" />
+              <span className="text-sm text-muted-foreground flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-md">
+                <Clock className="h-3.5 w-3.5" />
                 Last synced: {lastSynced.toLocaleString("en-NZ")}
               </span>
             )}
@@ -770,13 +806,19 @@ export function ProjectsTable({
         </div>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-lg border bg-card shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow
+                key={headerGroup.id}
+                className="hover:bg-transparent border-b-2"
+              >
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    className="h-11 px-4 text-muted-foreground font-medium"
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -792,9 +834,9 @@ export function ProjectsTable({
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <React.Fragment key={row.id}>
-                  <TableRow>
+                  <TableRow className="hover:bg-muted/50 transition-colors">
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell key={cell.id} className="px-4 py-3">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
@@ -809,35 +851,50 @@ export function ProjectsTable({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-32 text-center"
                 >
-                  No projects found.
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <AlertCircle className="h-6 w-6" />
+                    <p>No projects found</p>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between space-x-2 py-4">
+      <div className="flex items-center justify-between py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           Showing {table.getRowModel().rows.length} of {totalProjects} projects
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
+            className="h-8 w-8 p-0 hover:bg-muted"
           >
-            Previous
+            <ChevronLeft className="h-4 w-4" />
           </Button>
+          <div className="flex items-center gap-1">
+            <div className="text-sm font-medium">{page}</div>
+            <div className="text-sm text-muted-foreground">/</div>
+            <div className="text-sm text-muted-foreground">
+              {Math.ceil(totalProjects / (Number(searchParams.size) || 10))}
+            </div>
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setPage((p) => p + 1)}
-            disabled={page >= Math.ceil(totalProjects / 10)}
+            disabled={
+              page >=
+              Math.ceil(totalProjects / (Number(searchParams.size) || 10))
+            }
+            className="h-8 w-8 p-0 hover:bg-muted"
           >
-            Next
+            <ChevronRightIcon className="h-4 w-4" />
           </Button>
         </div>
       </div>
