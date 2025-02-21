@@ -621,7 +621,6 @@ export function ProjectsTable({
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
     onExpandedChange: setExpanded,
     state: {
@@ -638,6 +637,65 @@ export function ProjectsTable({
     enableExpanding: true,
     getRowId: (row) => row.id,
   });
+
+  // Effect to update projects when search changes
+  useEffect(() => {
+    const updateProjects = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (debouncedSearch) {
+          params.set("search", formatSearchQuery(debouncedSearch));
+        }
+        params.set("page", "1"); // Reset to first page on search
+        params.set("size", String(Number(searchParams.size) || 10));
+
+        const response = await fetch(`/api/projects?${params.toString()}`);
+        if (!response.ok) throw new Error("Failed to fetch projects");
+
+        const data = await response.json();
+        setProjects(data.projects);
+        setPage(1);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch projects",
+          variant: "destructive",
+        });
+      }
+    };
+
+    updateProjects();
+  }, [debouncedSearch, searchParams.size]);
+
+  // Effect to update projects when page changes
+  useEffect(() => {
+    const updateProjects = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (debouncedSearch) {
+          params.set("search", formatSearchQuery(debouncedSearch));
+        }
+        params.set("page", String(page));
+        params.set("size", String(Number(searchParams.size) || 10));
+
+        const response = await fetch(`/api/projects?${params.toString()}`);
+        if (!response.ok) throw new Error("Failed to fetch projects");
+
+        const data = await response.json();
+        setProjects(data.projects);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch projects",
+          variant: "destructive",
+        });
+      }
+    };
+
+    updateProjects();
+  }, [page, searchParams.size]);
 
   return (
     <div>
