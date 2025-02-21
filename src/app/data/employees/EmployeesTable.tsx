@@ -46,7 +46,6 @@ import {
   SortingState,
   ColumnFiltersState,
   flexRender,
-  FilterFn,
 } from "@tanstack/react-table";
 
 interface Employee {

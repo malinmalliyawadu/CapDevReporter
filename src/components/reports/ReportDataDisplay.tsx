@@ -6,7 +6,7 @@ import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
 import { TimeReport } from "@/types/timeReport";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 
 interface ReportData {
@@ -31,12 +31,11 @@ export function ReportDataDisplay({
   initialData: ReportData;
 }) {
   const [data, setData] = useState<ReportData>(initialData);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+    startTransition(async () => {
       try {
         const response = await fetch(`/api/reports?${searchParams.toString()}`);
         if (!response.ok) {
@@ -46,21 +45,17 @@ export function ReportDataDisplay({
         setData(newData);
       } catch (error) {
         console.error("Error fetching data:", error);
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    fetchData();
+    });
   }, [searchParams]);
 
   return (
     <div className="space-y-8 relative">
       <div
         className={cn(
-          "absolute inset-0 bg-background/50 flex items-center justify-center z-50",
+          "absolute inset-0 bg-background/50 flex items-center justify-center z-40",
           "transition-all duration-200 ease-in-out",
-          isLoading
+          isPending
             ? "opacity-100 backdrop-blur-[1px]"
             : "opacity-0 backdrop-blur-0 pointer-events-none"
         )}
@@ -70,7 +65,7 @@ export function ReportDataDisplay({
       <div
         className={cn(
           "transition-opacity duration-200 ease-in-out",
-          isLoading ? "opacity-50 pointer-events-none" : "opacity-100"
+          isPending ? "opacity-50 pointer-events-none" : "opacity-100"
         )}
       >
         <TimeDistributionCharts

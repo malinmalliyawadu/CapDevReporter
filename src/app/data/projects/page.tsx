@@ -46,11 +46,6 @@ async function getProjects(searchParams: ProjectsPageQueryString) {
           },
         },
         timeEntries: true,
-        activities: {
-          orderBy: {
-            activityDate: "desc",
-          },
-        },
       },
       orderBy: { name: "asc" },
       skip: (page - 1) * size,

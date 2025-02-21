@@ -156,7 +156,7 @@ export async function GET(request: Request) {
                 console.error("[Boards] No boards found or could be created");
                 sendSSEMessage(controller, {
                   message: "No boards found or could be created",
-                  progress: 15,
+                  progress: 2,
                   type: "error",
                   operation: "fetch-boards",
                 });
@@ -166,7 +166,7 @@ export async function GET(request: Request) {
 
             sendSSEMessage(controller, {
               message: `Successfully fetched ${boards.length} boards`,
-              progress: 20,
+              progress: 12,
               type: "success",
               operation: "fetch-boards",
             });
@@ -174,7 +174,7 @@ export async function GET(request: Request) {
             // Get existing projects
             sendSSEMessage(controller, {
               message: "Fetching existing projects...",
-              progress: 25,
+              progress: 17,
               type: "info",
               operation: "fetch-projects",
             });
@@ -193,7 +193,7 @@ export async function GET(request: Request) {
 
             sendSSEMessage(controller, {
               message: "Successfully fetched existing projects",
-              progress: 35,
+              progress: 22,
               type: "success",
               operation: "fetch-projects",
             });
@@ -206,6 +206,8 @@ export async function GET(request: Request) {
             );
 
             const totalBoards = boards.length;
+            // Reserve 73% of progress (from 22% to 95%) for processing boards
+            const progressPerBoard = 73 / totalBoards;
 
             // Process each board
             for (let boardIndex = 0; boardIndex < boards.length; boardIndex++) {
@@ -213,7 +215,8 @@ export async function GET(request: Request) {
               console.log(
                 `[Board ${board.boardId}] Starting processing for board: ${board.name}`
               );
-              const baseProgress = (boardIndex / totalBoards) * 80;
+              // Start from 22% and distribute the 73% among boards
+              const baseProgress = 22 + boardIndex * progressPerBoard;
 
               // First, get the actual Jira board details
               console.log(
@@ -263,7 +266,7 @@ export async function GET(request: Request) {
 
               sendSSEMessage(controller, {
                 message: `Fetching issues for board ${board.name} (${board.boardId})...`,
-                progress: Math.round(baseProgress),
+                progress: Math.round(baseProgress + progressPerBoard * 0.1),
                 type: "info",
                 operation: "fetch-issues",
               });
@@ -279,6 +282,17 @@ export async function GET(request: Request) {
                   maxIssuesPerBoard,
                   "ORDER BY updatedDate desc"
                 );
+
+                // Update progress after successful fetch
+                sendSSEMessage(controller, {
+                  message: `Successfully fetched ${
+                    jiraIssues?.issues?.length || 0
+                  } issues from board ${board.name}`,
+                  progress: Math.round(baseProgress + progressPerBoard * 0.2),
+                  type: "success",
+                  operation: "fetch-issues",
+                });
+
                 console.log(
                   `[Board ${board.boardId}] Successfully fetched ${
                     jiraIssues?.issues?.length || 0
@@ -291,55 +305,44 @@ export async function GET(request: Request) {
                 );
                 sendSSEMessage(controller, {
                   message: `Failed to fetch issues for board ${board.name}`,
-                  progress: Math.round(baseProgress),
+                  progress: Math.round(baseProgress + progressPerBoard * 0.3),
                   type: "error",
                   operation: "fetch-issues",
                 });
-                throw error;
+                // Continue to next board instead of throwing
+                continue;
               }
 
               if (!jiraIssues || !jiraIssues.issues) {
                 sendSSEMessage(controller, {
                   message: `No issues found for board ${board.name}`,
-                  progress: Math.round(baseProgress),
+                  progress: Math.round(baseProgress + progressPerBoard * 0.3),
                   type: "warning",
                   operation: "fetch-issues",
                 });
                 continue;
               }
 
-              sendSSEMessage(controller, {
-                message: `Successfully fetched ${jiraIssues.issues.length} issues from board ${board.name}`,
-                progress: Math.round(baseProgress + 5),
-                type: "success",
-                operation: "fetch-issues",
-              });
-
               const totalIssues = jiraIssues.issues.length;
               let processedCount = 0;
 
               // Process each issue
               for (const issue of jiraIssues.issues) {
-                console.log(`[Issue ${issue.key}] Starting processing`);
-                const issueProgress =
-                  (processedCount / totalIssues) * (80 / totalBoards);
+                // Calculate progress within this board's allocation
+                // Start from 30% (after fetch) and use remaining 70% for processing
+                const issueProgressPercentage = processedCount / totalIssues;
                 const currentProgress = Math.round(
-                  baseProgress + issueProgress
+                  baseProgress +
+                    progressPerBoard * (0.3 + 0.7 * issueProgressPercentage)
                 );
 
-                // Send progress messages at regular intervals and for the first/last items
-                if (
-                  processedCount === 0 ||
-                  processedCount % Math.max(1, Math.floor(totalIssues / 10)) ===
-                    0
-                ) {
-                  sendSSEMessage(controller, {
-                    message: `Processing issues for ${board.name}\n${issue.key}\nCompleted: ${processedCount}/${totalIssues}`,
-                    progress: currentProgress,
-                    type: "info",
-                    operation: `process-issues-${board.boardId}`,
-                  });
-                }
+                // Send progress message for every issue
+                sendSSEMessage(controller, {
+                  message: `Processing issues for ${board.name}\n${issue.key}\nCompleted: ${processedCount}/${totalIssues}`,
+                  progress: currentProgress,
+                  type: "info",
+                  operation: `process-issues-${board.boardId}`,
+                });
 
                 try {
                   console.log(
@@ -426,7 +429,7 @@ export async function GET(request: Request) {
                   processedCount++;
 
                   // Send progress message for the last item
-                  if (processedCount === totalIssues) {
+                  if (processedCount === totalIssues - 1) {
                     sendSSEMessage(controller, {
                       message: `Processing issues for ${board.name}\n${issue.key}\nCompleted: ${processedCount}/${totalIssues}`,
                       progress: currentProgress,
@@ -452,7 +455,7 @@ export async function GET(request: Request) {
               // Send completion message for this board
               sendSSEMessage(controller, {
                 message: `Completed processing ${board.name}\nAll ${totalIssues} issues processed`,
-                progress: Math.round(baseProgress + 80 / totalBoards),
+                progress: Math.round(baseProgress + progressPerBoard),
                 type: "success",
                 operation: `process-issues-${board.boardId}`,
               });
@@ -465,7 +468,7 @@ export async function GET(request: Request) {
             console.log("[Sync] All boards processed successfully");
             sendSSEMessage(controller, {
               message: "Finalizing sync...",
-              progress: 95,
+              progress: 97,
               type: "info",
               operation: "finalize",
             });

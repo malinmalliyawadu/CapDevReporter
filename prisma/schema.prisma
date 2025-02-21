@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x", "rhel-openssl-1.0.x"]
 }
 
@@ -12,27 +9,27 @@ datasource db {
 }
 
 model Team {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String               @id @default(cuid())
+  name        String               @unique
   description String?
-  jiraBoards  JiraBoard[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
   assignments EmployeeAssignment[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  jiraBoards  JiraBoard[]
 }
 
 model Project {
-  id            String   @id @default(cuid())
-  name          String
-  description   String?
-  jiraId        String   @unique
-  isCapDev      Boolean  @default(false)
-  board         JiraBoard @relation(fields: [boardId], references: [id])
-  boardId       String
-  timeEntries   TimeEntry[]
-  activities    ProjectActivity[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  jiraId      String      @unique
+  isCapDev    Boolean     @default(false)
+  boardId     String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  board       JiraBoard   @relation(fields: [boardId], references: [id])
+  timeEntries TimeEntry[]
+  activities  ProjectActivity[]
 }
 
 model TimeEntry {
@@ -40,111 +37,111 @@ model TimeEntry {
   date        DateTime
   hours       Float
   description String?
-  employee    Employee @relation(fields: [employeeId], references: [id])
   employeeId  String
-  project     Project  @relation(fields: [projectId], references: [id])
   projectId   String
-  timeType    TimeType @relation(fields: [timeTypeId], references: [id])
   timeTypeId  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  timeType    TimeType @relation(fields: [timeTypeId], references: [id])
+  project     Project  @relation(fields: [projectId], references: [id])
+  employee    Employee @relation(fields: [employeeId], references: [id])
 }
 
 model TimeType {
-  id              String   @id @default(cuid())
-  name            String   @unique
-  description     String?
-  isCapDev        Boolean  @default(false)
-  timeEntries     TimeEntry[]
+  id                 String                  @id @default(cuid())
+  name               String                  @unique
+  description        String?
+  isCapDev           Boolean                 @default(false)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
   generalAssignments GeneralTimeAssignment[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  timeEntries        TimeEntry[]
 }
 
 model Role {
-  id                String     @id @default(cuid())
-  name              String     @unique
-  description       String?
-  employees         Employee[]
+  id                 String                  @id @default(cuid())
+  name               String                  @unique
+  description        String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  employees          Employee[]
   generalAssignments GeneralTimeAssignment[]
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
 }
 
 model Employee {
-  id           String   @id @default(cuid())
+  id           String               @id @default(cuid())
   name         String
-  payrollId    String   @unique
-  hoursPerWeek Int      @default(40)
-  role         Role     @relation(fields: [roleId], references: [id])
+  payrollId    String               @unique
+  hoursPerWeek Int                  @default(40)
   roleId       String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  role         Role                 @relation(fields: [roleId], references: [id])
+  assignments  EmployeeAssignment[]
   leave        Leave[]
   timeEntries  TimeEntry[]
-  assignments  EmployeeAssignment[]
 }
 
 model EmployeeAssignment {
-  id          String    @id @default(cuid())
-  startDate   DateTime
-  endDate     DateTime?
-  employee    Employee  @relation(fields: [employeeId], references: [id])
-  employeeId  String
-  team        Team      @relation(fields: [teamId], references: [id])
-  teamId      String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  startDate  DateTime
+  endDate    DateTime?
+  employeeId String
+  teamId     String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  team       Team      @relation(fields: [teamId], references: [id])
+  employee   Employee  @relation(fields: [employeeId], references: [id])
 
   @@index([employeeId])
   @@index([teamId])
 }
 
 model Leave {
-  id           String   @id @default(cuid())
-  date         DateTime
-  type         String   // "Annual Leave" | "Sick Leave" | "Bereavement Leave" | "Other"
-  status       String   @default("PENDING") // "Approved" | "Pending" | "Taken"
-  duration     Float    // in days
-  employee     Employee @relation(fields: [employeeId], references: [id])
-  employeeId   String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id         String   @id @default(cuid())
+  date       DateTime
+  type       String
+  status     String   @default("PENDING")
+  duration   Float
+  employeeId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  employee   Employee @relation(fields: [employeeId], references: [id])
 }
 
 model GeneralTimeAssignment {
   id           String   @id @default(cuid())
-  role         Role     @relation(fields: [roleId], references: [id])
   roleId       String
-  timeType     TimeType @relation(fields: [timeTypeId], references: [id])
   timeTypeId   String
   hoursPerWeek Float
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  timeType     TimeType @relation(fields: [timeTypeId], references: [id])
+  role         Role     @relation(fields: [roleId], references: [id])
 
   @@unique([roleId, timeTypeId])
 }
 
 model JiraBoard {
-  id          String   @id @default(cuid())
-  name        String
-  boardId     String
-  team        Team     @relation(fields: [teamId], references: [id])
-  teamId      String
-  projects    Project[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String    @id @default(cuid())
+  name      String
+  boardId   String
+  teamId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  team      Team      @relation(fields: [teamId], references: [id])
+  projects  Project[]
 
   @@unique([teamId, boardId])
 }
 
 model ProjectActivity {
-  id            String   @id @default(cuid())
-  jiraIssueId   String
-  activityDate  DateTime
-  project       Project  @relation(fields: [jiraIssueId], references: [jiraId])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  jiraIssueId  String
+  activityDate DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  project      Project  @relation(fields: [jiraIssueId], references: [jiraId])
 
   @@index([jiraIssueId])
-} 
+}

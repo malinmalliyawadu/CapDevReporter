@@ -616,12 +616,12 @@ export function ProjectsTable({
       <div className="flex flex-col gap-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex w-full max-w-sm items-center space-x-2">
+            <div className="flex w-full items-center space-x-2">
               <Input
                 placeholder="Search projects... (use jira:TF-123 for exact Jira ID)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 w-[150px] lg:w-[250px]"
+                className="h-8 w-[200px] lg:w-[400px]"
               />
               <Select value={selectedTeam} onValueChange={setSelectedTeam}>
                 <SelectTrigger className="h-8 w-[150px]">
@@ -1068,7 +1068,7 @@ export function ProjectsTable({
                           <AlertCircle className="h-4 w-4 text-yellow-500" />
                         )}
                         {log.type === "info" && (
-                          <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin-fast" />
+                          <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
                         )}
                       </span>
                       <div className="flex-1 space-y-1">
