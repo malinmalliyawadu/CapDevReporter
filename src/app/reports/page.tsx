@@ -1,34 +1,151 @@
 import { BarChart } from "lucide-react";
-import { startOfYear } from "date-fns";
+import { startOfYear, format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { TimeReportFilters } from "@/components/reports/TimeReportFilters";
 import { ReportDataDisplay } from "@/components/reports/ReportDataDisplay";
-import { GET } from "@/app/api/reports/route";
-import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { Prisma, TimeEntry, TimeType } from "@prisma/client";
+import { TimeReport, TimeReportEntry } from "@/types/timeReport";
 
 export const dynamic = "force-dynamic";
 
 async function getTimeReportData(searchParams: {
   [key: string]: string | string[] | undefined;
 }) {
-  // Create a mock request object with the search params
-  const url = new URL("/api/reports", "http://localhost");
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (Array.isArray(value)) {
-      value.forEach((v) => url.searchParams.append(key, v));
-    } else if (value !== undefined) {
-      url.searchParams.append(key, String(value));
+  const from = searchParams["from"]
+    ? new Date(searchParams["from"] as string)
+    : startOfYear(new Date());
+  const to = searchParams["to"]
+    ? new Date(searchParams["to"] as string)
+    : new Date();
+  const teamId = searchParams["team"] as string;
+  const roleId = searchParams["role"] as string;
+  const search = searchParams["search"] as string;
+
+  // Build the where clause for employee search
+  const where: Prisma.EmployeeWhereInput = {
+    AND: [
+      // Search by name or payroll ID
+      search
+        ? {
+            OR: [
+              { name: { contains: search } },
+              { payrollId: { contains: search } },
+            ],
+          }
+        : {},
+      // Filter by role
+      roleId && roleId !== "all" ? { roleId } : {},
+      // Filter by team
+      teamId && teamId !== "all"
+        ? {
+            assignments: {
+              some: {
+                teamId,
+                startDate: { lte: to },
+                OR: [{ endDate: null }, { endDate: { gte: from } }],
+              },
+            },
+          }
+        : {},
+    ],
+  };
+
+  // Fetch data in parallel
+  const [timeEntries, teams, roles, timeTypes, generalTimeAssignments] =
+    await Promise.all([
+      prisma.timeEntry.findMany({
+        where: {
+          date: {
+            gte: from,
+            lte: to,
+          },
+          employee: where,
+        },
+        include: {
+          employee: {
+            include: {
+              role: true,
+              assignments: {
+                include: {
+                  team: true,
+                },
+                where: {
+                  startDate: { lte: to },
+                  OR: [{ endDate: null }, { endDate: { gte: from } }],
+                },
+              },
+            },
+          },
+          timeType: true,
+        },
+      }),
+      prisma.team.findMany(),
+      prisma.role.findMany(),
+      prisma.timeType.findMany(),
+      prisma.generalTimeAssignment.findMany({
+        include: {
+          timeType: true,
+        },
+      }),
+    ]);
+
+  // Group time entries by employee and week
+  const timeEntriesByEmployeeAndWeek = timeEntries.reduce((acc, entry) => {
+    const week = format(entry.date, "yyyy-MM-dd");
+    const key = `${entry.employeeId}-${week}`;
+    if (!acc[key]) {
+      acc[key] = [];
     }
-  });
+    acc[key].push(entry);
+    return acc;
+  }, {} as Record<string, typeof timeEntries>);
 
-  const mockRequest = new NextRequest(url);
-  const response = await GET(mockRequest);
+  // Transform time entries into time reports
+  const timeReports = Object.entries(timeEntriesByEmployeeAndWeek).map(
+    ([key, entries]) => {
+      const firstEntry = entries[0];
+      const employee = firstEntry.employee;
+      const currentAssignment = employee.assignments[0] || null;
+      const totalHours = entries.reduce((sum, entry) => sum + entry.hours, 0);
+      const expectedHours = 40; // This should be calculated based on working days in the week
+      const isUnderutilized = totalHours < expectedHours;
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch time reports: ${response.statusText}`);
-  }
+      const timeReportEntries: TimeReportEntry[] = entries.map((entry) => ({
+        id: entry.id,
+        hours: entry.hours,
+        timeTypeId: entry.timeTypeId,
+        isCapDev: entry.timeType.isCapDev,
+        date: format(entry.date, "yyyy-MM-dd"),
+      }));
 
-  return response.json();
+      const report: TimeReport = {
+        id: key,
+        employeeId: employee.id,
+        employeeName: employee.name,
+        week: format(firstEntry.date, "yyyy-MM-dd"),
+        payrollId: employee.payrollId,
+        fullHours: totalHours,
+        expectedHours,
+        isUnderutilized,
+        missingHours: Math.max(0, expectedHours - totalHours),
+        team: currentAssignment?.team?.name || "Unassigned",
+        role: employee.role?.name || "No Role",
+        roleId: employee.roleId || "",
+        timeEntries: timeReportEntries,
+      };
+
+      return report;
+    }
+  );
+
+  return {
+    timeReports,
+    teams,
+    roles,
+    timeTypes: timeTypes.map((tt: TimeType) => ({ id: tt.id, name: tt.name })),
+    generalAssignments: generalTimeAssignments,
+  };
 }
 
 export default async function ReportsPage({
@@ -49,7 +166,7 @@ export default async function ReportsPage({
     params["to"] = defaultEndDate.toISOString();
   }
 
-  // Fetch data from the API
+  // Fetch data directly from the database
   const data = await getTimeReportData(params);
 
   return (
