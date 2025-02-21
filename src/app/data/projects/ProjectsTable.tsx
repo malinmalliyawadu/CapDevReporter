@@ -283,6 +283,17 @@ export function ProjectsTable({
     console.log("Available boards:", availableBoards);
   }, [syncConfig, availableBoards]);
 
+  // Handle sync parameter
+  useEffect(() => {
+    if (searchParams.sync === "true") {
+      setSyncDialogOpen(true);
+      // Remove the sync parameter from the URL
+      const params = new URLSearchParams(window.location.search);
+      params.delete("sync");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [searchParams.sync, router, pathname]);
+
   const addSyncLog = (
     message: string,
     type: SyncLog["type"] = "info",
@@ -366,8 +377,25 @@ export function ProjectsTable({
         setSyncProgress(null);
 
         toast({
-          title: "Success",
-          description: "Projects synced with Jira",
+          title: "Projects synced successfully!",
+          description: (
+            <div className="flex flex-col gap-2">
+              <p>All projects have been synchronized with Jira.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  setSyncDialogOpen(false);
+                  router.push("/data/projects");
+                  router.refresh();
+                }}
+              >
+                View All Projects
+              </Button>
+            </div>
+          ),
+          duration: 5000,
         });
       });
     } catch (error) {
@@ -429,17 +457,17 @@ export function ProjectsTable({
 
   // Add effect to trigger confetti on successful completion
   useEffect(() => {
-    if (
-      syncLogs.some(
-        (log) =>
-          log.type === "success" &&
-          log.message === "Sync complete!" &&
-          log.operation === "finalize"
-      )
-    ) {
+    const hasSuccessLog = syncLogs.some(
+      (log) =>
+        log.type === "success" &&
+        log.message === "Sync complete!" &&
+        log.operation === "finalize"
+    );
+
+    if (hasSuccessLog && !isSyncing) {
       triggerConfetti();
     }
-  }, [syncLogs]);
+  }, [syncLogs, isSyncing]);
 
   // Add effect for auto-scrolling
   useEffect(() => {

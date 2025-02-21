@@ -18,12 +18,14 @@ import {
   LayoutGrid,
   Palmtree,
   PartyPopper,
+  RefreshCw,
   Timer,
   TimerReset,
   User,
   Users,
 } from "lucide-react";
 import { ModeToggle } from "./ModeToggle";
+import { Button } from "./ui/button";
 
 const data: { title: React.ReactNode; href: string; description: string }[] = [
   {
@@ -203,7 +205,20 @@ export function Navigation() {
           </NavigationMenu>
         </div>
 
-        <ModeToggle />
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/80 dark:to-zinc-900/50 hover:from-white hover:to-white/80 dark:hover:from-zinc-800 dark:hover:to-zinc-800/80 transition-all duration-200"
+            onClick={() => {
+              window.location.href = "/data/projects?sync=true";
+            }}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Sync Projects
+          </Button>
+          <ModeToggle />
+        </div>
       </div>
     </header>
 

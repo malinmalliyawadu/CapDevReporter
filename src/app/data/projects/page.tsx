@@ -62,6 +62,7 @@ export type ProjectsPageQueryString = {
   page?: string;
   size?: string;
   projectId?: string;
+  sync?: string;
 };
 
 export default async function ProjectsPage(props: {
