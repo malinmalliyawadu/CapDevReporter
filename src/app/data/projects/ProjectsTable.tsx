@@ -142,6 +142,7 @@ export function ProjectsTable({
   const router = useRouter();
   const pathname = usePathname();
   const [projects, setProjects] = useState(initialProjects);
+  const [projectsCount, setProjectsCount] = useState(totalProjects);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
@@ -326,6 +327,25 @@ export function ProjectsTable({
     });
   };
 
+  // Add fetchProjects function
+  const fetchProjects = async (params: URLSearchParams) => {
+    try {
+      const response = await fetch(`/api/projects?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to fetch projects");
+
+      const data = await response.json();
+      setProjects(data.projects);
+      setProjectsCount(data.total);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch projects",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSync = async () => {
     try {
       setIsSyncing(true);
@@ -344,7 +364,6 @@ export function ProjectsTable({
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
         setSyncProgress(data);
-        // Use the operation field from the server if provided
         addSyncLog(data.message, data.type || "info", data.operation);
       };
 
@@ -361,14 +380,20 @@ export function ProjectsTable({
       };
 
       // Listen for completion
-      eventSource.addEventListener("sync-complete", async () => {
+      eventSource.addEventListener("sync-complete", async (event) => {
         eventSource.close();
 
-        addSyncLog("Fetching updated projects...", "info", "fetch-projects");
-        // Fetch updated projects
-        const projectsResponse = await fetch("/api/projects");
-        const updatedProjects = await projectsResponse.json();
-        setProjects(updatedProjects);
+        // Always fetch the current page data after sync
+        const currentParams = new URLSearchParams();
+        currentParams.set("page", String(page));
+        currentParams.set("size", String(Number(searchParams.size) || 10));
+        if (debouncedSearch) {
+          currentParams.set("search", formatSearchQuery(debouncedSearch));
+        }
+
+        // Fetch current page data
+        await fetchProjects(currentParams);
+
         setLastSynced(new Date());
         addSyncLog(
           "Projects updated successfully",
@@ -651,68 +676,33 @@ export function ProjectsTable({
       },
     },
     manualPagination: true,
-    pageCount: Math.ceil(totalProjects / (Number(searchParams.size) || 10)),
+    pageCount: Math.ceil(projectsCount / (Number(searchParams.size) || 10)),
     enableExpanding: true,
     getRowId: (row) => row.id,
   });
 
   // Effect to update projects when search changes
   useEffect(() => {
-    const updateProjects = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (debouncedSearch) {
-          params.set("search", formatSearchQuery(debouncedSearch));
-        }
-        params.set("page", "1"); // Reset to first page on search
-        params.set("size", String(Number(searchParams.size) || 10));
+    const params = new URLSearchParams();
+    if (debouncedSearch) {
+      params.set("search", formatSearchQuery(debouncedSearch));
+    }
+    params.set("page", "1"); // Reset to first page on search
+    params.set("size", String(Number(searchParams.size) || 10));
 
-        const response = await fetch(`/api/projects?${params.toString()}`);
-        if (!response.ok) throw new Error("Failed to fetch projects");
-
-        const data = await response.json();
-        setProjects(data.projects);
-        setPage(1);
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch projects",
-          variant: "destructive",
-        });
-      }
-    };
-
-    updateProjects();
+    fetchProjects(params);
   }, [debouncedSearch, searchParams.size]);
 
   // Effect to update projects when page changes
   useEffect(() => {
-    const updateProjects = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (debouncedSearch) {
-          params.set("search", formatSearchQuery(debouncedSearch));
-        }
-        params.set("page", String(page));
-        params.set("size", String(Number(searchParams.size) || 10));
+    const params = new URLSearchParams();
+    if (debouncedSearch) {
+      params.set("search", formatSearchQuery(debouncedSearch));
+    }
+    params.set("page", String(page));
+    params.set("size", String(Number(searchParams.size) || 10));
 
-        const response = await fetch(`/api/projects?${params.toString()}`);
-        if (!response.ok) throw new Error("Failed to fetch projects");
-
-        const data = await response.json();
-        setProjects(data.projects);
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch projects",
-          variant: "destructive",
-        });
-      }
-    };
-
-    updateProjects();
+    fetchProjects(params);
   }, [page, searchParams.size]);
 
   return (
@@ -865,7 +855,7 @@ export function ProjectsTable({
       </div>
       <div className="flex items-center justify-between py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          Showing {table.getRowModel().rows.length} of {totalProjects} projects
+          Showing {table.getRowModel().rows.length} of {projectsCount} projects
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -881,7 +871,7 @@ export function ProjectsTable({
             <div className="text-sm font-medium">{page}</div>
             <div className="text-sm text-muted-foreground">/</div>
             <div className="text-sm text-muted-foreground">
-              {Math.ceil(totalProjects / (Number(searchParams.size) || 10))}
+              {Math.ceil(projectsCount / (Number(searchParams.size) || 10))}
             </div>
           </div>
           <Button
@@ -890,7 +880,7 @@ export function ProjectsTable({
             onClick={() => setPage((p) => p + 1)}
             disabled={
               page >=
-              Math.ceil(totalProjects / (Number(searchParams.size) || 10))
+              Math.ceil(projectsCount / (Number(searchParams.size) || 10))
             }
             className="h-8 w-8 p-0 hover:bg-muted"
           >
