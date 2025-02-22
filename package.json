@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "playwright test --debug"
+    "test:e2e:debug": "playwright test --debug",
+    "db:reset": "rm -f prisma/dev.db && prisma db push --force-reset && prisma generate && prisma db seed"
   },
   "dependencies": {
     "@million/lint": "^1.0.14",
