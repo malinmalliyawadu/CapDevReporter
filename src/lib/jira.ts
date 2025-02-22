@@ -68,68 +68,77 @@ export class JiraClient {
 
           console.log(issue.key);
           console.log(existingProjectMap.has(issue.key));
-          if (existingProjectMap.has(issue.key)) {
-            // Update existing project
-            await prisma.project.update({
-              where: { id: existingProjectMap.get(issue.key) },
-              data: {
-                name: issue.fields.summary,
-                description: issue.fields.description || null,
-                isCapDev: false,
-                boardId: board.id,
-              },
-            });
-            console.log("updated");
-          } else {
-            // Create new project
-            await prisma.project.create({
-              data: {
-                name: issue.fields.summary,
-                description: issue.fields.description || null,
-                jiraId: issue.key,
-                isCapDev: false,
-                boardId: board.id,
-              },
-            });
-            console.log("created");
-          }
 
-          // clear existing activities
-          await prisma.projectActivity.deleteMany({
-            where: {
-              jiraIssueId: issue.key,
-            },
-          });
-
-          // create new activities from changelog
-          if (issue.changelog && issue.changelog.histories) {
-            const activityDates = new Set<string>(
-              issue.changelog.histories.map(
-                (history: { created: string }) =>
-                  new Date(history.created).toISOString().split("T")[0] // Only keep the date part
-              )
-            );
-
-            if (activityDates.size > 0) {
-              await prisma.projectActivity.createMany({
-                data: Array.from(activityDates).map((activityDate) => ({
-                  jiraIssueId: issue.key,
-                  activityDate: new Date(activityDate),
-                })),
+          // Use a transaction to ensure atomicity of project and activity updates
+          await prisma.$transaction(async (tx) => {
+            // Update or create project
+            if (existingProjectMap.has(issue.key)) {
+              // Update existing project
+              await tx.project.update({
+                where: { id: existingProjectMap.get(issue.key) },
+                data: {
+                  name: issue.fields.summary,
+                  description: issue.fields.description || null,
+                  isCapDev: false,
+                  boardId: board.id,
+                },
               });
+              console.log("updated");
+            } else {
+              // Create new project
+              await tx.project.create({
+                data: {
+                  name: issue.fields.summary,
+                  description: issue.fields.description || null,
+                  jiraId: issue.key,
+                  isCapDev: false,
+                  boardId: board.id,
+                },
+              });
+              console.log("created");
             }
-          }
+
+            // Process activities
+            // First clear existing activities
+            await tx.projectActivity.deleteMany({
+              where: {
+                jiraIssueId: issue.key,
+              },
+            });
+
+            // Then process and add new activities
+            if (issue.changelog && issue.changelog.histories) {
+              const activityDates = new Set<string>();
+
+              // Process and normalize dates
+              issue.changelog.histories
+                .filter((history: { author: { displayName: string } }) => {
+                  const authorName = history.author.displayName;
+                  return (
+                    authorName !== "Recurring Tasks for Jira Cloud" &&
+                    authorName !== "VCS Automation"
+                  );
+                })
+                .forEach((history: { created: string }) => {
+                  // Normalize date to YYYY-MM-DD format in UTC
+                  const date = new Date(history.created);
+                  const normalizedDate = date.toISOString().split("T")[0];
+                  activityDates.add(normalizedDate);
+                });
+
+              if (activityDates.size > 0) {
+                // Create activities in bulk
+                await tx.projectActivity.createMany({
+                  data: Array.from(activityDates).map((dateString) => ({
+                    jiraIssueId: issue.key,
+                    activityDate: new Date(dateString),
+                  })),
+                });
+              }
+            }
+          });
         }
       }
-
-      // 4. Delete projects that no longer exist in Jira
-      // for (const [jiraId, projectId] of existingProjectMap.entries()) {
-      //   if (!processedJiraIds.has(jiraId)) {
-      //     await ctx.prisma.project.delete({
-      //       where: { id: projectId },
-      //     });
-      //   }
-      // }
 
       console.log(processedJiraIds);
 

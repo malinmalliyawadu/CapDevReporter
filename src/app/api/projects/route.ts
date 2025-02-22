@@ -43,6 +43,7 @@ export async function GET(request: Request) {
             },
           },
           timeEntries: true,
+          activities: true,
         },
         orderBy: { name: "asc" },
         skip: (page - 1) * size,

@@ -620,7 +620,9 @@ export function ProjectsTable({
   ];
 
   const renderSubRow = (row: Project) => {
-    const sortedActivities = [...(row.activities || [])].sort(
+    if (!row.activities) return null;
+
+    const sortedActivities = [...row.activities].sort(
       (a, b) =>
         new Date(b.activityDate).getTime() - new Date(a.activityDate).getTime()
     );
