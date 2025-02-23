@@ -48,17 +48,26 @@ export function TimeDistributionCharts({
   timeReport.forEach((report) => {
     report.timeEntries.forEach((entry: TimeReportEntry) => {
       const key = entry.isLeave ? "leave" : entry.timeTypeId;
-      const current = timeTypeHours.get(key) || {
-        hours: 0,
-        isCapDev: entry.isCapDev,
-        name: entry.isLeave
-          ? "Leave"
-          : timeTypes.find((t) => t.id === entry.timeTypeId)?.name ||
-            "Projects",
-        isLeave: entry.isLeave,
-      };
-      current.hours += Math.abs(entry.hours);
-      timeTypeHours.set(key, current);
+      const existingEntry = timeTypeHours.get(key);
+
+      if (!existingEntry) {
+        // Create new entry
+        timeTypeHours.set(key, {
+          hours: Math.abs(entry.hours),
+          isCapDev: entry.isCapDev,
+          name: entry.isLeave
+            ? "Leave"
+            : timeTypes.find((t) => t.id === entry.timeTypeId)?.name ||
+              "Projects",
+          isLeave: entry.isLeave,
+        });
+      } else {
+        // Update existing entry
+        existingEntry.hours += Math.abs(entry.hours);
+        // Ensure isCapDev is preserved - if any entry for this type is CapDev, the whole type is CapDev
+        existingEntry.isCapDev = existingEntry.isCapDev || entry.isCapDev;
+        timeTypeHours.set(key, existingEntry);
+      }
     });
   });
 
@@ -75,10 +84,33 @@ export function TimeDistributionCharts({
     .filter((data) => data.isLeave)
     .reduce((sum, data) => sum + data.hours, 0);
 
+  // Calculate total work hours (excluding leave)
+  const totalWorkHours = totalCapDevHours + totalNonCapDevHours;
+
   const rolledUpData = [
-    { name: "CapDev", value: totalCapDevHours, color: "#0ea5e9" },
-    { name: "Non-CapDev", value: totalNonCapDevHours, color: "#f43f5e" },
-    { name: "Leave", value: totalLeaveHours, color: "#f97316" },
+    {
+      name: "CapDev",
+      value: totalCapDevHours,
+      color: "#0ea5e9",
+      percentage:
+        totalWorkHours > 0 ? (totalCapDevHours / totalWorkHours) * 100 : 0,
+    },
+    {
+      name: "Non-CapDev",
+      value: totalNonCapDevHours,
+      color: "#f43f5e",
+      percentage:
+        totalWorkHours > 0 ? (totalNonCapDevHours / totalWorkHours) * 100 : 0,
+    },
+    {
+      name: "Leave",
+      value: totalLeaveHours,
+      color: "#f97316",
+      percentage:
+        totalLeaveHours > 0
+          ? (totalLeaveHours / (totalWorkHours + totalLeaveHours)) * 100
+          : 0,
+    },
   ];
 
   const detailedChartData = Array.from(timeTypeHours.entries()).map(
@@ -123,12 +155,14 @@ export function TimeDistributionCharts({
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value: number) =>
-                    `${value.toFixed(1)} hours (${(
-                      (value / totalTime) *
-                      100
-                    ).toFixed(1)}%)`
-                  }
+                  formatter={(value: number, name: string, props: any) => {
+                    const item = rolledUpData.find((d) => d.name === name);
+                    return [
+                      `${value.toFixed(1)} hours (${item?.percentage.toFixed(
+                        1
+                      )}%)`,
+                    ];
+                  }}
                 />
                 <Legend />
               </PieChart>
@@ -146,7 +180,7 @@ export function TimeDistributionCharts({
                 </div>
                 <div className="text-right">
                   <span className="font-medium">
-                    {((item.value / totalTime) * 100).toFixed(1)}%
+                    {item.percentage.toFixed(1)}%
                   </span>
                   <span className="text-sm text-muted-foreground ml-2">
                     ({item.value.toFixed(1)} hours)
