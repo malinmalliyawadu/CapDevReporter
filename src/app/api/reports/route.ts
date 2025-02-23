@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
             weekEnd: format(weekEnd, "yyyy-MM-dd"),
             payrollId: employee.payrollId,
             fullHours: 0,
-            expectedHours: availableHours,
+            expectedHours: employee.hoursPerWeek,
             isUnderutilized: false,
             missingHours: 0,
             underutilizationReason: "",

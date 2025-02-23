@@ -570,13 +570,10 @@ export function ProjectsTable({
       accessorKey: "description",
       header: "Description",
       cell: ({ row }) => (
-        <div className="relative max-w-[300px]">
-          <p className="text-muted-foreground text-sm truncate pr-4">
+        <div className="max-w-[300px]">
+          <p className="text-muted-foreground text-sm truncate">
             {row.original.description || "—"}
           </p>
-          {row.original.description && row.original.description.length > 50 && (
-            <div className="absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-background to-transparent" />
-          )}
         </div>
       ),
     },

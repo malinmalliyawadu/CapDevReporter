@@ -19,6 +19,40 @@ function sendSSEMessage(
   controller.enqueue(": flush\n\n");
 }
 
+// Helper function to check for capdev label up the parent chain
+async function checkForCapDevLabel(
+  issueKey: string,
+  depth = 0
+): Promise<boolean> {
+  if (depth > 5) return false; // Prevent infinite loops by limiting depth
+
+  try {
+    const issue = await jiraClient.getIssue(
+      issueKey,
+      ["labels", "parent"],
+      undefined
+    );
+
+    // Check current issue's labels
+    const hasCapDev =
+      issue.fields.labels?.some(
+        (label: string) => label.toLowerCase() === "capdev"
+      ) ?? false;
+
+    if (hasCapDev) return true;
+
+    // If no capdev label and has parent, check parent
+    if (issue.fields.parent) {
+      return checkForCapDevLabel(issue.fields.parent.key, depth + 1);
+    }
+
+    return false;
+  } catch (error) {
+    console.error(`Error checking capdev label for ${issueKey}:`, error);
+    return false;
+  }
+}
+
 export async function GET(request: Request) {
   console.log("[Sync] Starting sync process");
 
@@ -235,13 +269,14 @@ export async function GET(request: Request) {
                 );
 
                 jiraBoard = jiraBoards?.values?.[0];
+                console.log("Found Jira board:", jiraBoard);
 
-                if (!jiraBoard) {
+                if (!jiraBoard || !jiraBoard.location?.projectKey) {
                   console.error(
-                    `[Board ${board.boardId}] Board not found in Jira response`
+                    `[Board ${board.boardId}] Board not found in Jira response or missing project key`
                   );
                   sendSSEMessage(controller, {
-                    message: `Board ${board.name} (${board.boardId}) not found in Jira`,
+                    message: `Board ${board.name} (${board.boardId}) not found in Jira or missing project key`,
                     progress: Math.round(baseProgress),
                     type: "error",
                     operation: "fetch-board",
@@ -250,7 +285,7 @@ export async function GET(request: Request) {
                 }
 
                 console.log(
-                  `[Board ${board.boardId}] Successfully found Jira board: ${jiraBoard.name} (ID: ${jiraBoard.id})`
+                  `[Board ${board.boardId}] Successfully found Jira board: ${jiraBoard.name} (ID: ${jiraBoard.id}) for project: ${jiraBoard.location.projectKey}`
                 );
               } catch (error) {
                 console.error(
@@ -266,7 +301,7 @@ export async function GET(request: Request) {
                 continue;
               }
 
-              // Get issues for this board
+              // Get issues for this board, prioritizing higher-level issues
               console.log(
                 `[Board ${board.boardId}] Fetching issues for board ${board.name}`
               );
@@ -279,12 +314,28 @@ export async function GET(request: Request) {
 
               let issues;
               try {
+                // First fetch initiatives and epics
+                const jql = `project = "${jiraBoard.location.projectKey}" AND issuetype in (Initiative, Epic) ORDER BY issuetype ASC, updatedDate DESC`;
                 issues = await jiraClient.getIssuesForBoard(
                   jiraBoard.id,
-                  0, // startAt
-                  maxIssuesPerBoard, // maxResults
-                  "ORDER BY updatedDate DESC" // Get most recently updated issues
+                  0,
+                  maxIssuesPerBoard,
+                  jql
                 );
+
+                // Then fetch stories and other issue types
+                const otherIssues = await jiraClient.getIssuesForBoard(
+                  jiraBoard.id,
+                  0,
+                  maxIssuesPerBoard,
+                  `project = "${jiraBoard.location.projectKey}" AND issuetype not in (Initiative, Epic) ORDER BY updatedDate DESC`
+                );
+
+                // Combine the results, prioritizing higher-level issues
+                issues.issues = [
+                  ...issues.issues,
+                  ...(otherIssues?.issues || []),
+                ].slice(0, maxIssuesPerBoard);
 
                 // Send success message to close out the fetch operation
                 sendSSEMessage(controller, {
@@ -372,10 +423,7 @@ export async function GET(request: Request) {
                   );
 
                   // Check if issue has capdev label
-                  const isCapDev =
-                    issueDetails.fields.labels?.some(
-                      (label: string) => label.toLowerCase() === "capdev"
-                    ) ?? false;
+                  const isCapDev = await checkForCapDevLabel(issue.key);
 
                   console.log(`[Issue ${issue.key}] isCapDev:`, isCapDev);
 

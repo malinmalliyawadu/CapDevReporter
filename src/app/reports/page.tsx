@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { TimeReportFilters } from "@/components/reports/TimeReportFilters";
 import { ReportDataDisplay } from "@/components/reports/ReportDataDisplay";
 import { prisma } from "@/lib/prisma";
-import { Prisma, TimeEntry, TimeType } from "@prisma/client";
+import { Prisma, TimeType } from "@prisma/client";
 import { TimeReport, TimeReportEntry } from "@/types/timeReport";
 
 export const dynamic = "force-dynamic";
@@ -108,7 +108,7 @@ async function getTimeReportData(searchParams: {
       const employee = firstEntry.employee;
       const currentAssignment = employee.assignments[0] || null;
       const totalHours = entries.reduce((sum, entry) => sum + entry.hours, 0);
-      const expectedHours = 40; // This should be calculated based on working days in the week
+      const expectedHours = employee.hoursPerWeek; // Use employee's configured hours per week
       const isUnderutilized = totalHours < expectedHours;
 
       const timeReportEntries: TimeReportEntry[] = entries.map((entry) => ({

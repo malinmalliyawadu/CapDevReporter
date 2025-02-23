@@ -146,7 +146,7 @@ export const createColumns = (): ColumnDef<TimeReport>[] => [
     header: "Non-CapDev Time",
     cell: ({ row }) => {
       const nonCapdevHours = row.original.timeEntries
-        .filter((entry) => !entry.isCapDev)
+        .filter((entry) => !entry.isCapDev || entry.isPublicHoliday)
         .reduce((sum, entry) => sum + entry.hours, 0);
       return nonCapdevHours.toFixed(1);
     },
