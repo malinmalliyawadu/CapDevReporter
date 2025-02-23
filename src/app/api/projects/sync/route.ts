@@ -362,35 +362,56 @@ export async function GET(request: Request) {
                   );
                   const issueDetails = await jiraClient.getIssue(
                     issue.key,
-                    ["summary", "description"],
+                    ["summary", "description", "labels"],
                     "changelog"
                   );
+
+                  console.log(
+                    `[Issue ${issue.key}] Labels:`,
+                    issueDetails.fields.labels
+                  );
+
+                  // Check if issue has capdev label
+                  const isCapDev =
+                    issueDetails.fields.labels?.some(
+                      (label: string) => label.toLowerCase() === "capdev"
+                    ) ?? false;
+
+                  console.log(`[Issue ${issue.key}] isCapDev:`, isCapDev);
 
                   // Update or create project
                   if (existingProjectMap.has(issueDetails.key)) {
                     console.log(
-                      `[Issue ${issue.key}] Updating existing project`
+                      `[Issue ${issue.key}] Updating existing project with isCapDev=${isCapDev}`
                     );
                     await prisma.project.update({
                       where: { id: existingProjectMap.get(issueDetails.key) },
                       data: {
                         name: issueDetails.fields.summary,
                         description: issueDetails.fields.description || null,
-                        isCapDev: false,
+                        isCapDev: isCapDev,
                         boardId: board.id,
                       },
                     });
+                    console.log(
+                      `[Issue ${issue.key}] Project updated successfully`
+                    );
                   } else {
-                    console.log(`[Issue ${issue.key}] Creating new project`);
+                    console.log(
+                      `[Issue ${issue.key}] Creating new project with isCapDev=${isCapDev}`
+                    );
                     await prisma.project.create({
                       data: {
                         name: issueDetails.fields.summary,
                         description: issueDetails.fields.description || null,
                         jiraId: issueDetails.key,
-                        isCapDev: false,
+                        isCapDev: isCapDev,
                         boardId: board.id,
                       },
                     });
+                    console.log(
+                      `[Issue ${issue.key}] Project created successfully`
+                    );
                   }
 
                   // Process activities
@@ -446,7 +467,7 @@ export async function GET(request: Request) {
                     error
                   );
                   sendSSEMessage(controller, {
-                    message: `Error processing issue ${issue.key}: ${
+                    message: `Error processing issue: ${
                       error instanceof Error ? error.message : "Unknown error"
                     }`,
                     progress: issueProgress,
@@ -455,21 +476,8 @@ export async function GET(request: Request) {
                   });
                 }
               }
-
-              // Board completion message
-              sendSSEMessage(controller, {
-                message: `Completed processing board ${board.name}`,
-                progress: Math.round(baseProgress + progressPerBoard),
-                type: "success",
-                operation: "process-board",
-              });
-
-              console.log(
-                `[Board ${board.boardId}] Completed processing all issues`
-              );
             }
 
-            console.log("[Sync] All boards processed successfully");
             sendSSEMessage(controller, {
               message: "Finalizing sync...",
               progress: 97,
@@ -487,6 +495,18 @@ export async function GET(request: Request) {
 
             // Send completion event
             controller.enqueue(`event: sync-complete\ndata: {}\n\n`);
+          } catch (error) {
+            console.error("[Sync] Error in sync process:", error);
+            sendSSEMessage(controller, {
+              message: `Error in sync process: ${
+                error instanceof Error ? error.message : "Unknown error"
+              }`,
+              progress: 100,
+              type: "error",
+              operation: "sync-error",
+            });
+            // Send completion event even on error
+            controller.enqueue(`event: sync-complete\ndata: {}\n\n`);
           } finally {
             clearTimeout(syncTimeout);
           }
@@ -498,25 +518,23 @@ export async function GET(request: Request) {
         // Close the stream
         controller.close();
       } catch (error) {
-        console.error("[Sync] Fatal error:", error);
-
-        // Send error message to client
+        console.error("[Sync] Error in sync route:", error);
         sendSSEMessage(controller, {
-          message:
-            error instanceof Error
-              ? error.message
-              : "An unknown error occurred during sync",
-          progress: 0,
+          message: `Error in sync route: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+          progress: 100,
           type: "error",
           operation: "sync-error",
         });
-
-        // Send completion event even on error
+        // Send completion event even on fatal error
         controller.enqueue(`event: sync-complete\ndata: {}\n\n`);
         controller.close();
       }
     },
   });
 
-  return new Response(stream, { headers: responseHeaders });
+  return new Response(stream, {
+    headers: responseHeaders,
+  });
 }
