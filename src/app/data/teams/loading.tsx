@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -8,8 +8,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
 import { Header } from "@radix-ui/react-accordion";
 
 export default function Loading() {

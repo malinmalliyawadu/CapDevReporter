@@ -1,6 +1,6 @@
 import { TableLoading } from "@/components/loading/TableLoading";
 import { PageHeader } from "@/components/ui/page-header";
-import { BarChart, Loader2 } from "lucide-react";
+import { BarChart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {

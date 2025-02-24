@@ -47,7 +47,6 @@ import {
   SortingState,
   ColumnFiltersState,
   getFilteredRowModel,
-  getPaginationRowModel,
   useReactTable,
   ExpandedState,
   getExpandedRowModel,
@@ -380,7 +379,7 @@ export function ProjectsTable({
       };
 
       // Listen for completion
-      eventSource.addEventListener("sync-complete", async (event) => {
+      eventSource.addEventListener("sync-complete", async () => {
         eventSource.close();
 
         // Always fetch the current page data after sync

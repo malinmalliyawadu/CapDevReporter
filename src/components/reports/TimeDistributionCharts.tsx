@@ -125,7 +125,6 @@ export function TimeDistributionCharts({
     })
   );
 
-  const totalTime = rolledUpData.reduce((sum, item) => sum + item.value, 0);
   const totalDetailedTime = detailedChartData.reduce(
     (sum, item) => sum + item.value,
     0
@@ -155,7 +154,7 @@ export function TimeDistributionCharts({
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value: number, name: string, props: any) => {
+                  formatter={(value: number, name: string) => {
                     const item = rolledUpData.find((d) => d.name === name);
                     return [
                       `${value.toFixed(1)} hours (${item?.percentage.toFixed(
