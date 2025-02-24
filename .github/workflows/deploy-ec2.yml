@@ -1,0 +1,54 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+        run: |
+          # Write the private key to a file
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          # Create a tar of the current directory
+          tar -czf deploy.tar.gz .
+
+          # Copy files to EC2
+          scp -i private_key.pem -o StrictHostKeyChecking=no deploy.tar.gz $EC2_USERNAME@$EC2_HOST:~/deploy.tar.gz
+
+          # Create the deployment script
+          echo '#!/bin/bash
+          cd ~
+          rm -rf app
+          mkdir app
+          tar -xzf deploy.tar.gz -C app
+          cd app
+          docker stop timesheet-app || true
+          docker rm timesheet-app || true
+          docker build -t timesheet-app .
+          docker run -d \
+            --name timesheet-app \
+            -p 3000:3000 \
+            -v /app/data:/app/data \
+            timesheet-app' > deploy.sh
+
+          # Copy and execute the deployment script
+          scp -i private_key.pem -o StrictHostKeyChecking=no deploy.sh $EC2_USERNAME@$EC2_HOST:~/deploy.sh
+          ssh -i private_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST "chmod +x ~/deploy.sh && ~/deploy.sh"
+
+          # Cleanup
+          rm private_key.pem deploy.sh

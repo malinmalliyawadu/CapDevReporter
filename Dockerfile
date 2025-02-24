@@ -85,6 +85,9 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Create data directory for SQLite database
+RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
+
 COPY --from=builder /app/public ./public
 
 # Automatically leverage output traces to reduce image size
@@ -102,9 +105,13 @@ USER nextjs
 EXPOSE 3000
 
 ENV PORT=3000
-ENV DATABASE_URL="file:/app/prisma/dev.db"
+ENV DATABASE_URL="file:/app/data/timesheet.db"
+
+# Copy database initialization script
+COPY --chown=nextjs:nodejs prisma/schema.prisma ./prisma/
+COPY --chown=nextjs:nodejs scripts/init-db.sh ./scripts/
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
 ENV HOSTNAME="0.0.0.0"
-CMD ["node", "server.js"]
+CMD ["/bin/sh", "-c", "./scripts/init-db.sh && node server.js"]
