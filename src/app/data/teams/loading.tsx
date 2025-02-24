@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Header } from "@radix-ui/react-accordion";
+import { Header } from "./Header";
 
 export default function Loading() {
   return (
