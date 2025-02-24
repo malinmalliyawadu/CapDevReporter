@@ -29,6 +29,24 @@ RUN \
 # Rebuild the source code only when needed
 FROM base AS builder
 ARG ***REMOVED***ROOTCACERT 
+# Add build-time environment variables
+ARG DATABASE_URL
+ARG NEXT_PUBLIC_JIRA_HOST
+ARG JIRA_API_TOKEN
+ARG JIRA_USER_EMAIL
+ARG IPAYROLL_API_URL
+ARG IPAYROLL_API_KEY
+ARG IPAYROLL_COMPANY_ID
+
+# Set environment variables for build
+ENV DATABASE_URL=${DATABASE_URL}
+ENV NEXT_PUBLIC_JIRA_HOST=${NEXT_PUBLIC_JIRA_HOST}
+ENV JIRA_API_TOKEN=${JIRA_API_TOKEN}
+ENV JIRA_USER_EMAIL=${JIRA_USER_EMAIL}
+ENV IPAYROLL_API_URL=${IPAYROLL_API_URL}
+ENV IPAYROLL_API_KEY=${IPAYROLL_API_KEY}
+ENV IPAYROLL_COMPANY_ID=${IPAYROLL_COMPANY_ID}
+
 RUN if [ -n "$***REMOVED***ROOTCACERT" ]; then \
     echo "$***REMOVED***ROOTCACERT" > /root/wlgca.crt; \
     cat /root/wlgca.crt >> /etc/ssl/certs/ca-certificates.crt; \
@@ -58,7 +76,25 @@ RUN \
 
 # Production image, copy all the files and run next
 FROM base AS runner
-ARG ***REMOVED***ROOTCACERT 
+ARG ***REMOVED***ROOTCACERT
+# Add runtime environment variables
+ENV DATABASE_URL="file:/app/data/timesheet.db"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+ENV NODE_ENV=production
+ARG NEXT_PUBLIC_JIRA_HOST
+ARG JIRA_API_TOKEN
+ARG JIRA_USER_EMAIL
+ARG IPAYROLL_API_URL
+ARG IPAYROLL_API_KEY
+ARG IPAYROLL_COMPANY_ID
+ENV NEXT_PUBLIC_JIRA_HOST=${NEXT_PUBLIC_JIRA_HOST}
+ENV JIRA_API_TOKEN=${JIRA_API_TOKEN}
+ENV JIRA_USER_EMAIL=${JIRA_USER_EMAIL}
+ENV IPAYROLL_API_URL=${IPAYROLL_API_URL}
+ENV IPAYROLL_API_KEY=${IPAYROLL_API_KEY}
+ENV IPAYROLL_COMPANY_ID=${IPAYROLL_COMPANY_ID}
+
 RUN if [ -n "$***REMOVED***ROOTCACERT" ]; then \
     echo "$***REMOVED***ROOTCACERT" > /root/wlgca.crt; \
     cat /root/wlgca.crt >> /etc/ssl/certs/ca-certificates.crt; \
@@ -107,14 +143,10 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT=3000
-ENV DATABASE_URL="file:/app/data/timesheet.db"
-
 # Copy database initialization script
 COPY --chown=nextjs:nodejs prisma/schema.prisma ./prisma/
 COPY --chown=nextjs:nodejs scripts/init-db.sh ./scripts/
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
-ENV HOSTNAME="0.0.0.0"
 CMD ["/bin/sh", "-c", "./scripts/init-db.sh && node server.js"]
