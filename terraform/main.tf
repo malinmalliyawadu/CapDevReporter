@@ -8,7 +8,13 @@ terraform {
 }
 
 provider "aws" {
-  region = var.aws_region
+  profile = "dev"
+  region  = "ap-southeast-2"
+  default_tags {
+    tags = {
+      Owner = "Malin Malliya Wadu"
+    }
+  }
 }
 
 # VPC and Networking
@@ -77,7 +83,7 @@ resource "aws_security_group" "app" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.your_ip_address]
     description = "HTTP access"
   }
 
@@ -85,16 +91,8 @@ resource "aws_security_group" "app" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.your_ip_address]
     description = "HTTPS access"
-  }
-
-  ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Next.js app access"
   }
 
   egress {
@@ -109,6 +107,62 @@ resource "aws_security_group" "app" {
   }
 }
 
+# IAM Role and Instance Profile for EC2
+resource "aws_iam_role" "ec2_role" {
+  name = "timesheet-ec2-ecr-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_iam_role_policy" "ecr_policy" {
+  name = "timesheet-ecr-pull-policy"
+  role = aws_iam_role.ec2_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "timesheet-ec2-ecr-profile"
+  role = aws_iam_role.ec2_role.name
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 # EC2 Instance
 resource "aws_instance" "app" {
   ami           = var.ubuntu_ami # Ubuntu 22.04 LTS
@@ -117,6 +171,7 @@ resource "aws_instance" "app" {
   subnet_id                   = aws_subnet.main.id
   vpc_security_group_ids      = [aws_security_group.app.id]
   associate_public_ip_address = true
+  iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
 
   key_name = aws_key_pair.deployer.key_name
 
@@ -125,7 +180,10 @@ resource "aws_instance" "app" {
     volume_type = "gp3"
   }
 
-  user_data = templatefile("${path.module}/scripts/init.sh", {})
+  user_data = templatefile("${path.module}/scripts/init.sh", {
+    ecr_repository = "***REMOVED***/timesheet"
+    aws_region     = var.aws_region
+  })
 
   tags = {
     Name = "timesheet-app"

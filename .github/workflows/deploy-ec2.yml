@@ -14,37 +14,63 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ***REMOVED***/timesheet
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
       - name: Deploy to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+          EC2_HOST: ${{ vars.EC2_HOST }}
+          EC2_USERNAME: ubuntu
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ***REMOVED***/timesheet
+          IMAGE_TAG: latest
         run: |
           # Write the private key to a file
           echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
 
-          # Create a tar of the current directory
-          tar -czf deploy.tar.gz .
-
-          # Copy files to EC2
-          scp -i private_key.pem -o StrictHostKeyChecking=no deploy.tar.gz $EC2_USERNAME@$EC2_HOST:~/deploy.tar.gz
-
-          # Create the deployment script
+          # Create deployment script
           echo '#!/bin/bash
-          cd ~
-          rm -rf app
-          mkdir app
-          tar -xzf deploy.tar.gz -C app
-          cd app
+          # Stop and remove existing container
           docker stop timesheet-app || true
           docker rm timesheet-app || true
-          docker build -t timesheet-app .
+
+          # Login to ECR
+          aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+
+          # Pull and run new container
+          docker pull ${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest
           docker run -d \
-            --name timesheet-app \
+            --name=timesheet-app \
+            --restart=always \
             -p 3000:3000 \
             -v /app/data:/app/data \
-            timesheet-app' > deploy.sh
+            ${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest
+
+          # Verify container is running
+          if ! docker ps | grep -q timesheet-app; then
+            echo "Container failed to start"
+            docker logs timesheet-app
+            exit 1
+          fi' > deploy.sh
 
           # Copy and execute the deployment script
           scp -i private_key.pem -o StrictHostKeyChecking=no deploy.sh $EC2_USERNAME@$EC2_HOST:~/deploy.sh
