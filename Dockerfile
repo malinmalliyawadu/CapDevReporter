@@ -132,7 +132,14 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Create data directory for SQLite database
-RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
+RUN mkdir -p /app/data && \
+    chown -R nextjs:nodejs /app/data && \
+    chmod 755 /app/data
+
+# Ensure the database directory is writable by the nextjs user
+RUN mkdir -p /app/prisma && \
+    chown -R nextjs:nodejs /app/prisma && \
+    chmod 755 /app/prisma
 
 COPY --from=builder /app/public ./public
 
