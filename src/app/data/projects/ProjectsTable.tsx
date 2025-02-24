@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   RefreshCw,
   ArrowUpDown,
@@ -327,23 +327,26 @@ export function ProjectsTable({
   };
 
   // Add fetchProjects function
-  const fetchProjects = async (params: URLSearchParams) => {
-    try {
-      const response = await fetch(`/api/projects?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to fetch projects");
+  const fetchProjects = useCallback(
+    async (params: URLSearchParams) => {
+      try {
+        const response = await fetch(`/api/projects?${params.toString()}`);
+        if (!response.ok) throw new Error("Failed to fetch projects");
 
-      const data = await response.json();
-      setProjects(data.projects);
-      setProjectsCount(data.total);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch projects",
-        variant: "destructive",
-      });
-    }
-  };
+        const data = await response.json();
+        setProjects(data.projects);
+        setProjectsCount(data.total);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch projects",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
 
   const handleSync = async () => {
     try {
@@ -689,7 +692,7 @@ export function ProjectsTable({
     params.set("size", String(Number(searchParams.size) || 10));
 
     fetchProjects(params);
-  }, [debouncedSearch, searchParams.size]);
+  }, [debouncedSearch, searchParams.size, fetchProjects]);
 
   // Effect to update projects when page changes
   useEffect(() => {
@@ -701,7 +704,7 @@ export function ProjectsTable({
     params.set("size", String(Number(searchParams.size) || 10));
 
     fetchProjects(params);
-  }, [page, searchParams.size]);
+  }, [page, searchParams.size, debouncedSearch, fetchProjects]);
 
   return (
     <div>
