@@ -36,7 +36,7 @@ export function DateRangePicker({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[300px] justify-start text-left font-normal",
+              "justify-start text-left font-normal",
               !dateRange && "text-muted-foreground"
             )}
           >
@@ -61,7 +61,9 @@ export function DateRangePicker({
               {presets?.map((preset) => (
                 <Button
                   key={preset.label}
-                  onClick={() => onDateRangeChange(preset.value)}
+                  onClick={() => {
+                    onDateRangeChange(preset.value);
+                  }}
                   variant="outline"
                   size="sm"
                   className="text-sm"

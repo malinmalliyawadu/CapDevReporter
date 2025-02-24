@@ -1,0 +1,147 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "rhel-openssl-1.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Team {
+  id          String               @id @default(cuid())
+  name        String               @unique
+  description String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  assignments EmployeeAssignment[]
+  jiraBoards  JiraBoard[]
+}
+
+model Project {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  jiraId      String      @unique
+  isCapDev    Boolean     @default(false)
+  boardId     String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  board       JiraBoard   @relation(fields: [boardId], references: [id])
+  timeEntries TimeEntry[]
+  activities  ProjectActivity[]
+}
+
+model TimeEntry {
+  id          String   @id @default(cuid())
+  date        DateTime
+  hours       Float
+  description String?
+  employeeId  String
+  projectId   String
+  timeTypeId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  timeType    TimeType @relation(fields: [timeTypeId], references: [id])
+  project     Project  @relation(fields: [projectId], references: [id])
+  employee    Employee @relation(fields: [employeeId], references: [id])
+}
+
+model TimeType {
+  id                 String                  @id @default(cuid())
+  name               String                  @unique
+  description        String?
+  isCapDev           Boolean                 @default(false)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  generalAssignments GeneralTimeAssignment[]
+  timeEntries        TimeEntry[]
+}
+
+model Role {
+  id                 String                  @id @default(cuid())
+  name               String                  @unique
+  description        String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  employees          Employee[]
+  generalAssignments GeneralTimeAssignment[]
+}
+
+model Employee {
+  id           String               @id @default(cuid())
+  name         String
+  payrollId    String               @unique
+  hoursPerWeek Int                  @default(40)
+  roleId       String
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  role         Role                 @relation(fields: [roleId], references: [id])
+  assignments  EmployeeAssignment[]
+  leave        Leave[]
+  timeEntries  TimeEntry[]
+}
+
+model EmployeeAssignment {
+  id         String    @id @default(cuid())
+  startDate  DateTime
+  endDate    DateTime?
+  employeeId String
+  teamId     String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  team       Team      @relation(fields: [teamId], references: [id])
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId])
+  @@index([teamId])
+}
+
+model Leave {
+  id         String   @id @default(cuid())
+  date       DateTime
+  type       String
+  status     String   @default("PENDING")
+  duration   Float
+  employeeId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  employee   Employee @relation(fields: [employeeId], references: [id])
+}
+
+model GeneralTimeAssignment {
+  id           String   @id @default(cuid())
+  roleId       String
+  timeTypeId   String
+  hoursPerWeek Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  timeType     TimeType @relation(fields: [timeTypeId], references: [id])
+  role         Role     @relation(fields: [roleId], references: [id])
+
+  @@unique([roleId, timeTypeId])
+}
+
+model JiraBoard {
+  id        String    @id @default(cuid())
+  name      String
+  boardId   String
+  teamId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  team      Team      @relation(fields: [teamId], references: [id])
+  projects  Project[]
+
+  @@unique([teamId, boardId])
+}
+
+model ProjectActivity {
+  id           String   @id @default(cuid())
+  jiraIssueId  String
+  activityDate DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  project      Project  @relation(fields: [jiraIssueId], references: [jiraId])
+
+  @@index([jiraIssueId])
+}
