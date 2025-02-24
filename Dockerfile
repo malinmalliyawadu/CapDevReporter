@@ -133,10 +133,12 @@ RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
 
 COPY --from=builder /app/public ./public
 
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy the entire .next directory instead of just static files
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+
+# Copy package.json and install production dependencies
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/node_modules ./node_modules
 
 # Ensure Prisma files have correct permissions
 RUN chown -R nextjs:nodejs ./prisma
@@ -151,6 +153,5 @@ EXPOSE 3000
 COPY --chown=nextjs:nodejs prisma/schema.prisma ./prisma/
 COPY --chown=nextjs:nodejs scripts/init-db.sh ./scripts/
 
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
-CMD ["/bin/sh", "-c", "./scripts/init-db.sh && node server.js"]
+# Use next start instead of node server.js since we're not using standalone output
+CMD ["/bin/sh", "-c", "./scripts/init-db.sh && npm run start"]
