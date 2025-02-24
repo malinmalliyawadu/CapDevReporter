@@ -99,6 +99,9 @@ ENV IPAYROLL_API_KEY=${IPAYROLL_API_KEY}
 ENV IPAYROLL_COMPANY_ID=${IPAYROLL_COMPANY_ID}
 ENV JIRA_HOST=${JIRA_HOST}
 
+# Install required packages
+RUN apk add --no-cache dos2unix
+
 RUN if [ -n "$***REMOVED***ROOTCACERT" ]; then \
     echo "$***REMOVED***ROOTCACERT" > /root/wlgca.crt; \
     cat /root/wlgca.crt >> /etc/ssl/certs/ca-certificates.crt; \
@@ -152,6 +155,10 @@ EXPOSE 3000
 # Copy database initialization script
 COPY --chown=nextjs:nodejs prisma/schema.prisma ./prisma/
 COPY --chown=nextjs:nodejs scripts/init-db.sh ./scripts/
+
+# Ensure script has correct permissions and line endings
+RUN chmod +x ./scripts/init-db.sh && \
+    dos2unix ./scripts/init-db.sh 2>/dev/null || true
 
 # Use next start instead of node server.js since we're not using standalone output
 CMD ["/bin/sh", "-c", "./scripts/init-db.sh && npm run start"]
