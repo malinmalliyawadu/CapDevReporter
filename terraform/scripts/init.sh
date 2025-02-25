@@ -144,6 +144,37 @@ server {
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
     }
+
+    # Sync endpoint - optimized for streaming
+    location /api/projects/sync {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        
+        # Disable all buffering for streaming
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_cache off;
+        
+        # Increase timeouts for long-running sync
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+        proxy_connect_timeout 600s;
+        
+        # Keep connection alive
+        proxy_set_header Connection '';
+        keepalive_timeout 600s;
+        keepalive_requests 1000;
+        
+        # Chunked transfer encoding
+        proxy_set_header Transfer-Encoding chunked;
+        
+        # Disable compression
+        proxy_set_header Accept-Encoding '';
+    }
 }
 EOL
 

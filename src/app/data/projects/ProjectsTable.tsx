@@ -377,7 +377,12 @@ export function ProjectsTable({
           if (!line) continue;
 
           try {
-            const data = JSON.parse(line);
+            const data = JSON.parse(line) as {
+              type?: "complete";
+              message: string;
+              progress: number;
+              operation?: string;
+            };
 
             if (data.type === "complete") {
               // Handle completion
@@ -428,7 +433,11 @@ export function ProjectsTable({
             } else {
               // Handle progress update
               setSyncProgress(data);
-              addSyncLog(data.message, data.type || "info", data.operation);
+              addSyncLog(
+                data.message,
+                data.type || "info",
+                data.operation || "sync"
+              );
             }
           } catch (error) {
             console.error("Error parsing sync message:", error);
