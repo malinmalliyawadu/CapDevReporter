@@ -15,20 +15,12 @@ export async function DELETE(
     // Check if time type exists and has no time entries
     const timeType = await prisma.timeType.findUnique({
       where: { id },
-      include: { timeEntries: true },
     });
 
     if (!timeType) {
       return NextResponse.json(
         { error: "Time type not found" },
         { status: 404 }
-      );
-    }
-
-    if (timeType.timeEntries.length > 0) {
-      return NextResponse.json(
-        { error: "Cannot delete time type with existing time entries" },
-        { status: 400 }
       );
     }
 

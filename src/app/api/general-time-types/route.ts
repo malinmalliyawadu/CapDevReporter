@@ -5,7 +5,6 @@ export async function GET() {
   try {
     const timeTypes = await prisma.timeType.findMany({
       include: {
-        timeEntries: true,
         generalAssignments: {
           include: {
             role: true,
@@ -59,7 +58,6 @@ export async function POST(request: Request) {
         isCapDev: isCapDev || false,
       },
       include: {
-        timeEntries: true,
         generalAssignments: {
           include: {
             role: true,

@@ -33,21 +33,11 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 
-interface TimeEntry {
-  id: string;
-  date: string;
-  hours: number;
-  description: string | null;
-  employeeId: string;
-  projectId: string;
-}
-
 interface TimeType {
   id: string;
   name: string;
   description: string | null;
   isCapDev: boolean;
-  timeEntries: TimeEntry[];
   generalAssignments: {
     id: string;
     role: {
@@ -207,16 +197,12 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
     {
       id: "actions",
       cell: ({ row }) => {
-        const hasEntries = row.original.timeEntries.length > 0;
         return (
           <Button
             variant="ghost"
             size="sm"
-            className={`${
-              hasEntries ? "text-gray-400" : "text-red-600 hover:text-red-700"
-            }`}
+            className="text-red-600 hover:text-red-700"
             onClick={() => handleDeleteClick(row.original)}
-            disabled={hasEntries}
           >
             <Trash2 className="h-4 w-4" />
             <span className="ml-2">Delete</span>

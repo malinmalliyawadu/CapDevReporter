@@ -45,7 +45,6 @@ async function getProjects(searchParams: ProjectsPageQueryString) {
             team: true,
           },
         },
-        timeEntries: true,
         activities: true,
       },
       orderBy: { name: "asc" },

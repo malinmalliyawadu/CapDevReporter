@@ -10,7 +10,6 @@ import { TimeTypesTableSkeleton } from "./loading";
 async function getTimeTypes() {
   const timeTypes = await prisma.timeType.findMany({
     include: {
-      timeEntries: true,
       generalAssignments: {
         include: {
           role: true,
@@ -22,12 +21,6 @@ async function getTimeTypes() {
     ...type,
     createdAt: type.createdAt.toISOString(),
     updatedAt: type.updatedAt.toISOString(),
-    timeEntries: type.timeEntries.map((entry) => ({
-      ...entry,
-      date: entry.date.toISOString(),
-      createdAt: entry.createdAt.toISOString(),
-      updatedAt: entry.updatedAt.toISOString(),
-    })),
   }));
 }
 

@@ -41,7 +41,6 @@ export async function GET(request: Request) {
               team: true,
             },
           },
-          timeEntries: true,
           activities: true,
         },
         orderBy: { name: "asc" },

@@ -92,12 +92,7 @@ interface Project {
       name: string;
     };
   };
-  timeEntries: TimeEntry[];
   activities?: ProjectActivity[];
-}
-
-interface TimeEntry {
-  date: string | Date;
 }
 
 interface ProjectActivity {
