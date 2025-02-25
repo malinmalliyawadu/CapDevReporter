@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
   Pencil,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -183,6 +184,44 @@ export function TeamAssignmentsTable({
     }
   };
 
+  const handleDeleteAssignment = async (
+    assignmentId: string,
+    employeeId: string
+  ) => {
+    try {
+      const response = await fetch(
+        `/api/employee-assignments/${assignmentId}?id=${assignmentId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete assignment");
+      }
+
+      // Update local state
+      setEmployees((prevEmployees) =>
+        prevEmployees.map((employee) => {
+          if (employee.id === employeeId) {
+            return {
+              ...employee,
+              assignments: employee.assignments.filter(
+                (a) => a.id !== assignmentId
+              ),
+            };
+          }
+          return employee;
+        })
+      );
+
+      toast.success("Assignment deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete assignment:", error);
+      toast.error("Failed to delete assignment");
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center gap-4">
@@ -346,23 +385,37 @@ export function TeamAssignmentsTable({
                                   : "Present"}
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                setEditingAssignment({
-                                  employeeId: employee.id,
-                                  assignmentId: assignment.id,
-                                  teamId: assignment.team.id,
-                                  startDate: new Date(assignment.startDate),
-                                  endDate: assignment.endDate
-                                    ? new Date(assignment.endDate)
-                                    : undefined,
-                                })
-                              }
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  setEditingAssignment({
+                                    employeeId: employee.id,
+                                    assignmentId: assignment.id,
+                                    teamId: assignment.team.id,
+                                    startDate: new Date(assignment.startDate),
+                                    endDate: assignment.endDate
+                                      ? new Date(assignment.endDate)
+                                      : undefined,
+                                  })
+                                }
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  handleDeleteAssignment(
+                                    assignment.id,
+                                    employee.id
+                                  )
+                                }
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
                           </div>
                         ))
                     ) : (
