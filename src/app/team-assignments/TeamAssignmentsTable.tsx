@@ -181,31 +181,36 @@ export function TeamAssignmentsTable({
     assignmentId: string,
     employeeId: string
   ) => {
+    // Optimistically update the UI
+    const previousEmployees = [...employees];
+    setEmployees((prevEmployees) =>
+      prevEmployees.map((employee) => {
+        if (employee.id === employeeId) {
+          return {
+            ...employee,
+            assignments: employee.assignments.filter(
+              (a) => a.id !== assignmentId
+            ),
+          };
+        }
+        return employee;
+      })
+    );
+
     try {
       const result = await deleteAssignment(assignmentId);
 
       if (!result.success) {
+        // Revert the optimistic update if the server request fails
+        setEmployees(previousEmployees);
         throw new Error(result.error);
       }
-
-      // Update local state
-      setEmployees((prevEmployees) =>
-        prevEmployees.map((employee) => {
-          if (employee.id === employeeId) {
-            return {
-              ...employee,
-              assignments: employee.assignments.filter(
-                (a) => a.id !== assignmentId
-              ),
-            };
-          }
-          return employee;
-        })
-      );
 
       toast.success("Assignment deleted successfully");
     } catch (error) {
       console.error("Failed to delete assignment:", error);
+      // Revert the optimistic update
+      setEmployees(previousEmployees);
       toast.error(
         error instanceof Error ? error.message : "Failed to delete assignment"
       );
