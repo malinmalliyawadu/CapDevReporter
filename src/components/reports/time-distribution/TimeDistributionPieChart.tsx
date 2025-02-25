@@ -18,7 +18,7 @@ export function TimeDistributionPieChart({
   total,
 }: TimeDistributionPieChartProps) {
   return (
-    <Card>
+    <Card className="h-fit">
       <CardHeader className="pb-2">
         <CardTitle>Rolled Up Time Distribution</CardTitle>
       </CardHeader>

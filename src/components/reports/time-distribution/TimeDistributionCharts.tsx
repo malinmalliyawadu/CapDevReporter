@@ -165,7 +165,7 @@ export function TimeDistributionCharts({
     .sort((a, b) => b.value - a.value);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-4 md:grid-cols-2 mb-4">
       <TimeDistributionPieChart data={rolledUpData} total={totalHours} />
       <TimeDistributionBarChart data={detailedChartData} total={totalHours} />
     </div>
