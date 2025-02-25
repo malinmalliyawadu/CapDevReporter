@@ -198,14 +198,13 @@ export function TimeDistributionCharts({
                   }}
                   itemStyle={{ color: "#ffffff" }}
                   labelStyle={{ color: "#ffffff" }}
-                  formatter={(value: number, name: string) => {
-                    const item = rolledUpData.find((d) => d.name === name);
-                    return [
-                      `${value.toFixed(1)} hours (${item?.percentage.toFixed(
-                        1
-                      )}%)`,
-                    ];
-                  }}
+                  formatter={(value: number, name: string) => [
+                    `${value.toFixed(1)} hours (${(
+                      (value / (totalWorkHours + leaveHours)) *
+                      100
+                    ).toFixed(1)}%)`,
+                    name,
+                  ]}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -274,14 +273,19 @@ export function TimeDistributionCharts({
                     borderRadius: "4px",
                     padding: "8px 12px",
                   }}
-                  itemStyle={{ color: "#ffffff" }}
-                  labelStyle={{ color: "#ffffff" }}
-                  formatter={(value: number) =>
-                    `${value.toFixed(1)} hours (${(
-                      (value / (totalWorkHours + leaveHours)) *
-                      100
-                    ).toFixed(1)}%)`
-                  }
+                  content={({ payload }) => {
+                    if (!payload?.length) return null;
+                    const data = payload[0].payload;
+                    return (
+                      <div className="text-white">
+                        <div>{data.name}</div>
+                        <div>{`${data.value.toFixed(1)} hours (${(
+                          (data.value / (totalWorkHours + leaveHours)) *
+                          100
+                        ).toFixed(1)}%)`}</div>
+                      </div>
+                    );
+                  }}
                 />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {detailedChartData.map((entry, index) => (
