@@ -20,6 +20,7 @@ import {
   Wrench,
   Code,
   ExternalLink,
+  RefreshCw,
 } from "lucide-react";
 import {
   Tooltip,
@@ -27,6 +28,8 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { useSyncDialog } from "@/contexts/dialog-context";
 
 interface TimeReportExpandedRowProps {
   report: TimeReport;
@@ -44,6 +47,8 @@ export function TimeReportExpandedRow({
   timeTypes,
   deviations,
 }: TimeReportExpandedRowProps) {
+  const { openFromEvent: openSyncDialogFromEvent } = useSyncDialog();
+
   const getEntryIcon = (entry: TimeReport["timeEntries"][0]) => {
     if (entry.isPublicHoliday)
       return <Calendar className="h-4 w-4 text-blue-500" />;
@@ -73,6 +78,7 @@ export function TimeReportExpandedRow({
                   <TableHead>Activity Date</TableHead>
                   <TableHead className="text-right">Hours</TableHead>
                   <TableHead className="text-right">Tags</TableHead>
+                  <TableHead className="w-8"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -145,6 +151,21 @@ export function TimeReportExpandedRow({
                           <Badge variant="default" className="text-xs">
                             CapDev
                           </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-3 text-right">
+                        {entry.jiraId && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={openSyncDialogFromEvent({
+                              defaultIssueKey: entry.jiraId,
+                            })}
+                            title="Sync this project"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
                         )}
                       </TableCell>
                     </TableRow>

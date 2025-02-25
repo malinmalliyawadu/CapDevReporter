@@ -7,9 +7,14 @@ interface DialogState {
   isOpen: boolean;
 }
 
+interface SyncDialogState extends DialogState {
+  defaultIssueKey?: string;
+}
+
 interface DialogContextType<T extends DialogState = DialogState> {
   state: T;
-  open: () => void;
+  open: (options?: Partial<T>) => void;
+  openFromEvent: (options?: Partial<T>) => React.MouseEventHandler;
   close: () => void;
   setState: React.Dispatch<React.SetStateAction<T>>;
 }
@@ -33,11 +38,27 @@ function createDialogContext<T extends DialogState = DialogState>(
       ...initialState,
     } as T);
 
-    const open = () => setState((prev) => ({ ...prev, isOpen: true }));
-    const close = () => setState((prev) => ({ ...prev, isOpen: false }));
+    const open = (options?: Partial<T>) =>
+      setState((prev) => ({ ...prev, ...options, isOpen: true }));
+
+    const openFromEvent =
+      (options?: Partial<T>): React.MouseEventHandler =>
+      (e) => {
+        e.stopPropagation();
+        open(options);
+      };
+
+    const close = () =>
+      setState((prev) => ({
+        ...prev,
+        isOpen: false,
+        defaultIssueKey: undefined,
+      }));
 
     return (
-      <DialogContext.Provider value={{ state, setState, open, close }}>
+      <DialogContext.Provider
+        value={{ state, setState, open, openFromEvent, close }}
+      >
         {children}
       </DialogContext.Provider>
     );
@@ -61,4 +82,4 @@ function createDialogContext<T extends DialogState = DialogState>(
 
 // Create and export a single instance for the sync dialog
 export const { Provider: SyncDialogProvider, useDialog: useSyncDialog } =
-  createDialogContext("Sync");
+  createDialogContext<SyncDialogState>("Sync");

@@ -61,11 +61,12 @@ interface SyncLog {
 interface SyncConfig {
   boards: string[];
   maxIssuesPerBoard: number;
+  issueKey?: string;
 }
 
 export function SyncDialog() {
   const {
-    state: { isOpen },
+    state: { isOpen, defaultIssueKey },
     close,
   } = useSyncDialog();
   const [isSyncing, setIsSyncing] = useState(false);
@@ -79,11 +80,38 @@ export function SyncDialog() {
   const [syncConfig, setSyncConfig] = useState<SyncConfig>({
     boards: ["all"],
     maxIssuesPerBoard: 50,
+    issueKey: "",
   });
   const [availableBoards, setAvailableBoards] = useState<JiraBoard[]>([]);
   const [boardSearchOpen, setBoardSearchOpen] = useState(false);
   const [boardSearchQuery, setBoardSearchQuery] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Set default issue key when dialog opens
+  useEffect(() => {
+    if (isOpen && defaultIssueKey) {
+      setSyncConfig((prev) => ({
+        ...prev,
+        issueKey: defaultIssueKey,
+        boards: ["all"], // Reset boards when issue key is provided
+      }));
+      setShowAdvancedConfig(true); // Auto-expand advanced config when issue key is provided
+    }
+  }, [isOpen, defaultIssueKey]);
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSyncConfig({
+        boards: ["all"],
+        maxIssuesPerBoard: 50,
+        issueKey: "",
+      });
+      setShowAdvancedConfig(false);
+      setSyncLogs([]);
+      setSyncProgress(null);
+    }
+  }, [isOpen]);
 
   const filteredBoards = useMemo(() => {
     if (!boardSearchQuery) return availableBoards;
@@ -118,7 +146,12 @@ export function SyncDialog() {
   // Add effect for auto-scrolling
   useEffect(() => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      const viewport = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
     }
   }, [syncLogs]);
 
@@ -216,10 +249,18 @@ export function SyncDialog() {
       setSyncLogs([]);
 
       // Create URL with config parameters
-      const params = new URLSearchParams({
-        boards: syncConfig.boards.join(","),
-        maxIssuesPerBoard: syncConfig.maxIssuesPerBoard.toString(),
-      });
+      const params = new URLSearchParams();
+
+      if (syncConfig.issueKey) {
+        params.append("issueKey", syncConfig.issueKey);
+        // When syncing by issue key, we don't need other parameters
+      } else {
+        params.append("boards", syncConfig.boards.join(","));
+        params.append(
+          "maxIssuesPerBoard",
+          syncConfig.maxIssuesPerBoard.toString()
+        );
+      }
 
       const response = await fetch(`/api/projects/sync?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to start sync");
@@ -341,7 +382,42 @@ export function SyncDialog() {
             {showAdvancedConfig && (
               <div className="space-y-4 pt-4 border-t">
                 <div className="space-y-2">
-                  <Label htmlFor="boards">Boards to Sync</Label>
+                  <Label htmlFor="issueKey">Jira Issue Key (Optional)</Label>
+                  <Input
+                    id="issueKey"
+                    placeholder="e.g. PROJ-123"
+                    value={syncConfig.issueKey}
+                    onChange={(e) => {
+                      const newIssueKey = e.target.value.trim().toUpperCase();
+                      setSyncConfig((prev) => ({
+                        ...prev,
+                        issueKey: newIssueKey,
+                        // Reset boards to "all" when issue key is provided
+                        boards: newIssueKey ? ["all"] : prev.boards,
+                      }));
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter a specific Jira issue key to sync only that issue.
+                    This will override board selection.
+                  </p>
+                </div>
+
+                <div
+                  className="space-y-2 opacity-100 transition-opacity duration-200"
+                  style={{
+                    opacity: syncConfig.issueKey ? "0.5" : "1",
+                    pointerEvents: syncConfig.issueKey ? "none" : "auto",
+                  }}
+                >
+                  <Label htmlFor="boards" className="flex items-center gap-2">
+                    Boards to Sync
+                    {syncConfig.issueKey && (
+                      <span className="text-xs text-muted-foreground">
+                        (Disabled when issue key is provided)
+                      </span>
+                    )}
+                  </Label>
                   <Popover
                     open={boardSearchOpen}
                     onOpenChange={setBoardSearchOpen}
@@ -449,8 +525,24 @@ export function SyncDialog() {
                   </Popover>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="maxIssues">Maximum Issues per Board</Label>
+                <div
+                  className="space-y-2 opacity-100 transition-opacity duration-200"
+                  style={{
+                    opacity: syncConfig.issueKey ? "0.5" : "1",
+                    pointerEvents: syncConfig.issueKey ? "none" : "auto",
+                  }}
+                >
+                  <Label
+                    htmlFor="maxIssues"
+                    className="flex items-center gap-2"
+                  >
+                    Maximum Issues per Board
+                    {syncConfig.issueKey && (
+                      <span className="text-xs text-muted-foreground">
+                        (Disabled when issue key is provided)
+                      </span>
+                    )}
+                  </Label>
                   <Input
                     id="maxIssues"
                     type="number"

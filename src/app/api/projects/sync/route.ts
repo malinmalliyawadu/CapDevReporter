@@ -59,8 +59,9 @@ async function checkForCapDevLabel(
 export async function GET(request: Request) {
   console.log("[Sync] Starting sync process");
 
-  // Parse the URL to get the boards parameter
+  // Parse the URL to get parameters
   const url = new URL(request.url);
+  const issueKey = url.searchParams.get("issueKey");
   const selectedBoards = url.searchParams.get("boards")?.split(",") || ["all"];
   const maxIssuesPerBoard = parseInt(
     url.searchParams.get("maxIssuesPerBoard") || "50",
@@ -68,9 +69,13 @@ export async function GET(request: Request) {
   );
 
   console.log(
-    `[Sync] Configuration - Selected Boards: ${selectedBoards.join(
-      ", "
-    )}, Max Issues Per Board: ${maxIssuesPerBoard}`
+    `[Sync] Configuration - ${
+      issueKey
+        ? `Issue Key: ${issueKey}`
+        : `Selected Boards: ${selectedBoards.join(
+            ", "
+          )}, Max Issues Per Board: ${maxIssuesPerBoard}`
+    }`
   );
 
   // Create a transform stream to handle the sync process
@@ -105,6 +110,110 @@ export async function GET(request: Request) {
               });
             }
 
+            if (issueKey) {
+              // Single issue sync mode
+              sendStreamMessage(encoder, controller, {
+                message: `Fetching issue ${issueKey}...`,
+                progress: 10,
+                type: "info",
+                operation: "fetch-issue",
+              });
+
+              try {
+                const issue = await jiraClient.getIssue(
+                  issueKey,
+                  [
+                    "summary",
+                    "description",
+                    "status",
+                    "labels",
+                    "parent",
+                    "project",
+                    "project.projectCategory",
+                  ],
+                  undefined
+                );
+
+                if (!issue) {
+                  throw new Error(`Issue ${issueKey} not found`);
+                }
+
+                // Check for CapDev label
+                const hasCapDev = await checkForCapDevLabel(issueKey);
+
+                // Create or update the project
+                const project = await prisma.project.upsert({
+                  where: { jiraId: issue.key },
+                  create: {
+                    name: issue.fields.summary,
+                    description: issue.fields.description || "",
+                    jiraId: issue.key,
+                    isCapDev: hasCapDev,
+                    board: {
+                      connectOrCreate: {
+                        where: { id: issue.fields.project.id.toString() },
+                        create: {
+                          boardId: issue.fields.project.id.toString(),
+                          name: issue.fields.project.name,
+                          team: {
+                            connectOrCreate: {
+                              where: {
+                                name:
+                                  issue.fields.project.projectCategory?.name ||
+                                  "Unknown Team",
+                              },
+                              create: {
+                                name:
+                                  issue.fields.project.projectCategory?.name ||
+                                  "Unknown Team",
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  update: {
+                    name: issue.fields.summary,
+                    description: issue.fields.description || "",
+                    isCapDev: hasCapDev,
+                  },
+                });
+
+                sendStreamMessage(encoder, controller, {
+                  message: `Successfully synced issue ${issueKey}`,
+                  progress: 100,
+                  type: "success",
+                  operation: "sync-issue",
+                });
+
+                // Send complete message
+                controller.enqueue(
+                  encoder.encode(
+                    JSON.stringify({
+                      type: "complete",
+                      message: "Sync complete!",
+                      progress: 100,
+                    }) + "\n"
+                  )
+                );
+
+                return;
+              } catch (error: any) {
+                console.error(`Error syncing issue ${issueKey}:`, error);
+                sendStreamMessage(encoder, controller, {
+                  message: `Failed to sync issue ${issueKey}: ${
+                    error?.message || "Unknown error"
+                  }`,
+                  progress: 0,
+                  type: "error",
+                  operation: "sync-error",
+                });
+                throw error;
+              }
+            }
+
+            // If no issue key, proceed with board-based sync
             // Get boards from database
             sendStreamMessage(encoder, controller, {
               message: "Fetching boards from database...",

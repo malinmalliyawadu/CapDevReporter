@@ -134,7 +134,7 @@ export function ProjectsTable({
   searchParams,
 }: ProjectsTableProps) {
   const { toast } = useToast();
-  const { open: openSyncDialog } = useSyncDialog();
+  const { openFromEvent: openSyncDialogFromEvent } = useSyncDialog();
   const router = useRouter();
   const pathname = usePathname();
   const [projects, setProjects] = useState(initialProjects);
@@ -280,13 +280,13 @@ export function ProjectsTable({
   // Effect to handle sync parameter
   useEffect(() => {
     if (searchParams.sync === "true") {
-      openSyncDialog();
+      openSyncDialogFromEvent();
       // Remove the sync parameter from the URL
       const params = new URLSearchParams(window.location.search);
       params.delete("sync");
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [searchParams.sync, router, pathname, openSyncDialog]);
+  }, [searchParams.sync, router, pathname, openSyncDialogFromEvent]);
 
   const addSyncLog = (
     message: string,
@@ -410,7 +410,7 @@ export function ProjectsTable({
                       size="sm"
                       className="w-full"
                       onClick={() => {
-                        openSyncDialog();
+                        openSyncDialogFromEvent();
                         router.push("/data/projects");
                         router.refresh();
                       }}
@@ -623,6 +623,27 @@ export function ProjectsTable({
         </span>
       ),
     },
+    {
+      id: "sync",
+      cell: ({ row }) => {
+        const project = row.original;
+        return (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={openSyncDialogFromEvent({
+              defaultIssueKey: project.jiraId,
+            })}
+            title="Sync this project"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    },
   ];
 
   const renderSubRow = (row: Project) => {
@@ -775,8 +796,12 @@ export function ProjectsTable({
                 Last synced: {lastSynced.toLocaleString("en-NZ")}
               </span>
             )}
-            <Button onClick={openSyncDialog} size="sm">
-              <RefreshCw className="h-4 w-4 mr-2 hover:rotate-180 transition-all duration-300" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openSyncDialogFromEvent()}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
               Sync with Jira
             </Button>
           </div>
