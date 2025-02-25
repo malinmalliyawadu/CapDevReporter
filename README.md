@@ -1,4 +1,4 @@
-# 🕒 PTMl Timesheet
+# 🕒 ***REMOVED*** Timesheet
 
 Automated timesheet app for ***REMOVED*** employees.
 
@@ -11,7 +11,7 @@ Automated timesheet app for ***REMOVED*** employees.
 - [Playwright](https://playwright.dev/) (E2E Testing)
 - [Recharts](https://recharts.org/)
 
-## 🏃‍♂️ Installation
+## 🏃‍♂️ Get Started
 
 1. Install dependencies:
 
@@ -42,7 +42,7 @@ npm run test:e2e:ui
 npm run test:e2e:debug
 ```
 
-## 🗃️ Database Management
+## 💾 Database Management
 
 Initialize or reset the database:
 
