@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { jiraClient } from "@/utils/jira";
 
-// Helper to send SSE messages
-function sendSSEMessage(
-  controller: ReadableStreamDefaultController,
+// Helper to send stream message
+function sendStreamMessage(
+  encoder: TextEncoder,
+  controller: TransformStreamDefaultController,
   data: {
     message: string;
     progress: number;
@@ -12,11 +13,13 @@ function sendSSEMessage(
   }
 ) {
   console.log(
-    `[SSE] ${data.operation}: ${data.message} (Progress: ${data.progress}%)`
+    `[Stream] ${data.operation}: ${data.message} (Progress: ${data.progress}%)`
   );
-  controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
-  // Add a flush message to ensure real-time updates
-  controller.enqueue(": flush\n\n");
+  try {
+    controller.enqueue(encoder.encode(JSON.stringify(data) + "\n"));
+  } catch (error) {
+    console.error("[Stream] Failed to enqueue message:", error);
+  }
 }
 
 // Helper function to check for capdev label up the parent chain
@@ -56,13 +59,6 @@ async function checkForCapDevLabel(
 export async function GET(request: Request) {
   console.log("[Sync] Starting sync process");
 
-  // Set up SSE headers
-  const responseHeaders = new Headers({
-    "Content-Type": "text/event-stream",
-    Connection: "keep-alive",
-    "Cache-Control": "no-cache",
-  });
-
   // Parse the URL to get the boards parameter
   const url = new URL(request.url);
   const selectedBoards = url.searchParams.get("boards")?.split(",") || ["all"];
@@ -77,24 +73,40 @@ export async function GET(request: Request) {
     )}, Max Issues Per Board: ${maxIssuesPerBoard}`
   );
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        let syncTimeout: NodeJS.Timeout;
+  // Create a transform stream to handle the sync process
+  const encoder = new TextEncoder();
+  let isStreamActive = true;
 
+  const transform = new TransformStream({
+    transform() {
+      // We don't use the chunk as we're only using this for output
+    },
+    async start(controller) {
+      let syncTimeout: NodeJS.Timeout | undefined;
+
+      try {
         // Set a timeout to prevent infinite syncs
         const timeoutPromise = new Promise((_, reject) => {
           syncTimeout = setTimeout(() => {
             console.error("[Sync] Process timed out after 5 minutes");
+            isStreamActive = false;
             reject(new Error("Sync timed out after 5 minutes"));
           }, 5 * 60 * 1000); // 5 minutes timeout
         });
 
         const syncPromise = async () => {
           try {
-            console.log("[Sync] Starting sync promise execution");
+            if (isStreamActive) {
+              sendStreamMessage(encoder, controller, {
+                message: "Starting sync...",
+                progress: 0,
+                type: "info",
+                operation: "sync-start",
+              });
+            }
+
             // Get boards from database
-            sendSSEMessage(controller, {
+            sendStreamMessage(encoder, controller, {
               message: "Fetching boards from database...",
               progress: 10,
               type: "info",
@@ -190,7 +202,7 @@ export async function GET(request: Request) {
 
               if (!boards.length) {
                 console.error("[Boards] No boards found or could be created");
-                sendSSEMessage(controller, {
+                sendStreamMessage(encoder, controller, {
                   message: "No boards found or could be created",
                   progress: 2,
                   type: "error",
@@ -200,7 +212,7 @@ export async function GET(request: Request) {
               }
             }
 
-            sendSSEMessage(controller, {
+            sendStreamMessage(encoder, controller, {
               message: `Successfully fetched ${boards.length} boards`,
               progress: 12,
               type: "success",
@@ -208,7 +220,7 @@ export async function GET(request: Request) {
             });
 
             // Get existing projects
-            sendSSEMessage(controller, {
+            sendStreamMessage(encoder, controller, {
               message: "Fetching existing projects...",
               progress: 17,
               type: "info",
@@ -227,7 +239,7 @@ export async function GET(request: Request) {
               },
             });
 
-            sendSSEMessage(controller, {
+            sendStreamMessage(encoder, controller, {
               message: "Successfully fetched existing projects",
               progress: 22,
               type: "success",
@@ -275,7 +287,7 @@ export async function GET(request: Request) {
                   console.error(
                     `[Board ${board.boardId}] Board not found in Jira response or missing project key`
                   );
-                  sendSSEMessage(controller, {
+                  sendStreamMessage(encoder, controller, {
                     message: `Board ${board.name} (${board.boardId}) not found in Jira or missing project key`,
                     progress: Math.round(baseProgress),
                     type: "error",
@@ -292,7 +304,7 @@ export async function GET(request: Request) {
                   `[Board ${board.boardId}] Error looking up board in Jira:`,
                   error
                 );
-                sendSSEMessage(controller, {
+                sendStreamMessage(encoder, controller, {
                   message: `Failed to lookup board ${board.name} in Jira`,
                   progress: Math.round(baseProgress),
                   type: "error",
@@ -305,7 +317,7 @@ export async function GET(request: Request) {
               console.log(
                 `[Board ${board.boardId}] Fetching issues for board ${board.name}`
               );
-              sendSSEMessage(controller, {
+              sendStreamMessage(encoder, controller, {
                 message: `Fetching issues from board ${board.name}...`,
                 progress: Math.round(baseProgress + progressPerBoard * 0.2),
                 type: "info",
@@ -338,7 +350,7 @@ export async function GET(request: Request) {
                 ].slice(0, maxIssuesPerBoard);
 
                 // Send success message to close out the fetch operation
-                sendSSEMessage(controller, {
+                sendStreamMessage(encoder, controller, {
                   message: "Issues fetched successfully",
                   progress: Math.round(baseProgress + progressPerBoard * 0.25),
                   type: "success",
@@ -349,7 +361,7 @@ export async function GET(request: Request) {
                   `[Board ${board.boardId}] Error fetching issues:`,
                   error
                 );
-                sendSSEMessage(controller, {
+                sendStreamMessage(encoder, controller, {
                   message: `Error fetching issues: ${
                     error instanceof Error ? error.message : "Unknown error"
                   }`,
@@ -364,7 +376,7 @@ export async function GET(request: Request) {
                 console.log(
                   `[Board ${board.boardId}] No issues found for board ${board.name}`
                 );
-                sendSSEMessage(controller, {
+                sendStreamMessage(encoder, controller, {
                   message: `No issues found for board ${board.name}`,
                   progress: Math.round(baseProgress + progressPerBoard * 0.5),
                   type: "warning",
@@ -376,7 +388,7 @@ export async function GET(request: Request) {
               console.log(
                 `[Board ${board.boardId}] Found ${issues.issues.length} issues`
               );
-              sendSSEMessage(controller, {
+              sendStreamMessage(encoder, controller, {
                 message: `Found ${issues.issues.length} issues in board ${board.name}`,
                 progress: Math.round(baseProgress + progressPerBoard * 0.3),
                 type: "success",
@@ -399,7 +411,7 @@ export async function GET(request: Request) {
                 );
 
                 try {
-                  sendSSEMessage(controller, {
+                  sendStreamMessage(encoder, controller, {
                     message: `Processing issue ${issue.key} (${
                       issueIndex + 1
                     }/${issues.issues.length})`,
@@ -503,7 +515,7 @@ export async function GET(request: Request) {
                     }
                   }
 
-                  sendSSEMessage(controller, {
+                  sendStreamMessage(encoder, controller, {
                     message: `Successfully processed issue ${issue.key} (${issueDetails.fields.summary})`,
                     progress: issueProgress,
                     type: "success",
@@ -514,7 +526,7 @@ export async function GET(request: Request) {
                     `[Issue ${issue.key}] Error processing issue:`,
                     error
                   );
-                  sendSSEMessage(controller, {
+                  sendStreamMessage(encoder, controller, {
                     message: `Error processing issue: ${
                       error instanceof Error ? error.message : "Unknown error"
                     }`,
@@ -526,63 +538,82 @@ export async function GET(request: Request) {
               }
             }
 
-            sendSSEMessage(controller, {
+            sendStreamMessage(encoder, controller, {
               message: "Finalizing sync...",
               progress: 97,
               type: "info",
               operation: "finalize",
             });
 
-            // Send completion message
-            sendSSEMessage(controller, {
-              message: "Sync complete!",
-              progress: 100,
-              type: "success",
-              operation: "finalize",
-            });
-
-            // Send completion event
-            controller.enqueue(`event: sync-complete\ndata: {}\n\n`);
+            // At the end of successful sync
+            if (isStreamActive) {
+              sendStreamMessage(encoder, controller, {
+                message: "Sync complete!",
+                progress: 100,
+                type: "success",
+                operation: "finalize",
+              });
+              controller.enqueue(
+                encoder.encode(JSON.stringify({ type: "complete" }) + "\n")
+              );
+            }
           } catch (error) {
-            console.error("[Sync] Error in sync process:", error);
-            sendSSEMessage(controller, {
-              message: `Error in sync process: ${
-                error instanceof Error ? error.message : "Unknown error"
-              }`,
-              progress: 100,
-              type: "error",
-              operation: "sync-error",
-            });
-            // Send completion event even on error
-            controller.enqueue(`event: sync-complete\ndata: {}\n\n`);
+            if (isStreamActive) {
+              console.error("[Sync] Error in sync process:", error);
+              sendStreamMessage(encoder, controller, {
+                message: `Error in sync process: ${
+                  error instanceof Error ? error.message : "Unknown error"
+                }`,
+                progress: 100,
+                type: "error",
+                operation: "sync-error",
+              });
+              controller.enqueue(
+                encoder.encode(JSON.stringify({ type: "complete" }) + "\n")
+              );
+            }
           } finally {
-            clearTimeout(syncTimeout);
+            isStreamActive = false;
+            if (syncTimeout) {
+              clearTimeout(syncTimeout);
+            }
           }
         };
 
         // Race between sync and timeout
         await Promise.race([syncPromise(), timeoutPromise]);
-
-        // Close the stream
-        controller.close();
       } catch (error) {
-        console.error("[Sync] Error in sync route:", error);
-        sendSSEMessage(controller, {
-          message: `Error in sync route: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-          progress: 100,
-          type: "error",
-          operation: "sync-error",
-        });
-        // Send completion event even on fatal error
-        controller.enqueue(`event: sync-complete\ndata: {}\n\n`);
-        controller.close();
+        if (isStreamActive) {
+          console.error("[Sync] Error in sync route:", error);
+          sendStreamMessage(encoder, controller, {
+            message: `Error in sync route: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+            progress: 100,
+            type: "error",
+            operation: "sync-error",
+          });
+          controller.enqueue(
+            encoder.encode(JSON.stringify({ type: "complete" }) + "\n")
+          );
+        }
+      } finally {
+        isStreamActive = false;
+        if (syncTimeout) {
+          clearTimeout(syncTimeout);
+        }
       }
+    },
+    flush() {
+      // Clean up when the stream is closed
+      isStreamActive = false;
     },
   });
 
-  return new Response(stream, {
-    headers: responseHeaders,
+  return new Response(transform.readable, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Transfer-Encoding": "chunked",
+    },
   });
 }

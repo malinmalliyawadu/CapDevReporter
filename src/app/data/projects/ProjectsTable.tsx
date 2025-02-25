@@ -349,80 +349,95 @@ export function ProjectsTable({
       setSyncProgress({ message: "Starting sync...", progress: 0 });
       setSyncLogs([]);
 
-      // Create EventSource with config parameters
+      // Create URL with config parameters
       const params = new URLSearchParams({
         boards: syncConfig.boards.join(","),
         maxIssuesPerBoard: syncConfig.maxIssuesPerBoard.toString(),
       });
-      const eventSource = new EventSource(
-        `/api/projects/sync?${params.toString()}`
-      );
 
-      eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        setSyncProgress(data);
-        addSyncLog(data.message, data.type || "info", data.operation);
-      };
+      const response = await fetch(`/api/projects/sync?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to start sync");
+      if (!response.body) throw new Error("No response body");
 
-      eventSource.onerror = () => {
-        eventSource.close();
-        setIsSyncing(false);
-        setSyncProgress(null);
-        addSyncLog("Failed to sync with Jira", "error", "sync-error");
-        toast({
-          title: "Error",
-          description: "Failed to sync projects with Jira",
-          variant: "destructive",
-        });
-      };
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-      // Listen for completion
-      eventSource.addEventListener("sync-complete", async () => {
-        eventSource.close();
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-        // Always fetch the current page data after sync
-        const currentParams = new URLSearchParams();
-        currentParams.set("page", String(page));
-        currentParams.set("size", String(Number(searchParams.size) || 10));
-        if (debouncedSearch) {
-          currentParams.set("search", formatSearchQuery(debouncedSearch));
+        // Append new chunk to buffer and split by newlines
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+
+        // Process all complete lines
+        for (let i = 0; i < lines.length - 1; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          try {
+            const data = JSON.parse(line);
+
+            if (data.type === "complete") {
+              // Handle completion
+              const currentParams = new URLSearchParams();
+              currentParams.set("page", String(page));
+              currentParams.set(
+                "size",
+                String(Number(searchParams.size) || 10)
+              );
+              if (debouncedSearch) {
+                currentParams.set("search", formatSearchQuery(debouncedSearch));
+              }
+
+              // Fetch current page data
+              await fetchProjects(currentParams);
+
+              setLastSynced(new Date());
+              addSyncLog(
+                "Projects updated successfully",
+                "success",
+                "fetch-projects"
+              );
+
+              setIsSyncing(false);
+              setSyncProgress(null);
+
+              toast({
+                title: "Projects synced successfully!",
+                description: (
+                  <div className="flex flex-col gap-2">
+                    <p>All projects have been synchronized with Jira.</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        setSyncDialogOpen(false);
+                        router.push("/data/projects");
+                        router.refresh();
+                      }}
+                    >
+                      View All Projects
+                    </Button>
+                  </div>
+                ),
+                duration: 5000,
+              });
+            } else {
+              // Handle progress update
+              setSyncProgress(data);
+              addSyncLog(data.message, data.type || "info", data.operation);
+            }
+          } catch (error) {
+            console.error("Error parsing sync message:", error);
+          }
         }
 
-        // Fetch current page data
-        await fetchProjects(currentParams);
-
-        setLastSynced(new Date());
-        addSyncLog(
-          "Projects updated successfully",
-          "success",
-          "fetch-projects"
-        );
-
-        setIsSyncing(false);
-        setSyncProgress(null);
-
-        toast({
-          title: "Projects synced successfully!",
-          description: (
-            <div className="flex flex-col gap-2">
-              <p>All projects have been synchronized with Jira.</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => {
-                  setSyncDialogOpen(false);
-                  router.push("/data/projects");
-                  router.refresh();
-                }}
-              >
-                View All Projects
-              </Button>
-            </div>
-          ),
-          duration: 5000,
-        });
-      });
+        // Keep the last incomplete line in the buffer
+        buffer = lines[lines.length - 1];
+      }
     } catch (error) {
       console.error(error);
       setIsSyncing(false);
