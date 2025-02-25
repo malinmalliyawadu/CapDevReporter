@@ -213,7 +213,7 @@ export function Navigation() {
             variant="outline"
             size="sm"
             className="bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/80 dark:to-zinc-900/50 hover:from-white hover:to-white/80 dark:hover:from-zinc-800 dark:hover:to-zinc-800/80 transition-all duration-200"
-            onClick={openSyncDialog}
+            onClick={() => openSyncDialog()}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Sync Projects

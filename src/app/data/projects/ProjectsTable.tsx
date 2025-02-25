@@ -9,14 +9,7 @@ import {
   ArrowDown,
   ChevronDown,
   ChevronRight,
-  Clock,
-  CheckCircle2,
-  XCircle,
   AlertCircle,
-  AlertTriangle,
-  Check,
-  ChevronsUpDown,
-  Download,
   ChevronLeft,
   ChevronRight as ChevronRightIcon,
   X,
@@ -57,31 +50,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useDebounce } from "@/hooks/use-debounce";
 import { ProjectsPageQueryString } from "./page";
 import { useSyncDialog } from "@/contexts/dialog-context";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import confetti, { Options as ConfettiOptions } from "canvas-confetti";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -119,18 +88,6 @@ interface ProjectsTableProps {
   searchParams: ProjectsPageQueryString;
 }
 
-interface SyncLog {
-  timestamp: Date;
-  message: string;
-  type: "info" | "success" | "error" | "warning";
-  operation?: string;
-}
-
-interface SyncConfig {
-  boards: string[];
-  maxIssuesPerBoard: number;
-}
-
 interface JiraBoard {
   id: string;
   boardId: string;
@@ -154,24 +111,12 @@ export function ProjectsTable({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
-  const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [searchQuery, setSearchQuery] = useState(searchParams.search || "");
   const debouncedSearch = useDebounce(searchQuery, 500);
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [page, setPage] = useState(Number(searchParams.page) || 1);
-  const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
-  const [syncConfig, setSyncConfig] = useState<SyncConfig>({
-    boards: ["all"],
-    maxIssuesPerBoard: 50,
-  });
   const [availableBoards, setAvailableBoards] = useState<JiraBoard[]>([]);
-  const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
-  const [boardSearchOpen, setBoardSearchOpen] = useState(false);
-  const [boardSearchQuery, setBoardSearchQuery] = useState("");
-  const scrollAreaRef = React.useRef<HTMLDivElement>(
-    null
-  ) as React.RefObject<HTMLDivElement>;
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   const uniqueTeams = useMemo(() => {
@@ -284,12 +229,6 @@ export function ProjectsTable({
     fetchBoards();
   }, [availableBoards.length, toast]);
 
-  // Debug log for board selection
-  useEffect(() => {
-    console.log("Current sync config:", syncConfig);
-    console.log("Available boards:", availableBoards);
-  }, [syncConfig, availableBoards]);
-
   // Effect to handle sync parameter
   useEffect(() => {
     if (searchParams.sync === "true") {
@@ -300,35 +239,6 @@ export function ProjectsTable({
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
   }, [searchParams.sync, router, pathname, openSyncDialogFromEvent]);
-
-  const addSyncLog = (
-    message: string,
-    type: SyncLog["type"] = "info",
-    operation?: string
-  ) => {
-    setSyncLogs((prev) => {
-      // If we have an operation, try to find and update an existing log
-      if (operation) {
-        const existingLogIndex = prev.findIndex(
-          (log) => log.operation === operation && log.type === "info"
-        );
-
-        if (existingLogIndex !== -1) {
-          const newLogs = [...prev];
-          newLogs[existingLogIndex] = {
-            message,
-            type,
-            operation,
-            timestamp: new Date(),
-          };
-          return newLogs;
-        }
-      }
-
-      // If no operation or no existing log found, add a new one
-      return [...prev, { message, type, operation, timestamp: new Date() }];
-    });
-  };
 
   // Add fetchProjects function
   const fetchProjects = useCallback(
@@ -353,180 +263,6 @@ export function ProjectsTable({
     },
     [toast]
   );
-
-  const handleSync = async () => {
-    try {
-      setSyncLogs([]);
-
-      // Create URL with config parameters
-      const params = new URLSearchParams({
-        boards: syncConfig.boards.join(","),
-        maxIssuesPerBoard: syncConfig.maxIssuesPerBoard.toString(),
-      });
-
-      const response = await fetch(`/api/projects/sync?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to start sync");
-      if (!response.body) throw new Error("No response body");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        // Append new chunk to buffer and split by newlines
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-
-        // Process all complete lines
-        for (let i = 0; i < lines.length - 1; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
-
-          try {
-            const data = JSON.parse(line) as {
-              type?: "complete";
-              message: string;
-              progress: number;
-              operation?: string;
-            };
-
-            if (data.type === "complete") {
-              // Handle completion
-              const currentParams = new URLSearchParams();
-              currentParams.set("page", String(page));
-              currentParams.set(
-                "size",
-                String(Number(searchParams.size) || 10)
-              );
-              if (debouncedSearch) {
-                currentParams.set("search", formatSearchQuery(debouncedSearch));
-              }
-
-              // Fetch current page data
-              await fetchProjects(currentParams);
-
-              setLastSynced(new Date());
-              addSyncLog(
-                "Projects updated successfully",
-                "success",
-                "fetch-projects"
-              );
-
-              toast({
-                title: "Projects synced successfully!",
-                description: (
-                  <div className="flex flex-col gap-2">
-                    <p>All projects have been synchronized with Jira.</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => {
-                        openSyncDialogFromEvent();
-                        router.push("/data/projects");
-                        router.refresh();
-                      }}
-                    >
-                      View All Projects
-                    </Button>
-                  </div>
-                ),
-                duration: 5000,
-              });
-            } else {
-              // Handle progress update
-              addSyncLog(
-                data.message,
-                data.type || "info",
-                data.operation || "sync"
-              );
-            }
-          } catch (error) {
-            console.error("Error parsing sync message:", error);
-          }
-        }
-
-        // Keep the last incomplete line in the buffer
-        buffer = lines[lines.length - 1];
-      }
-    } catch (error) {
-      console.error(error);
-      addSyncLog("Sync process failed with an error", "error", "sync-error");
-      toast({
-        title: "Error",
-        description: "Failed to sync projects with Jira",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Function to trigger confetti
-  const triggerConfetti = () => {
-    const count = 200;
-    const defaults = {
-      origin: { y: 0.7 },
-      zIndex: 9999,
-    };
-
-    function fire(particleRatio: number, opts: ConfettiOptions) {
-      confetti({
-        ...defaults,
-        ...opts,
-        particleCount: Math.floor(count * particleRatio),
-      });
-    }
-
-    fire(0.25, {
-      spread: 26,
-      startVelocity: 55,
-    });
-
-    fire(0.2, {
-      spread: 60,
-    });
-
-    fire(0.35, {
-      spread: 100,
-      decay: 0.91,
-      scalar: 0.8,
-    });
-
-    fire(0.1, {
-      spread: 120,
-      startVelocity: 25,
-      decay: 0.92,
-      scalar: 1.2,
-    });
-
-    fire(0.1, {
-      spread: 120,
-      startVelocity: 45,
-    });
-  };
-
-  // Add effect to trigger confetti on successful completion
-  useEffect(() => {
-    const hasSuccessLog = syncLogs.some(
-      (log) =>
-        log.type === "success" &&
-        log.message === "Sync complete!" &&
-        log.operation === "finalize"
-    );
-
-    if (hasSuccessLog) {
-      triggerConfetti();
-    }
-  }, [syncLogs]);
-
-  // Add effect for auto-scrolling
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, [syncLogs]);
 
   const handleDeleteProject = async (project: Project) => {
     if (!project?.id) {
@@ -760,15 +496,6 @@ export function ProjectsTable({
     );
   };
 
-  const filteredBoards = useMemo(() => {
-    if (!boardSearchQuery) return availableBoards;
-    return availableBoards.filter(
-      (board) =>
-        board.name.toLowerCase().includes(boardSearchQuery.toLowerCase()) ||
-        board.team.name.toLowerCase().includes(boardSearchQuery.toLowerCase())
-    );
-  }, [availableBoards, boardSearchQuery]);
-
   const table = useReactTable({
     data: projects,
     columns,
@@ -874,12 +601,6 @@ export function ProjectsTable({
             </div>
           </div>
           <div className="flex items-center gap-6">
-            {lastSynced && (
-              <span className="text-sm text-muted-foreground flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-md">
-                <Clock className="h-3.5 w-3.5" />
-                Last synced: {lastSynced.toLocaleString("en-NZ")}
-              </span>
-            )}
             <Button
               variant="outline"
               size="sm"

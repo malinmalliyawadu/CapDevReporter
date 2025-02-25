@@ -9,7 +9,6 @@ import {
   ChevronRight,
   Search,
   Filter,
-  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -184,14 +183,6 @@ export function GeneralTimeAssignmentsTable({
       total,
       breakdown: breakdown.sort((a, b) => b.hoursPerWeek - a.hoursPerWeek),
     };
-  };
-
-  // Color utility function for progress bar
-  const getProgressBarColor = (percentage: number): string => {
-    if (percentage > 100) return "bg-red-500";
-    if (percentage > 90) return "bg-amber-500";
-    if (percentage > 75) return "bg-yellow-500";
-    return "bg-emerald-500";
   };
 
   // Color utility function for time types

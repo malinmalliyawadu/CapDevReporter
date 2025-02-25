@@ -7,7 +7,6 @@ import {
   Check,
   ChevronsUpDown,
   Download,
-  Clock,
   CheckCircle2,
   XCircle,
   AlertCircle,
@@ -74,7 +73,7 @@ export function SyncDialog() {
     message: string;
     progress: number;
   } | null>(null);
-  const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const [, setLastSynced] = useState<Date | null>(null);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
   const [syncConfig, setSyncConfig] = useState<SyncConfig>({

@@ -142,7 +142,7 @@ export async function GET(request: Request) {
                 const hasCapDev = await checkForCapDevLabel(issueKey);
 
                 // Create or update the project
-                const project = await prisma.project.upsert({
+                await prisma.project.upsert({
                   where: { jiraId: issue.key },
                   create: {
                     name: issue.fields.summary,
@@ -199,11 +199,11 @@ export async function GET(request: Request) {
                 );
 
                 return;
-              } catch (error: any) {
+              } catch (error: unknown) {
                 console.error(`Error syncing issue ${issueKey}:`, error);
                 sendStreamMessage(encoder, controller, {
                   message: `Failed to sync issue ${issueKey}: ${
-                    error?.message || "Unknown error"
+                    error instanceof Error ? error.message : "Unknown error"
                   }`,
                   progress: 0,
                   type: "error",

@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { useSyncDialog } from "@/contexts/dialog-context";
-import { useToast } from "@/hooks/use-toast";
 
 interface TimeReportExpandedRowProps {
   report: TimeReport;

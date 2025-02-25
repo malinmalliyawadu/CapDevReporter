@@ -5,7 +5,12 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 type CreateAssignmentResult =
-  | { success: true; data: any }
+  | {
+      success: true;
+      data: Prisma.GeneralTimeAssignmentGetPayload<{
+        include: { timeType: true };
+      }>;
+    }
   | { success: false; error: string };
 
 type DeleteAssignmentResult =
