@@ -6,6 +6,11 @@ on:
       - main
   workflow_dispatch:
 
+# Add concurrency to ensure only one deployment runs at a time
+concurrency:
+  group: production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -13,14 +18,61 @@ jobs:
       NEXT_PUBLIC_JIRA_URL: https://***REMOVED***.atlassian.net
 
     steps:
-      - name: 📥 Setup
-        run: |
-          echo "::group::📥 Repository Setup"
-          echo "🔍 Starting deployment process..."
-          echo "::endgroup::"
-
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔄 Update version
+        id: update_version
+        run: |
+          # Read current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Split version into parts
+          IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
+          MAJOR="${VERSION_PARTS[0]}"
+          MINOR="${VERSION_PARTS[1]}"
+          PATCH="${VERSION_PARTS[2]}"
+          
+          # Increment patch version
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          echo "New version: $NEW_VERSION"
+          
+          # Update package.json
+          node -e "
+            const fs = require('fs');
+            const package = require('./package.json');
+            package.version = '$NEW_VERSION';
+            fs.writeFileSync('./package.json', JSON.stringify(package, null, 2) + '\n');
+          "
+          
+          # Configure git
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          
+          # Commit and push changes
+          git add package.json
+          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+          git push
+          
+          # Set output for later steps
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "release_tag=v${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "release_name=Release v${NEW_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: 🏷️ Get version from package.json
+        id: package_version
+        run: |
+          VERSION=${{ steps.update_version.outputs.version }}
+          RELEASE_TAG=${{ steps.update_version.outputs.release_tag }}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+          echo "release_name=Release ${RELEASE_TAG}" >> $GITHUB_OUTPUT
+          echo "Using version: ${VERSION}"
 
       - name: 🌍 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -37,7 +89,8 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ***REMOVED***/timesheet
-          IMAGE_TAG: latest
+          VERSION: ${{ steps.package_version.outputs.version }}
+          RELEASE_TAG: ${{ steps.package_version.outputs.release_tag }}
         run: |
           echo "::group::🐳 Docker Build Process"
           echo "📦 Building Docker image..."
@@ -54,26 +107,30 @@ jobs:
             --build-arg IPAYROLL_API_URL=https://api.ipayroll.com \
             --build-arg IPAYROLL_API_KEY=hehe \
             --build-arg IPAYROLL_COMPANY_ID=1234567890 \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . || {
+            --label "org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --label "org.opencontainers.image.version=${VERSION}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest . || {
               echo "::error::Docker build failed"
               exit 1
             }
           
           # Show image details after successful build
           echo "📋 Image details:"
-          docker images $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --format "ID: {{.ID}}\nSize: {{.Size}}\nCreated: {{.CreatedSince}}"
+          docker images $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} --format "ID: {{.ID}}\nSize: {{.Size}}\nCreated: {{.CreatedSince}}"
           echo "::endgroup::"
           
           echo "::group::⬆️ Docker Push Process"
           echo "⬆️ Pushing image to ECR..."
-          if ! docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG; then
+          if ! docker push $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} || ! docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest; then
             echo "::error::Failed to push Docker image to ECR"
             exit 1
           fi
           
           # Show push summary
           echo "📊 Push summary:"
-          docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --format 'Repository: {{.RepoTags}}\nSize: {{.Size}} bytes\nLayers: {{len .RootFS.Layers}}'
+          docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} --format 'Repository: {{.RepoTags}}\nSize: {{.Size}} bytes\nLayers: {{len .RootFS.Layers}}'
           echo "::endgroup::"
 
       - name: 🚀 Deploy to EC2
@@ -83,7 +140,8 @@ jobs:
           EC2_USERNAME: ubuntu
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ***REMOVED***/timesheet
-          IMAGE_TAG: latest
+          VERSION: ${{ steps.package_version.outputs.version }}
+          RELEASE_TAG: ${{ steps.package_version.outputs.release_tag }}
         run: |
           echo "::group::🔑 SSH Setup"
           echo "Setting up SSH keys..."
@@ -126,7 +184,8 @@ jobs:
             -p 3000:3000 \
             -v /app/data:/app/data \
             -e NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
-            ${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest; then
+            -e APP_VERSION=${{ env.VERSION }} \
+            ${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:${RELEASE_TAG}; then
             echo "::error::Failed to start container"
             exit 1
           fi
@@ -189,6 +248,9 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const version = process.env.VERSION;
+            const releaseTag = process.env.RELEASE_TAG;
+            
             // Create deployment
             const deployment = await github.rest.repos.createDeployment({
               owner: context.repo.owner,
@@ -197,7 +259,8 @@ jobs:
               environment: 'production',
               auto_merge: false,
               required_contexts: [],
-              production_environment: true
+              production_environment: true,
+              description: `Deploying version ${version}`
             });
 
             // Update deployment status
@@ -208,5 +271,40 @@ jobs:
               state: 'success',
               environment_url: 'https://${{ vars.EC2_HOST }}',
               log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              description: 'Deployment successful!'
+              description: `Successfully deployed version ${version}!`
             });
+
+            // Create GitHub Release
+            const changelog = `
+            ## What's Changed
+            * Automated deployment of version ${version}
+            * Deployment timestamp: ${new Date().toISOString()}
+            * Commit: ${context.sha}
+            
+            ## Installation
+            This release has been automatically deployed to production.
+            
+            ## Additional Notes
+            * Docker image tag: \`${releaseTag}\`
+            * Environment: Production
+            `;
+
+            try {
+              await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: releaseTag,
+                name: `Release ${releaseTag}`,
+                body: changelog,
+                draft: false,
+                prerelease: false,
+                generate_release_notes: true
+              });
+              console.log(`Successfully created release ${releaseTag}`);
+            } catch (error) {
+              if (error.status === 422) {
+                console.log(`Release ${releaseTag} already exists, skipping creation`);
+              } else {
+                throw error;
+              }
+            }
