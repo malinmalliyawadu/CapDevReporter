@@ -28,23 +28,7 @@ model Project {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   board       JiraBoard   @relation(fields: [boardId], references: [id])
-  timeEntries TimeEntry[]
   activities  ProjectActivity[]
-}
-
-model TimeEntry {
-  id          String   @id @default(cuid())
-  date        DateTime
-  hours       Float
-  description String?
-  employeeId  String
-  projectId   String
-  timeTypeId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  timeType    TimeType @relation(fields: [timeTypeId], references: [id])
-  project     Project  @relation(fields: [projectId], references: [id])
-  employee    Employee @relation(fields: [employeeId], references: [id])
 }
 
 model TimeType {
@@ -55,7 +39,6 @@ model TimeType {
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
   generalAssignments GeneralTimeAssignment[]
-  timeEntries        TimeEntry[]
 }
 
 model Role {
@@ -79,7 +62,6 @@ model Employee {
   role         Role                 @relation(fields: [roleId], references: [id])
   assignments  EmployeeAssignment[]
   leave        Leave[]
-  timeEntries  TimeEntry[]
 }
 
 model EmployeeAssignment {

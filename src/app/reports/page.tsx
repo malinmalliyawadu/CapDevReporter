@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { TimeReportFilters } from "@/components/reports/TimeReportFilters";
 import { ReportDataDisplay } from "@/components/reports/ReportDataDisplay";
 import { prisma } from "@/lib/prisma";
-import { Prisma, TimeType } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { TimeReport, TimeReportEntry } from "@/types/timeReport";
 
 export const dynamic = "force-dynamic";
@@ -52,98 +52,134 @@ async function getTimeReportData(searchParams: {
   };
 
   // Fetch data in parallel
-  const [timeEntries, teams, roles, timeTypes, generalTimeAssignments] =
-    await Promise.all([
-      prisma.timeEntry.findMany({
-        where: {
-          date: {
-            gte: from,
-            lte: to,
+  const [
+    employees,
+    teams,
+    roles,
+    timeTypes,
+    generalTimeAssignments,
+    leaves,
+    projectActivities,
+  ] = await Promise.all([
+    prisma.employee.findMany({
+      where,
+      include: {
+        role: true,
+        assignments: {
+          include: {
+            team: true,
           },
-          employee: where,
-        },
-        include: {
-          employee: {
-            include: {
-              role: true,
-              assignments: {
-                include: {
-                  team: true,
-                },
-                where: {
-                  startDate: { lte: to },
-                  OR: [{ endDate: null }, { endDate: { gte: from } }],
-                },
-              },
-            },
+          where: {
+            startDate: { lte: to },
+            OR: [{ endDate: null }, { endDate: { gte: from } }],
           },
-          timeType: true,
         },
-      }),
-      prisma.team.findMany(),
-      prisma.role.findMany(),
-      prisma.timeType.findMany(),
-      prisma.generalTimeAssignment.findMany({
-        include: {
-          timeType: true,
+      },
+    }),
+    prisma.team.findMany(),
+    prisma.role.findMany(),
+    prisma.timeType.findMany(),
+    prisma.generalTimeAssignment.findMany({
+      include: {
+        timeType: true,
+      },
+    }),
+    prisma.leave.findMany({
+      where: {
+        date: {
+          gte: from,
+          lte: to,
         },
-      }),
-    ]);
+        employee: where,
+      },
+    }),
+    prisma.projectActivity.findMany({
+      where: {
+        activityDate: {
+          gte: from,
+          lte: to,
+        },
+      },
+      include: {
+        project: {
+          include: {
+            board: true,
+          },
+        },
+      },
+    }),
+  ]);
 
-  // Group time entries by employee and week
-  const timeEntriesByEmployeeAndWeek = timeEntries.reduce((acc, entry) => {
-    const week = format(entry.date, "yyyy-MM-dd");
-    const key = `${entry.employeeId}-${week}`;
-    if (!acc[key]) {
-      acc[key] = [];
-    }
-    acc[key].push(entry);
-    return acc;
-  }, {} as Record<string, typeof timeEntries>);
+  // Group activities by employee and week
+  const timeReports = employees.map((employee) => {
+    const currentAssignment = employee.assignments[0] || null;
 
-  // Transform time entries into time reports
-  const timeReports = Object.entries(timeEntriesByEmployeeAndWeek).map(
-    ([key, entries]) => {
-      const firstEntry = entries[0];
-      const employee = firstEntry.employee;
-      const currentAssignment = employee.assignments[0] || null;
-      const totalHours = entries.reduce((sum, entry) => sum + entry.hours, 0);
-      const expectedHours = employee.hoursPerWeek; // Use employee's configured hours per week
-      const isUnderutilized = totalHours < expectedHours;
+    // Get leaves for this employee
+    const employeeLeaves = leaves.filter(
+      (leave) => leave.employeeId === employee.id
+    );
 
-      const timeReportEntries: TimeReportEntry[] = entries.map((entry) => ({
-        id: entry.id,
-        hours: entry.hours,
-        timeTypeId: entry.timeTypeId,
-        isCapDev: entry.timeType.isCapDev,
-        date: format(entry.date, "yyyy-MM-dd"),
+    // Create time report entries from leaves
+    const leaveEntries: TimeReportEntry[] = employeeLeaves.map((leave) => ({
+      id: leave.id,
+      hours: leave.duration,
+      timeTypeId: "leave", // You might want to create a specific time type for leaves
+      isCapDev: false,
+      isLeave: true,
+      leaveType: leave.type,
+      date: format(leave.date, "yyyy-MM-dd"),
+    }));
+
+    // Create time report entries from project activities
+    const projectEntries: TimeReportEntry[] = projectActivities
+      .filter((activity) => {
+        // Filter activities based on the employee's team assignment
+        const employeeTeamId = currentAssignment?.team?.id;
+        if (!employeeTeamId) return false;
+
+        // Get the project's board and check if it belongs to the employee's team
+        return activity.project.board.teamId === employeeTeamId;
+      })
+      .map((activity) => ({
+        id: activity.id,
+        hours: 8, // Default to 8 hours per activity - you might want to adjust this
+        timeTypeId: activity.project.isCapDev ? "capdev" : "non-capdev", // You might want to create proper time types
+        isCapDev: activity.project.isCapDev,
+        projectId: activity.project.id,
+        projectName: activity.project.name,
+        jiraId: activity.jiraIssueId,
+        date: format(activity.activityDate, "yyyy-MM-dd"),
       }));
 
-      const report: TimeReport = {
-        id: key,
-        employeeId: employee.id,
-        employeeName: employee.name,
-        week: format(firstEntry.date, "yyyy-MM-dd"),
-        payrollId: employee.payrollId,
-        fullHours: totalHours,
-        expectedHours,
-        isUnderutilized,
-        missingHours: Math.max(0, expectedHours - totalHours),
-        team: currentAssignment?.team?.name || "Unassigned",
-        role: employee.role?.name || "No Role",
-        roleId: employee.roleId || "",
-        timeEntries: timeReportEntries,
-      };
+    const timeEntries = [...leaveEntries, ...projectEntries];
+    const totalHours = timeEntries.reduce((sum, entry) => sum + entry.hours, 0);
+    const expectedHours = employee.hoursPerWeek;
+    const isUnderutilized = totalHours < expectedHours;
 
-      return report;
-    }
-  );
+    const report: TimeReport = {
+      id: employee.id,
+      employeeId: employee.id,
+      employeeName: employee.name,
+      week: format(new Date(), "yyyy-MM-dd"), // You might want to group by week
+      payrollId: employee.payrollId,
+      fullHours: totalHours,
+      expectedHours,
+      isUnderutilized,
+      missingHours: Math.max(0, expectedHours - totalHours),
+      team: currentAssignment?.team?.name || "Unassigned",
+      role: employee.role?.name || "No Role",
+      roleId: employee.roleId || "",
+      timeEntries,
+    };
+
+    return report;
+  });
 
   return {
     timeReports,
     teams,
     roles,
-    timeTypes: timeTypes.map((tt: TimeType) => ({ id: tt.id, name: tt.name })),
+    timeTypes: timeTypes.map((tt) => ({ id: tt.id, name: tt.name })),
     generalAssignments: generalTimeAssignments,
   };
 }

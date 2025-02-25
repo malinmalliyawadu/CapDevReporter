@@ -21,22 +21,6 @@ CREATE TABLE "Project" (
 );
 
 -- CreateTable
-CREATE TABLE "TimeEntry" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "date" DATETIME NOT NULL,
-    "hours" REAL NOT NULL,
-    "description" TEXT,
-    "employeeId" TEXT NOT NULL,
-    "projectId" TEXT NOT NULL,
-    "timeTypeId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "TimeEntry_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "TimeEntry_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "TimeEntry_timeTypeId_fkey" FOREIGN KEY ("timeTypeId") REFERENCES "TimeType" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
-);
-
--- CreateTable
 CREATE TABLE "TimeType" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
