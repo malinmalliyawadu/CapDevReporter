@@ -66,7 +66,7 @@ interface SyncConfig {
 
 export function SyncDialog() {
   const {
-    state: { isOpen, defaultIssueKey },
+    state: { isOpen, defaultIssueKey, onSuccess },
     close,
   } = useSyncDialog();
   const [isSyncing, setIsSyncing] = useState(false);
@@ -86,6 +86,7 @@ export function SyncDialog() {
   const [boardSearchOpen, setBoardSearchOpen] = useState(false);
   const [boardSearchQuery, setBoardSearchQuery] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const hasShownConfetti = useRef(false);
 
   // Set default issue key when dialog opens
   useEffect(() => {
@@ -110,6 +111,7 @@ export function SyncDialog() {
       setShowAdvancedConfig(false);
       setSyncLogs([]);
       setSyncProgress(null);
+      hasShownConfetti.current = false;
     }
   }, [isOpen]);
 
@@ -164,7 +166,7 @@ export function SyncDialog() {
       // If we have an operation, try to find and update an existing log
       if (operation) {
         const existingLogIndex = prev.findIndex(
-          (log) => log.operation === operation && log.type === "info"
+          (log) => log.operation === operation
         );
 
         if (existingLogIndex !== -1) {
@@ -237,10 +239,12 @@ export function SyncDialog() {
         log.operation === "finalize"
     );
 
-    if (hasSuccessLog && !isSyncing) {
+    if (hasSuccessLog && !isSyncing && !hasShownConfetti.current) {
       triggerConfetti();
+      hasShownConfetti.current = true;
+      onSuccess?.();
     }
-  }, [syncLogs, isSyncing]);
+  }, [syncLogs, isSyncing, onSuccess]);
 
   const handleSync = async () => {
     try {
@@ -248,12 +252,20 @@ export function SyncDialog() {
       setSyncProgress({ message: "Starting sync...", progress: 0 });
       setSyncLogs([]);
 
+      // Add initial sync log
+      addSyncLog("Starting sync...", "info", "sync-start");
+
       // Create URL with config parameters
       const params = new URLSearchParams();
 
       if (syncConfig.issueKey) {
         params.append("issueKey", syncConfig.issueKey);
         // When syncing by issue key, we don't need other parameters
+        addSyncLog(
+          `Fetching issue ${syncConfig.issueKey}...`,
+          "info",
+          "fetch-issue"
+        );
       } else {
         params.append("boards", syncConfig.boards.join(","));
         params.append(
@@ -293,6 +305,15 @@ export function SyncDialog() {
 
             if (data.type === "complete") {
               setLastSynced(new Date());
+              // Update the initial sync message
+              addSyncLog("Sync started successfully", "success", "sync-start");
+              if (syncConfig.issueKey) {
+                addSyncLog(
+                  `Issue ${syncConfig.issueKey} fetched successfully`,
+                  "success",
+                  "fetch-issue"
+                );
+              }
               addSyncLog("Sync complete!", "success", "finalize");
               setIsSyncing(false);
               setSyncProgress(null);
@@ -334,22 +355,24 @@ export function SyncDialog() {
               </>
             ) : (
               <>
-                <span
-                  className={
-                    syncLogs.some((log) => log.type === "error")
-                      ? "text-destructive"
-                      : "text-primary"
-                  }
-                >
-                  {syncLogs.length
-                    ? syncLogs.some((log) => log.type === "error")
-                      ? "Sync Failed"
-                      : "Sync Complete"
-                    : "Sync Configuration"}
-                </span>
-                {syncLogs.some((log) => log.type === "error") && (
-                  <AlertTriangle className="h-5 w-5 text-destructive animate-pulse" />
-                )}
+                <div className="flex items-center justify-between w-full">
+                  <span
+                    className={
+                      syncLogs.some((log) => log.type === "error")
+                        ? "text-destructive"
+                        : "text-primary"
+                    }
+                  >
+                    {syncLogs.length
+                      ? syncLogs.some((log) => log.type === "error")
+                        ? "Sync Failed"
+                        : "Sync Complete"
+                      : "Sync Configuration"}
+                  </span>
+                  {syncLogs.some((log) => log.type === "error") && (
+                    <AlertTriangle className="h-5 w-5 text-destructive animate-pulse" />
+                  )}
+                </div>
               </>
             )}
           </DialogTitle>
@@ -692,6 +715,26 @@ export function SyncDialog() {
                   ))}
                 </div>
               </ScrollArea>
+              {syncLogs.some(
+                (log) =>
+                  log.type === "success" &&
+                  log.message === "Sync complete!" &&
+                  log.operation === "finalize"
+              ) && (
+                <div className="mt-6 space-y-4 text-center p-4 rounded-lg border bg-muted/30">
+                  <p className="text-sm text-muted-foreground">
+                    Sync completed successfully! Please reload the page to see
+                    the updated data.
+                  </p>
+                  <Button
+                    onClick={() => window.location.reload()}
+                    className="w-full"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Reload Page
+                  </Button>
+                </div>
+              )}
             </div>
           </>
         )}

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { useSyncDialog } from "@/contexts/dialog-context";
+import { useToast } from "@/hooks/use-toast";
 
 interface TimeReportExpandedRowProps {
   report: TimeReport;
@@ -48,6 +49,13 @@ export function TimeReportExpandedRow({
   deviations,
 }: TimeReportExpandedRowProps) {
   const { openFromEvent: openSyncDialogFromEvent } = useSyncDialog();
+
+  const handleSync = (jiraId: string) => {
+    const handler = openSyncDialogFromEvent({
+      defaultIssueKey: jiraId,
+    });
+    return handler;
+  };
 
   const getEntryIcon = (entry: TimeReport["timeEntries"][0]) => {
     if (entry.isPublicHoliday)
@@ -159,9 +167,7 @@ export function TimeReportExpandedRow({
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={openSyncDialogFromEvent({
-                              defaultIssueKey: entry.jiraId,
-                            })}
+                            onClick={handleSync(entry.jiraId)}
                             title="Sync this project"
                           >
                             <RefreshCw className="h-4 w-4" />

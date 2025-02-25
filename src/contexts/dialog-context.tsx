@@ -9,6 +9,7 @@ interface DialogState {
 
 interface SyncDialogState extends DialogState {
   defaultIssueKey?: string;
+  onSuccess?: () => void;
 }
 
 interface DialogContextType<T extends DialogState = DialogState> {
