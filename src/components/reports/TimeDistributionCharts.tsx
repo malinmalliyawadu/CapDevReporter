@@ -240,7 +240,7 @@ export function TimeDistributionCharts({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="h-fit">
         <CardHeader className="pb-2">
           <CardTitle>Detailed Time Distribution</CardTitle>
         </CardHeader>
