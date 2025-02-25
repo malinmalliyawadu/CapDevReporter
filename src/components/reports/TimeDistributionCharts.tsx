@@ -1,7 +1,17 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+} from "recharts";
 import type { TimeReport, TimeReportEntry } from "@/types/timeReport";
 import { Badge } from "@/components/ui/badge";
 
@@ -223,20 +233,26 @@ export function TimeDistributionCharts({
         <CardContent className="pt-0">
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={detailedChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {detailedChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
+              <BarChart
+                data={detailedChartData}
+                layout="vertical"
+                margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+              >
+                <XAxis
+                  type="number"
+                  unit="h"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={0}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={false}
+                />
                 <Tooltip
                   formatter={(value: number) =>
                     `${value.toFixed(1)} hours (${(
@@ -245,7 +261,12 @@ export function TimeDistributionCharts({
                     ).toFixed(1)}%)`
                   }
                 />
-              </PieChart>
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {detailedChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-4 space-y-2">
