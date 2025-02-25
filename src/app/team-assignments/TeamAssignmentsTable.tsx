@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { createAssignment, deleteAssignment } from "./actions";
 
 interface Team {
   id: string;
@@ -142,34 +143,24 @@ export function TeamAssignmentsTable({
     }
 
     try {
-      const response = await fetch("/api/employee-assignments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          employeeId: editingAssignment.employeeId,
-          teamId: editingAssignment.teamId,
-          startDate: editingAssignment.startDate.toISOString(),
-          endDate: editingAssignment.endDate
-            ? editingAssignment.endDate.toISOString()
-            : null,
-        }),
+      const result = await createAssignment({
+        employeeId: editingAssignment.employeeId,
+        teamId: editingAssignment.teamId,
+        startDate: editingAssignment.startDate,
+        endDate: editingAssignment.endDate || null,
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create assignment");
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
-      const newAssignment = await response.json();
-
-      // Update local state
+      // Update local state with the properly typed assignment
       setEmployees((prevEmployees) =>
         prevEmployees.map((employee) => {
           if (employee.id === editingAssignment.employeeId) {
             return {
               ...employee,
-              assignments: [...employee.assignments, newAssignment],
+              assignments: [...employee.assignments, result.data],
             };
           }
           return employee;
@@ -180,7 +171,9 @@ export function TeamAssignmentsTable({
       setEditingAssignment(null);
     } catch (error) {
       console.error("Failed to create assignment:", error);
-      toast.error("Failed to create assignment");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create assignment"
+      );
     }
   };
 
@@ -189,15 +182,10 @@ export function TeamAssignmentsTable({
     employeeId: string
   ) => {
     try {
-      const response = await fetch(
-        `/api/employee-assignments/${assignmentId}?id=${assignmentId}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const result = await deleteAssignment(assignmentId);
 
-      if (!response.ok) {
-        throw new Error("Failed to delete assignment");
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
       // Update local state
@@ -218,7 +206,9 @@ export function TeamAssignmentsTable({
       toast.success("Assignment deleted successfully");
     } catch (error) {
       console.error("Failed to delete assignment:", error);
-      toast.error("Failed to delete assignment");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete assignment"
+      );
     }
   };
 
