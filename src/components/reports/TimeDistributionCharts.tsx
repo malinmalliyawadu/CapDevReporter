@@ -230,6 +230,12 @@ export function TimeDistributionCharts({
                 </div>
               </div>
             ))}
+            <div className="flex justify-between items-center border-t pt-2 mt-3">
+              <span className="text-sm font-semibold">Total</span>
+              <span className="font-semibold">
+                {(totalWorkHours + leaveHours).toFixed(1)} hours
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -319,6 +325,12 @@ export function TimeDistributionCharts({
                 </div>
               </div>
             ))}
+            <div className="flex justify-between items-center border-t pt-2 mt-3">
+              <span className="text-sm font-semibold">Total</span>
+              <span className="font-semibold">
+                {(totalWorkHours + leaveHours).toFixed(1)} hours
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
