@@ -41,7 +41,11 @@ jobs:
         run: |
           echo "::group::🐳 Docker Build Process"
           echo "📦 Building Docker image..."
-          if ! docker build \
+          
+          # Use Docker's built-in progress formatting
+          DOCKER_BUILDKIT=1 docker build \
+            --progress=plain \
+            --no-cache \
             --build-arg DATABASE_URL="file:./dev.db" \
             --build-arg NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
             --build-arg JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }} \
@@ -50,10 +54,14 @@ jobs:
             --build-arg IPAYROLL_API_URL=https://api.ipayroll.com \
             --build-arg IPAYROLL_API_KEY=hehe \
             --build-arg IPAYROLL_COMPANY_ID=1234567890 \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .; then
-            echo "::error::Docker build failed"
-            exit 1
-          fi
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . || {
+              echo "::error::Docker build failed"
+              exit 1
+            }
+          
+          # Show image details after successful build
+          echo "📋 Image details:"
+          docker images $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --format "ID: {{.ID}}\nSize: {{.Size}}\nCreated: {{.CreatedSince}}"
           echo "::endgroup::"
           
           echo "::group::⬆️ Docker Push Process"
@@ -62,6 +70,10 @@ jobs:
             echo "::error::Failed to push Docker image to ECR"
             exit 1
           fi
+          
+          # Show push summary
+          echo "📊 Push summary:"
+          docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --format 'Repository: {{.RepoTags}}\nSize: {{.Size}} bytes\nLayers: {{len .RootFS.Layers}}'
           echo "::endgroup::"
 
       - name: 🚀 Deploy to EC2
