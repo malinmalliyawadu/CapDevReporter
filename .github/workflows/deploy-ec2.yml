@@ -246,10 +246,13 @@ jobs:
 
       - name: 📝 Create and update deployment status
         uses: actions/github-script@v7
+        env:
+          VERSION: ${{ steps.package_version.outputs.version }}
+          RELEASE_TAG: ${{ steps.package_version.outputs.release_tag }}
         with:
           script: |
-            const version = process.env.VERSION;
-            const releaseTag = process.env.RELEASE_TAG;
+            const version = '${{ steps.package_version.outputs.version }}';
+            const releaseTag = '${{ steps.package_version.outputs.release_tag }}';
 
             // Create deployment
             const deployment = await github.rest.repos.createDeployment({
