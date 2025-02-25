@@ -344,16 +344,23 @@ export function GeneralTimeAssignmentsTable({
 
                 {/* Time breakdown visualization */}
                 <div className="space-y-3">
-                  <div className="h-3 w-full bg-secondary/30 rounded-full overflow-hidden shadow-inner">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${getProgressBarColor(
-                        totalPercentage
-                      )}`}
-                      style={{
-                        width: `${Math.min(totalPercentage, 100)}%`,
-                        boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.1)",
-                      }}
-                    />
+                  <div className="h-3 w-full bg-secondary/30 rounded-full overflow-hidden shadow-inner flex">
+                    {breakdown.map(({ timeType, percentage }, index) => {
+                      const colors = getTimeTypeColor(timeType);
+                      const prevWidth = breakdown
+                        .slice(0, index)
+                        .reduce((sum, b) => sum + b.percentage, 0);
+                      return (
+                        <div
+                          key={timeType.id}
+                          className={`h-full transition-all duration-500 ${colors.dot} first:rounded-l-full last:rounded-r-full`}
+                          style={{
+                            width: `${Math.min(percentage, 100 - prevWidth)}%`,
+                            boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.1)",
+                          }}
+                        />
+                      );
+                    })}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
