@@ -39,6 +39,29 @@ export function TimeDistributionBarChart({
               layout="vertical"
               margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
             >
+              <defs>
+                {data.map((entry, index) => {
+                  const color = entry.color;
+                  // Convert hex to RGB for lighter variant
+                  const r = parseInt(color.slice(1, 3), 16);
+                  const g = parseInt(color.slice(3, 5), 16);
+                  const b = parseInt(color.slice(5, 7), 16);
+                  const lighterColor = `rgba(${r}, ${g}, ${b}, 0.8)`;
+                  return (
+                    <linearGradient
+                      key={`gradient-${index}`}
+                      id={`gradient-${index}`}
+                      x1="0"
+                      y1="0"
+                      x2="1"
+                      y2="0"
+                    >
+                      <stop offset="0%" stopColor={color} />
+                      <stop offset="100%" stopColor={lighterColor} />
+                    </linearGradient>
+                  );
+                })}
+              </defs>
               <XAxis
                 type="number"
                 unit="h"
@@ -68,9 +91,35 @@ export function TimeDistributionBarChart({
                   );
                 }}
               />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+              <Bar
+                dataKey="value"
+                radius={[0, 4, 4, 0]}
+                cursor="pointer"
+                onMouseEnter={(data, index) => {
+                  const cell = document.querySelector(
+                    `[data-cell-index="${index}"]`
+                  ) as HTMLElement;
+                  if (cell) {
+                    cell.style.opacity = "0.85";
+                    cell.style.transition = "opacity 0.2s ease";
+                  }
+                }}
+                onMouseLeave={(data, index) => {
+                  const cell = document.querySelector(
+                    `[data-cell-index="${index}"]`
+                  ) as HTMLElement;
+                  if (cell) {
+                    cell.style.opacity = "1";
+                  }
+                }}
+              >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={`url(#gradient-${index})`}
+                    data-cell-index={index}
+                    style={{ transition: "opacity 0.2s ease" }}
+                  />
                 ))}
               </Bar>
             </BarChart>
