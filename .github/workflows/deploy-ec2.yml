@@ -82,7 +82,30 @@ jobs:
             echo "Container failed to start"
             docker logs timesheet-app
             exit 1
-          fi' > deploy.sh
+          fi
+
+          # Show initial disk usage
+          echo "Initial disk usage:"
+          docker system df
+
+          # Comprehensive cleanup
+          echo "🧹 Cleaning up Docker system..."
+          # Remove unused images older than 24 hours
+          docker image prune -af --filter "until=24h"
+          # Remove unused containers
+          docker container prune -f
+          # Remove unused networks
+          docker network prune -f
+          # Remove unused volumes (preserving data volume)
+          docker volume prune -f --filter "label!=preserve=true"
+          
+          # Show final disk usage
+          echo "Final disk usage after cleanup:"
+          docker system df
+          
+          # Show available disk space
+          echo "Available disk space:"
+          df -h' > deploy.sh
 
           # Copy and execute the deployment script
           scp -i private_key.pem -o StrictHostKeyChecking=no deploy.sh $EC2_USERNAME@$EC2_HOST:~/deploy.sh

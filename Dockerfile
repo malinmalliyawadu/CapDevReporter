@@ -19,9 +19,9 @@ WORKDIR /app
 # Install dependencies based on the preferred package manager
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
 RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile && yarn cache clean; \
-  elif [ -f package-lock.json ]; then npm ci && npm cache clean --force; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile && pnpm store prune; \
+  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
   else echo "Lockfile not found." && exit 1; \
   fi
 
@@ -48,7 +48,6 @@ ENV IPAYROLL_API_URL=${IPAYROLL_API_URL}
 ENV IPAYROLL_API_KEY=${IPAYROLL_API_KEY}
 ENV IPAYROLL_COMPANY_ID=${IPAYROLL_COMPANY_ID}
 ENV JIRA_HOST=${JIRA_HOST}
-ENV NODE_ENV=production
 
 RUN if [ -n "$***REMOVED***ROOTCACERT" ]; then \
     echo "$***REMOVED***ROOTCACERT" > /root/wlgca.crt; \
@@ -66,18 +65,16 @@ COPY . .
 RUN npx prisma generate
 
 # Next.js collects completely anonymous telemetry data about general usage.
-ENV NEXT_TELEMETRY_DISABLED=1
+# Learn more here: https://nextjs.org/telemetry
+# Uncomment the following line in case you want to disable telemetry during the build.
+# ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN \
-  if [ -f yarn.lock ]; then yarn run build && yarn cache clean; \
-  elif [ -f package-lock.json ]; then npm run build && npm cache clean --force; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build && pnpm store prune; \
+  if [ -f yarn.lock ]; then yarn run build; \
+  elif [ -f package-lock.json ]; then npm run build; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
   else echo "Lockfile not found." && exit 1; \
   fi
-
-# Remove dev dependencies and unnecessary files
-RUN rm -rf node_modules/.cache || true
-RUN rm -rf .next/cache || true
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -101,10 +98,9 @@ ENV IPAYROLL_API_URL=${IPAYROLL_API_URL}
 ENV IPAYROLL_API_KEY=${IPAYROLL_API_KEY}
 ENV IPAYROLL_COMPANY_ID=${IPAYROLL_COMPANY_ID}
 ENV JIRA_HOST=${JIRA_HOST}
-ENV NEXT_TELEMETRY_DISABLED=1
 
 # Install required packages
-RUN apk add --no-cache dos2unix && rm -rf /var/cache/apk/*
+RUN apk add --no-cache dos2unix
 
 RUN if [ -n "$***REMOVED***ROOTCACERT" ]; then \
     echo "$***REMOVED***ROOTCACERT" > /root/wlgca.crt; \
@@ -119,7 +115,7 @@ WORKDIR /app
 # Create prisma directory and set permissions
 RUN mkdir -p prisma && chown -R 1001:1001 prisma
 
-# Copy only necessary Prisma files
+# Copy Prisma files and generate client
 COPY --from=builder /app/prisma/schema.prisma ./prisma/
 COPY --from=builder /app/prisma/migrations ./prisma/migrations/
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
@@ -128,6 +124,10 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 # Copy SQLite database
 COPY prisma/dev.db ./prisma/dev.db
 RUN chown -R 1001:1001 ./prisma/dev.db
+
+ENV NODE_ENV=production
+# Uncomment the following line in case you want to disable telemetry during runtime.
+# ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -142,14 +142,17 @@ RUN mkdir -p /app/prisma && \
     chown -R nextjs:nodejs /app/prisma && \
     chmod 755 /app/prisma
 
-# Copy only necessary files for production
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 
-# Copy minimal production dependencies
+# Copy the entire .next directory instead of just static files
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+
+# Copy package.json and install production dependencies
 COPY --from=builder /app/package.json ./package.json
-RUN npm install --production && npm cache clean --force
+COPY --from=builder /app/node_modules ./node_modules
+
+# Install ts-node for seeding
+RUN npm install -g ts-node typescript @types/node
 
 # Ensure Prisma files have correct permissions
 RUN chown -R nextjs:nodejs ./prisma
@@ -170,4 +173,5 @@ COPY --chown=nextjs:nodejs scripts/init-db.sh ./scripts/
 RUN chmod +x ./scripts/init-db.sh && \
     dos2unix ./scripts/init-db.sh 2>/dev/null || true
 
+# Use next start instead of node server.js since we're not using standalone output
 CMD ["/bin/sh", "-c", "./scripts/init-db.sh && npm run start"]
