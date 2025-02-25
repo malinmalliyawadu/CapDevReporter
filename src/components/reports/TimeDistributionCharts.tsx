@@ -13,7 +13,6 @@ import type { TimeReport, TimeReportEntry } from "@/types/timeReport";
 
 interface TimeDistributionChartsProps {
   timeReport: TimeReport[];
-  timeTypes: Array<{ id: string; name: string }>;
 }
 
 // Color palette for the detailed chart
@@ -37,7 +36,6 @@ const timeTypeColors = [
 
 export function TimeDistributionCharts({
   timeReport,
-  timeTypes,
 }: TimeDistributionChartsProps) {
   // Calculate detailed time type data including leave
   const timeTypeHours = new Map<
@@ -47,7 +45,11 @@ export function TimeDistributionCharts({
 
   timeReport.forEach((report) => {
     report.timeEntries.forEach((entry: TimeReportEntry) => {
-      const key = entry.isLeave ? "leave" : entry.timeTypeId;
+      const key = entry.isLeave
+        ? "leave"
+        : entry.isCapDev
+        ? "capdev"
+        : "non-capdev";
       const existingEntry = timeTypeHours.get(key);
 
       if (!existingEntry) {
@@ -57,32 +59,23 @@ export function TimeDistributionCharts({
           isCapDev: entry.isCapDev,
           name: entry.isLeave
             ? "Leave"
-            : timeTypes.find((t) => t.id === entry.timeTypeId)?.name ||
-              "Projects",
+            : entry.isCapDev
+            ? "CapDev"
+            : "Non-CapDev",
           isLeave: entry.isLeave,
         });
       } else {
         // Update existing entry
         existingEntry.hours += Math.abs(entry.hours);
-        // Ensure isCapDev is preserved - if any entry for this type is CapDev, the whole type is CapDev
-        existingEntry.isCapDev = existingEntry.isCapDev || entry.isCapDev;
         timeTypeHours.set(key, existingEntry);
       }
     });
   });
 
   // Calculate rolled up CapDev data (excluding leave)
-  const totalCapDevHours = Array.from(timeTypeHours.values())
-    .filter((data) => !data.isLeave && data.isCapDev)
-    .reduce((sum, data) => sum + data.hours, 0);
-
-  const totalNonCapDevHours = Array.from(timeTypeHours.values())
-    .filter((data) => !data.isLeave && !data.isCapDev)
-    .reduce((sum, data) => sum + data.hours, 0);
-
-  const totalLeaveHours = Array.from(timeTypeHours.values())
-    .filter((data) => data.isLeave)
-    .reduce((sum, data) => sum + data.hours, 0);
+  const totalCapDevHours = timeTypeHours.get("capdev")?.hours || 0;
+  const totalNonCapDevHours = timeTypeHours.get("non-capdev")?.hours || 0;
+  const totalLeaveHours = timeTypeHours.get("leave")?.hours || 0;
 
   // Calculate total work hours (excluding leave)
   const totalWorkHours = totalCapDevHours + totalNonCapDevHours;

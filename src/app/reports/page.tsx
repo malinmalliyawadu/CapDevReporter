@@ -120,13 +120,9 @@ async function getTimeReportData(searchParams: {
     );
 
     // Find appropriate time types for leaves and projects
-    const leaveTimeType = timeTypes.find(
-      (tt) => tt.name === "General Administration"
-    );
-    const capDevTimeType = timeTypes.find((tt) => tt.name === "Tech Debt");
-    const nonCapDevTimeType = timeTypes.find(
-      (tt) => tt.name === "General Administration"
-    );
+    const leaveTimeType = timeTypes.find((tt) => tt.name === "Leave");
+    const capDevTimeType = timeTypes.find((tt) => tt.name === "CapDev");
+    const nonCapDevTimeType = timeTypes.find((tt) => tt.name === "Non-CapDev");
 
     // Create time report entries from leaves
     const leaveEntries: TimeReportEntry[] = employeeLeaves.map((leave) => ({
