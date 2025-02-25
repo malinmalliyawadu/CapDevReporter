@@ -55,6 +55,7 @@ import { format } from "date-fns";
 import { useRouter, usePathname } from "next/navigation";
 import { useDebounce } from "@/hooks/use-debounce";
 import { ProjectsPageQueryString } from "./page";
+import { useSyncDialog } from "@/contexts/dialog-context";
 import {
   Dialog,
   DialogContent,
@@ -133,6 +134,7 @@ export function ProjectsTable({
   searchParams,
 }: ProjectsTableProps) {
   const { toast } = useToast();
+  const { open: openSyncDialog } = useSyncDialog();
   const router = useRouter();
   const pathname = usePathname();
   const [projects, setProjects] = useState(initialProjects);
@@ -141,18 +143,12 @@ export function ProjectsTable({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncProgress, setSyncProgress] = useState<{
-    message: string;
-    progress: number;
-  } | null>(null);
   const [searchQuery, setSearchQuery] = useState(searchParams.search || "");
   const debouncedSearch = useDebounce(searchQuery, 500);
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [page, setPage] = useState(Number(searchParams.page) || 1);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
-  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const [syncConfig, setSyncConfig] = useState<SyncConfig>({
     boards: ["all"],
     maxIssuesPerBoard: 50,
@@ -252,7 +248,7 @@ export function ProjectsTable({
   // Fetch available boards when dialog opens
   useEffect(() => {
     const fetchBoards = async () => {
-      if (syncDialogOpen && availableBoards.length === 0) {
+      if (availableBoards.length === 0) {
         try {
           const response = await fetch("/api/boards");
           if (!response.ok) {
@@ -273,7 +269,7 @@ export function ProjectsTable({
     };
 
     fetchBoards();
-  }, [syncDialogOpen, availableBoards.length, toast]);
+  }, [availableBoards.length, toast]);
 
   // Debug log for board selection
   useEffect(() => {
@@ -281,16 +277,16 @@ export function ProjectsTable({
     console.log("Available boards:", availableBoards);
   }, [syncConfig, availableBoards]);
 
-  // Handle sync parameter
+  // Effect to handle sync parameter
   useEffect(() => {
     if (searchParams.sync === "true") {
-      setSyncDialogOpen(true);
+      openSyncDialog();
       // Remove the sync parameter from the URL
       const params = new URLSearchParams(window.location.search);
       params.delete("sync");
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [searchParams.sync, router, pathname]);
+  }, [searchParams.sync, router, pathname, openSyncDialog]);
 
   const addSyncLog = (
     message: string,
@@ -345,8 +341,6 @@ export function ProjectsTable({
 
   const handleSync = async () => {
     try {
-      setIsSyncing(true);
-      setSyncProgress({ message: "Starting sync...", progress: 0 });
       setSyncLogs([]);
 
       // Create URL with config parameters
@@ -406,9 +400,6 @@ export function ProjectsTable({
                 "fetch-projects"
               );
 
-              setIsSyncing(false);
-              setSyncProgress(null);
-
               toast({
                 title: "Projects synced successfully!",
                 description: (
@@ -419,7 +410,7 @@ export function ProjectsTable({
                       size="sm"
                       className="w-full"
                       onClick={() => {
-                        setSyncDialogOpen(false);
+                        openSyncDialog();
                         router.push("/data/projects");
                         router.refresh();
                       }}
@@ -432,7 +423,6 @@ export function ProjectsTable({
               });
             } else {
               // Handle progress update
-              setSyncProgress(data);
               addSyncLog(
                 data.message,
                 data.type || "info",
@@ -449,8 +439,6 @@ export function ProjectsTable({
       }
     } catch (error) {
       console.error(error);
-      setIsSyncing(false);
-      setSyncProgress(null);
       addSyncLog("Sync process failed with an error", "error", "sync-error");
       toast({
         title: "Error",
@@ -513,10 +501,10 @@ export function ProjectsTable({
         log.operation === "finalize"
     );
 
-    if (hasSuccessLog && !isSyncing) {
+    if (hasSuccessLog) {
       triggerConfetti();
     }
-  }, [syncLogs, isSyncing]);
+  }, [syncLogs]);
 
   // Add effect for auto-scrolling
   useEffect(() => {
@@ -781,36 +769,15 @@ export function ProjectsTable({
             </div>
           </div>
           <div className="flex items-center gap-6">
-            {lastSynced && !isSyncing && (
+            {lastSynced && (
               <span className="text-sm text-muted-foreground flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-md">
                 <Clock className="h-3.5 w-3.5" />
                 Last synced: {lastSynced.toLocaleString("en-NZ")}
               </span>
             )}
-            <Button
-              onClick={() => setSyncDialogOpen(true)}
-              disabled={isSyncing}
-              size="sm"
-              className={`relative transition-all duration-300 ${
-                isSyncing
-                  ? "bg-primary/90 text-primary-foreground min-w-[120px]"
-                  : ""
-              }`}
-            >
-              <RefreshCw
-                className={`h-4 w-4 mr-2 transition-all duration-300 ${
-                  isSyncing ? "animate-spin-fast" : "hover:rotate-180"
-                }`}
-              />
-              {isSyncing ? "Syncing..." : "Sync with Jira"}
-              {isSyncing && (
-                <span className="absolute bottom-0 left-0 h-[2px] bg-primary-foreground/20 w-full">
-                  <span
-                    className="absolute h-full bg-primary-foreground/40 animate-[progress_2s_ease-in-out_infinite]"
-                    style={{ width: "40%" }}
-                  />
-                </span>
-              )}
+            <Button onClick={openSyncDialog} size="sm">
+              <RefreshCw className="h-4 w-4 mr-2 hover:rotate-180 transition-all duration-300" />
+              Sync with Jira
             </Button>
           </div>
         </div>
@@ -908,335 +875,6 @@ export function ProjectsTable({
           </Button>
         </div>
       </div>
-
-      <Dialog open={syncDialogOpen} onOpenChange={setSyncDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              {isSyncing ? (
-                <>
-                  <span className="text-primary py-1">
-                    Syncing Projects with Jira
-                  </span>
-                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                </>
-              ) : (
-                <>
-                  <span
-                    className={
-                      syncLogs.some((log) => log.type === "error")
-                        ? "text-destructive"
-                        : "text-primary"
-                    }
-                  >
-                    {syncLogs.length
-                      ? syncLogs.some((log) => log.type === "error")
-                        ? "Sync Failed"
-                        : "Sync Complete"
-                      : "Sync Configuration"}
-                  </span>
-                  {syncLogs.some((log) => log.type === "error") && (
-                    <AlertTriangle className="h-5 w-5 text-destructive animate-pulse" />
-                  )}
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
-              {isSyncing
-                ? "Updating project information and activities from Jira"
-                : syncLogs.some((log) => log.type === "error")
-                ? "Sync process encountered errors. Please check the logs below."
-                : syncLogs.length
-                ? "Sync process completed successfully."
-                : "Configure the sync process parameters"}
-            </DialogDescription>
-          </DialogHeader>
-
-          {!isSyncing && !syncLogs.length ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Advanced Configuration</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Customize which boards to sync and how many issues to
-                    process
-                  </p>
-                </div>
-                <Switch
-                  checked={showAdvancedConfig}
-                  onCheckedChange={setShowAdvancedConfig}
-                />
-              </div>
-
-              {showAdvancedConfig && (
-                <div className="space-y-4 pt-4 border-t">
-                  <div className="space-y-2">
-                    <Label htmlFor="boards">Boards to Sync</Label>
-                    <Popover
-                      open={boardSearchOpen}
-                      onOpenChange={setBoardSearchOpen}
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={boardSearchOpen}
-                          className="w-full justify-between"
-                        >
-                          <div className="flex gap-1 flex-wrap">
-                            {syncConfig.boards[0] === "all" ? (
-                              <span>All Boards</span>
-                            ) : (
-                              <>
-                                {syncConfig.boards.map((boardId) => {
-                                  const board = availableBoards.find(
-                                    (b) => b.boardId === boardId
-                                  );
-                                  return board ? (
-                                    <Badge
-                                      key={board.id}
-                                      variant="secondary"
-                                      className="rounded-sm px-1 font-normal"
-                                    >
-                                      {board.name}
-                                    </Badge>
-                                  ) : null;
-                                })}
-                              </>
-                            )}
-                          </div>
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0" align="start">
-                        <Command>
-                          <CommandInput
-                            placeholder="Search boards..."
-                            value={boardSearchQuery}
-                            onValueChange={setBoardSearchQuery}
-                          />
-                          <CommandEmpty>No boards found.</CommandEmpty>
-                          <CommandGroup>
-                            <CommandItem
-                              value="all-boards"
-                              className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                              onSelect={() => {
-                                setSyncConfig((prev) => ({
-                                  ...prev,
-                                  boards: ["all"],
-                                }));
-                                setBoardSearchOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  syncConfig.boards[0] === "all"
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                )}
-                              />
-                              All Boards
-                            </CommandItem>
-                            {filteredBoards.map((board) => (
-                              <CommandItem
-                                key={board.id}
-                                value={board.boardId}
-                                className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                                onSelect={() => {
-                                  setSyncConfig((prev) => ({
-                                    ...prev,
-                                    boards:
-                                      prev.boards[0] === "all"
-                                        ? [board.boardId]
-                                        : prev.boards.includes(board.boardId)
-                                        ? prev.boards.filter(
-                                            (id) => id !== board.boardId
-                                          )
-                                        : [...prev.boards, board.boardId],
-                                  }));
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    syncConfig.boards.includes(board.boardId)
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                <span className="font-medium">
-                                  {board.name}
-                                </span>
-                                {board.team && (
-                                  <span className="ml-2 text-muted-foreground">
-                                    ({board.team.name} • {board.boardId})
-                                  </span>
-                                )}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="maxIssues">Maximum Issues per Board</Label>
-                    <Input
-                      id="maxIssues"
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={syncConfig.maxIssuesPerBoard}
-                      onChange={(e) =>
-                        setSyncConfig((prev) => ({
-                          ...prev,
-                          maxIssuesPerBoard: Math.max(
-                            1,
-                            Math.min(100, parseInt(e.target.value) || 50)
-                          ),
-                        }))
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Limit the number of issues to process per board (1-100)
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-6">
-                <Button
-                  className="w-full"
-                  onClick={handleSync}
-                  disabled={isSyncing}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Start Sync
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Progress Section */}
-              {(syncProgress || isSyncing) && (
-                <div className="space-y-4 mb-4">
-                  <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg">
-                    <h4 className="text-base flex items-center gap-2">
-                      {syncProgress?.message || "Starting sync..."}
-                    </h4>
-                    <Badge
-                      variant={isSyncing ? "default" : "secondary"}
-                      className="text-sm px-2 py-0.5"
-                    >
-                      {syncProgress?.progress || 0}%
-                    </Badge>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-secondary relative overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-500 absolute top-0 left-0"
-                      style={{ width: `${syncProgress?.progress || 0}%` }}
-                    />
-                    <div className="absolute top-0 left-0 w-full h-full bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.15)_50%,transparent_100%)] animate-[shine_1s_ease-in-out_infinite]" />
-                  </div>
-                  {isSyncing && syncProgress?.progress === 100 && (
-                    <p className="text-sm text-muted-foreground">
-                      Finalizing sync process...
-                    </p>
-                  )}
-                  {isSyncing && (syncProgress?.progress || 0) >= 95 && (
-                    <div className="flex items-center gap-2 bg-yellow-500/10 text-yellow-700 dark:text-yellow-500 text-sm px-3 py-2 rounded-md border border-yellow-500/20">
-                      <AlertTriangle className="h-4 w-4 shrink-0" />
-                      <p>Sync will timeout after 5 minutes if not completed</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Logs Section - Always show when syncing or has logs */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm text-foreground">Sync Log</h4>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs bg-background/50 px-2 py-1 rounded-md">
-                      {syncLogs.length}{" "}
-                      {syncLogs.length === 1 ? "entry" : "entries"}
-                    </span>
-                    {syncLogs.length > 0 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2"
-                        onClick={() => {
-                          const logText = syncLogs
-                            .map(
-                              (log) =>
-                                `[${log.timestamp.toLocaleString()}] ${log.type.toUpperCase()}: ${
-                                  log.message
-                                }`
-                            )
-                            .join("\n");
-                          const blob = new Blob([logText], {
-                            type: "text/plain",
-                          });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = url;
-                          a.download = `sync-log-${
-                            new Date().toISOString().split("T")[0]
-                          }.txt`;
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
-                          URL.revokeObjectURL(url);
-                        }}
-                      >
-                        <Download className="h-3 w-3 mr-1" />
-                        Export
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <ScrollArea
-                  className="h-[300px] rounded-md border p-4 bg-muted/5"
-                  viewportRef={scrollAreaRef}
-                >
-                  <div className="space-y-2">
-                    {syncLogs.map((log, index) => (
-                      <div
-                        key={index}
-                        className="flex items-start gap-3 text-sm bg-background/30 p-2 rounded-lg"
-                      >
-                        <span className="mt-0.5">
-                          {log.type === "success" && (
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          )}
-                          {log.type === "error" && (
-                            <XCircle className="h-4 w-4 text-red-500" />
-                          )}
-                          {log.type === "warning" && (
-                            <AlertCircle className="h-4 w-4 text-yellow-500" />
-                          )}
-                          {log.type === "info" && (
-                            <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                          )}
-                        </span>
-                        <div className="flex-1 space-y-1">
-                          <p className="leading-none">{log.message}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {log.timestamp.toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
