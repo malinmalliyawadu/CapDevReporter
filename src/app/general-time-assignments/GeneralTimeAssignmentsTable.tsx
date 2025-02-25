@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
+import { createAssignment, deleteAssignment } from "./actions";
 
 interface Role {
   id: string;
@@ -117,75 +118,52 @@ export function GeneralTimeAssignmentsTable({
       return;
     }
 
-    try {
-      const response = await fetch("/api/general-time-assignments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newAssignment),
-      });
+    const result = await createAssignment(newAssignment);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create assignment");
-      }
-
-      const createdAssignment = await response.json();
-
-      setRoles((prevRoles) =>
-        prevRoles.map((role) => {
-          if (role.id === newAssignment.roleId) {
-            return {
-              ...role,
-              generalAssignments: [
-                ...role.generalAssignments,
-                createdAssignment,
-              ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-            };
-          }
-          return role;
-        })
-      );
-
-      setNewAssignment({ roleId: "", timeTypeId: "", hoursPerWeek: 0 });
-      setIsDialogOpen(false);
-      toast.success("Assignment created successfully");
-    } catch (error) {
-      console.error("Failed to create assignment:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create assignment"
-      );
+    if (!result.success) {
+      toast.error(result.error);
+      return;
     }
+
+    setRoles((prevRoles) =>
+      prevRoles.map((role) => {
+        if (role.id === newAssignment.roleId) {
+          return {
+            ...role,
+            generalAssignments: [...role.generalAssignments, result.data].sort(
+              (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+            ),
+          };
+        }
+        return role;
+      })
+    );
+
+    setNewAssignment({ roleId: "", timeTypeId: "", hoursPerWeek: 0 });
+    setIsDialogOpen(false);
+    toast.success("Assignment created successfully");
   };
 
   const handleDeleteAssignment = async (id: string) => {
-    try {
-      const response = await fetch(`/api/general-time-assignments/${id}`, {
-        method: "DELETE",
-      });
+    const result = await deleteAssignment(id);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to delete assignment");
-      }
-
-      setRoles((prevRoles) =>
-        prevRoles.map((role) => ({
-          ...role,
-          generalAssignments: role.generalAssignments.filter(
-            (assignment) => assignment.id !== id
-          ),
-        }))
-      );
-
-      setIsDeleteDialogOpen(false);
-      setAssignmentToDelete(null);
-      toast.success("Assignment deleted successfully");
-    } catch (error) {
-      console.error("Failed to delete assignment:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete assignment"
-      );
+    if (!result.success) {
+      toast.error(result.error);
+      return;
     }
+
+    setRoles((prevRoles) =>
+      prevRoles.map((role) => ({
+        ...role,
+        generalAssignments: role.generalAssignments.filter(
+          (assignment) => assignment.id !== id
+        ),
+      }))
+    );
+
+    setIsDeleteDialogOpen(false);
+    setAssignmentToDelete(null);
+    toast.success("Assignment deleted successfully");
   };
 
   const calculateTimeBreakdown = (
@@ -311,44 +289,46 @@ export function GeneralTimeAssignmentsTable({
         </Button>
       </div>
 
-      <div className="grid gap-6">
+      <div className="space-y-4">
         {filteredRoles.map((role) => {
           const { total: totalHours, breakdown } = calculateTimeBreakdown(
             role.generalAssignments
           );
-          const totalPercentage = (totalHours / 40) * 100; // Using 40 hours as the baseline work week
+          const totalPercentage = (totalHours / 40) * 100;
 
           return (
             <Card key={role.id}>
-              <CardHeader>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => toggleRole(role.id)}
-                      >
-                        {expandedRoles.has(role.id) ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <div>
-                        <h4 className="text-lg font-semibold">{role.name}</h4>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>
-                            {totalHours} hours/week (
-                            {Math.round(totalPercentage)}% of 40hr week)
-                          </span>
-                        </div>
-                      </div>
+              <CardHeader
+                className="cursor-pointer"
+                onClick={() => toggleRole(role.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {expandedRoles.has(role.id) ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                    <div>
+                      <h4 className="text-sm font-medium">{role.name}</h4>
+                      {role.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {role.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-muted-foreground">
+                      {totalHours.toFixed(1)} hours/week (
+                      {totalPercentage.toFixed(1)}
+                      %)
                     </div>
                     <Button
                       variant="outline"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setNewAssignment((prev) => ({
                           ...prev,
                           roleId: role.id,
@@ -360,44 +340,44 @@ export function GeneralTimeAssignmentsTable({
                       Add Time Type
                     </Button>
                   </div>
+                </div>
 
-                  {/* Time breakdown visualization */}
-                  <div className="space-y-3">
-                    <div className="h-3 w-full bg-secondary/30 rounded-full overflow-hidden shadow-inner">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${getProgressBarColor(
-                          totalPercentage
-                        )}`}
-                        style={{
-                          width: `${Math.min(totalPercentage, 100)}%`,
-                          boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.1)",
-                        }}
-                      />
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      {breakdown.map(
-                        ({ timeType, hoursPerWeek, percentage }) => {
-                          const colors = getTimeTypeColor(timeType);
-                          return (
-                            <div
-                              key={timeType.id}
-                              className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${colors.bg} ${colors.text}`}
-                            >
-                              <div
-                                className={`w-2 h-2 rounded-full ${colors.dot}`}
-                              />
-                              <span className="text-sm font-medium">
-                                {timeType.name}: {hoursPerWeek}h (
-                                {Math.round(percentage)}%)
-                              </span>
-                            </div>
-                          );
-                        }
-                      )}
-                    </div>
+                {/* Time breakdown visualization */}
+                <div className="space-y-3">
+                  <div className="h-3 w-full bg-secondary/30 rounded-full overflow-hidden shadow-inner">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${getProgressBarColor(
+                        totalPercentage
+                      )}`}
+                      style={{
+                        width: `${Math.min(totalPercentage, 100)}%`,
+                        boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.1)",
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {breakdown.map(({ timeType, hoursPerWeek, percentage }) => {
+                      const colors = getTimeTypeColor(timeType);
+                      return (
+                        <div
+                          key={timeType.id}
+                          className="flex items-center gap-1.5"
+                        >
+                          <div
+                            className={`h-2 w-2 rounded-full ${colors.dot}`}
+                          />
+                          <span className="text-xs">
+                            {timeType.name} ({hoursPerWeek}h,{" "}
+                            {percentage.toFixed(1)}%)
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </CardHeader>
+
               {expandedRoles.has(role.id) && (
                 <CardContent>
                   <Table>
