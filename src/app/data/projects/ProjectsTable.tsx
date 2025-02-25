@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight as ChevronRightIcon,
   X,
+  Trash2,
 } from "lucide-react";
 import {
   Table,
@@ -81,6 +82,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { deleteProject, getProjects } from "./actions";
 
 interface Project {
   id: string;
@@ -160,6 +172,7 @@ export function ProjectsTable({
   const scrollAreaRef = React.useRef<HTMLDivElement>(
     null
   ) as React.RefObject<HTMLDivElement>;
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   const uniqueTeams = useMemo(() => {
     const teams = new Set(projects.map((p) => p.board.team.name));
@@ -321,12 +334,14 @@ export function ProjectsTable({
   const fetchProjects = useCallback(
     async (params: URLSearchParams) => {
       try {
-        const response = await fetch(`/api/projects?${params.toString()}`);
-        if (!response.ok) throw new Error("Failed to fetch projects");
+        const result = await getProjects({
+          page: Number(params.get("page")) || 1,
+          size: Number(params.get("size")) || 10,
+          search: params.get("search") || undefined,
+        });
 
-        const data = await response.json();
-        setProjects(data.projects);
-        setProjectsCount(data.total);
+        setProjects(result.projects);
+        setProjectsCount(result.total);
       } catch (error) {
         console.error("Error fetching projects:", error);
         toast({
@@ -513,6 +528,54 @@ export function ProjectsTable({
     }
   }, [syncLogs]);
 
+  const handleDeleteProject = async (project: Project) => {
+    if (!project?.id) {
+      toast({
+        title: "Error",
+        description: "Invalid project data",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const success = await deleteProject(project.id);
+
+      if (!success) {
+        throw new Error("Failed to delete project");
+      }
+
+      // Update local state
+      setProjects((prev) => prev.filter((p) => p.id !== project.id));
+      setProjectsCount((prev) => prev - 1);
+
+      toast({
+        title: "Project deleted",
+        description: `Project ${project.name} has been deleted successfully.`,
+      });
+
+      // Force a refresh of the data
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      if (searchParams.size) {
+        params.set("size", searchParams.size);
+      }
+      if (debouncedSearch) {
+        params.set("search", formatSearchQuery(debouncedSearch));
+      }
+      await fetchProjects(params);
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete project. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setProjectToDelete(null);
+    }
+  };
+
   const columns: ColumnDef<Project>[] = [
     {
       id: "expander",
@@ -639,6 +702,27 @@ export function ProjectsTable({
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const project = row.original;
+        return (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setProjectToDelete(project)}
+              title="Delete project"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         );
       },
       enableSorting: false,
@@ -900,6 +984,31 @@ export function ProjectsTable({
           </Button>
         </div>
       </div>
+      <AlertDialog
+        open={!!projectToDelete}
+        onOpenChange={() => setProjectToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the project &quot;
+              {projectToDelete?.name}&quot;. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() =>
+                projectToDelete && handleDeleteProject(projectToDelete)
+              }
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

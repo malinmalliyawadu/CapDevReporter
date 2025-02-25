@@ -3,61 +3,11 @@ import { Suspense } from "react";
 import { ClipboardList } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { prisma } from "@/lib/prisma";
 import { ProjectsTableSkeleton } from "./loading";
 import { ProjectsTable } from "./ProjectsTable";
+import { getProjects } from "./actions";
 
 export const dynamic = "force-dynamic";
-
-async function getProjects(searchParams: ProjectsPageQueryString) {
-  const page = Number(searchParams.page) || 1;
-  const size = Number(searchParams.size) || 10;
-  const search = searchParams.search || "";
-
-  let where = {};
-
-  if (search) {
-    if (search.toLowerCase().startsWith("jira:")) {
-      // Exact match for Jira ID
-      const jiraId = search.slice(5); // Remove "jira:" prefix
-      where = {
-        jiraId: {
-          equals: jiraId,
-        },
-      };
-    } else {
-      // Regular search across multiple fields
-      const searchLower = search.toLowerCase();
-      where = {
-        OR: [
-          { name: { contains: searchLower } },
-          { description: { contains: searchLower } },
-          { jiraId: { contains: searchLower } },
-        ],
-      };
-    }
-  }
-
-  const [projects, total] = await Promise.all([
-    prisma.project.findMany({
-      where,
-      include: {
-        board: {
-          include: {
-            team: true,
-          },
-        },
-        activities: true,
-      },
-      orderBy: { name: "asc" },
-      skip: (page - 1) * size,
-      take: size,
-    }),
-    prisma.project.count({ where }),
-  ]);
-
-  return { projects, total };
-}
 
 export type ProjectsPageQueryString = {
   search?: string;
@@ -76,7 +26,11 @@ export default async function ProjectsPage(props: {
   }>;
 }) {
   const params = await props.searchParams;
-  const { projects, total } = await getProjects(params ?? {});
+  const { projects, total } = await getProjects({
+    page: Number(params?.page) || 1,
+    size: Number(params?.size) || 10,
+    search: params?.search,
+  });
 
   return (
     <div className="space-y-8">
