@@ -208,5 +208,5 @@ jobs:
               state: 'success',
               environment_url: 'https://${{ vars.EC2_HOST }}',
               log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              description: '🎉 Deployment successful!'
+              description: 'Deployment successful!'
             });
