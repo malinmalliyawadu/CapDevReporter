@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { RolesTable } from "./RolesTable";
 import { RolesTableSkeleton } from "./loading";
 
+export const dynamic = "force-dynamic";
+
 async function getRoles() {
   const roles = await prisma.role.findMany({
     include: {

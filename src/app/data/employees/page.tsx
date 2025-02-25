@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { EmployeesTable } from "./EmployeesTable";
 import { EmployeesTableSkeleton } from "./loading";
 
+export const dynamic = "force-dynamic";
+
 async function getEmployees() {
   const employees = await prisma.employee.findMany({
     include: {

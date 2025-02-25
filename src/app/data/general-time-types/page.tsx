@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { TimeTypesTable } from "./TimeTypesTable";
 import { TimeTypesTableSkeleton } from "./loading";
 
+export const dynamic = "force-dynamic";
+
 async function getTimeTypes() {
   const timeTypes = await prisma.timeType.findMany({
     include: {

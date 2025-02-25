@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { ProjectsTableSkeleton } from "./loading";
 import { ProjectsTable } from "./ProjectsTable";
 
+export const dynamic = "force-dynamic";
+
 async function getProjects(searchParams: ProjectsPageQueryString) {
   const page = Number(searchParams.page) || 1;
   const size = Number(searchParams.size) || 10;
