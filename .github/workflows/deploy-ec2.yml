@@ -9,6 +9,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_JIRA_URL: https://***REMOVED***.atlassian.net
 
     steps:
       - name: Checkout code
@@ -33,7 +35,7 @@ jobs:
         run: |
           docker build \
             --build-arg DATABASE_URL="file:./dev.db" \
-            --build-arg NEXT_PUBLIC_JIRA_URL=https://***REMOVED***.atlassian.net \
+            --build-arg NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
             --build-arg JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }} \
             --build-arg JIRA_USER_EMAIL=malin.malliyawadu@***REMOVED***.com \
             --build-arg JIRA_HOST=***REMOVED***.atlassian.net \
@@ -72,6 +74,7 @@ jobs:
             --restart=always \
             -p 3000:3000 \
             -v /app/data:/app/data \
+            -e NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
             ${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest
 
           # Verify container is running
