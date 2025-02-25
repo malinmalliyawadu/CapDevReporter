@@ -33,7 +33,7 @@ jobs:
         run: |
           docker build \
             --build-arg DATABASE_URL="file:./dev.db" \
-            --build-arg NEXT_PUBLIC_JIRA_HOST=https://***REMOVED***.atlassian.net \
+            --build-arg NEXT_PUBLIC_JIRA_URL=https://***REMOVED***.atlassian.net \
             --build-arg JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }} \
             --build-arg JIRA_USER_EMAIL=malin.malliyawadu@***REMOVED***.com \
             --build-arg JIRA_HOST=***REMOVED***.atlassian.net \
