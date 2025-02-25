@@ -310,7 +310,7 @@ export function GeneralTimeAssignmentsTable({
                       <ChevronRight className="h-4 w-4" />
                     )}
                     <div>
-                      <h4 className="text-sm font-medium">{role.name}</h4>
+                      <h4 className="text-lg font-medium">{role.name}</h4>
                       {role.description && (
                         <p className="text-sm text-muted-foreground">
                           {role.description}
