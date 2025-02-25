@@ -74,7 +74,9 @@ export function TimeDistributionPieChart({
                   const data = payload[0].payload;
                   return (
                     <ChartTooltip>
-                      <div>{data.name}</div>
+                      <div className="font-bold text-slate-300">
+                        {data.name}
+                      </div>
                       <div>{`${data.value.toFixed(
                         1
                       )} hours (${data.percentage.toFixed(1)}%)`}</div>
