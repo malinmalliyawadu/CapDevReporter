@@ -13,115 +13,133 @@ import type { TimeReport, TimeReportEntry } from "@/types/timeReport";
 
 interface TimeDistributionChartsProps {
   timeReport: TimeReport[];
+  timeTypes: Array<{ id: string; name: string }>;
 }
-
-// Color palette for the detailed chart
-const timeTypeColors = [
-  "#2563eb", // blue-600
-  "#db2777", // pink-600
-  "#16a34a", // green-600
-  "#9333ea", // purple-600
-  "#ea580c", // orange-600
-  "#0891b2", // cyan-600
-  "#4f46e5", // indigo-600
-  "#be123c", // rose-600
-  "#15803d", // green-700
-  "#7c3aed", // violet-600
-  "#c2410c", // orange-700
-  "#0369a1", // sky-700
-  "#6d28d9", // purple-700
-  "#be185d", // pink-700
-  "#1d4ed8", // blue-700
-];
 
 export function TimeDistributionCharts({
   timeReport,
+  timeTypes,
 }: TimeDistributionChartsProps) {
   // Calculate detailed time type data including leave
   const timeTypeHours = new Map<
     string,
-    { hours: number; isCapDev: boolean; name: string; isLeave?: boolean }
+    { hours: number; capDevHours: number; name: string; color: string }
   >();
 
   timeReport.forEach((report) => {
     report.timeEntries.forEach((entry: TimeReportEntry) => {
-      const key = entry.isLeave
-        ? "leave"
-        : entry.isCapDev
-        ? "capdev"
-        : "non-capdev";
-      const existingEntry = timeTypeHours.get(key);
+      let key: string;
+      let name: string;
+      let color: string;
 
+      if (entry.isPublicHoliday) {
+        key = "public-holiday";
+        name = "Public Holidays";
+        color = "#0891b2"; // cyan-600
+      } else if (entry.isLeave) {
+        if (entry.leaveType?.toLowerCase().includes("sick")) {
+          key = "sick-leave";
+          name = "Sick Leave";
+          color = "#9333ea"; // purple-600
+        } else if (entry.leaveType?.toLowerCase().includes("annual")) {
+          key = "annual-leave";
+          name = "Annual Leave";
+          color = "#16a34a"; // green-600
+        } else {
+          key = "other-leave";
+          name = "Other Leave";
+          color = "#ea580c"; // orange-600
+        }
+      } else if (entry.projectId) {
+        key = "projects";
+        name = "Projects";
+        color = "#2563eb"; // blue-600
+      } else {
+        // Check if this is a general time entry by looking up the time type
+        const timeType = timeTypes.find((tt) => tt.id === entry.timeTypeId);
+        if (timeType) {
+          key = `general-${timeType.id}`;
+          name = timeType.name;
+          color = "#db2777"; // pink-600
+        } else {
+          key = "other";
+          name = "Other";
+          color = "#94a3b8"; // slate-400
+        }
+      }
+
+      const existingEntry = timeTypeHours.get(key);
+      const hours = Math.abs(entry.hours);
       if (!existingEntry) {
-        // Create new entry
         timeTypeHours.set(key, {
-          hours: Math.abs(entry.hours),
-          isCapDev: entry.isCapDev,
-          name: entry.isLeave
-            ? "Leave"
-            : entry.isCapDev
-            ? "CapDev"
-            : "Non-CapDev",
-          isLeave: entry.isLeave,
+          hours,
+          capDevHours: entry.isCapDev ? hours : 0,
+          name,
+          color,
         });
       } else {
-        // Update existing entry
-        existingEntry.hours += Math.abs(entry.hours);
+        existingEntry.hours += hours;
+        if (entry.isCapDev) {
+          existingEntry.capDevHours += hours;
+        }
         timeTypeHours.set(key, existingEntry);
       }
     });
   });
 
-  // Calculate rolled up CapDev data (excluding leave)
-  const totalCapDevHours = timeTypeHours.get("capdev")?.hours || 0;
-  const totalNonCapDevHours = timeTypeHours.get("non-capdev")?.hours || 0;
-  const totalLeaveHours = timeTypeHours.get("leave")?.hours || 0;
+  // Calculate rolled up data
+  const capDevHours = Array.from(timeTypeHours.values()).reduce(
+    (sum, data) => sum + data.capDevHours,
+    0
+  );
 
-  // Calculate total work hours (excluding leave)
-  const totalWorkHours = totalCapDevHours + totalNonCapDevHours;
+  const nonCapDevHours = Array.from(timeTypeHours.values())
+    .filter(
+      (data) =>
+        !data.name.includes("Leave") && // Not Leave
+        data.name !== "Public Holidays" // Not Public Holidays
+    )
+    .reduce((sum, data) => sum + data.hours - data.capDevHours, 0);
+
+  const leaveHours = Array.from(timeTypeHours.values())
+    .filter(
+      (data) => data.name.includes("Leave") || data.name === "Public Holidays"
+    )
+    .reduce((sum, data) => sum + data.hours, 0);
+
+  const totalWorkHours = capDevHours + nonCapDevHours;
 
   const rolledUpData = [
     {
       name: "CapDev",
-      value: totalCapDevHours,
-      color: "#0ea5e9",
-      percentage:
-        totalWorkHours > 0 ? (totalCapDevHours / totalWorkHours) * 100 : 0,
+      value: capDevHours,
+      color: "#0ea5e9", // sky-500
+      percentage: totalWorkHours > 0 ? (capDevHours / totalWorkHours) * 100 : 0,
     },
     {
       name: "Non-CapDev",
-      value: totalNonCapDevHours,
-      color: "#f43f5e",
+      value: nonCapDevHours,
+      color: "#f43f5e", // rose-500
       percentage:
-        totalWorkHours > 0 ? (totalNonCapDevHours / totalWorkHours) * 100 : 0,
+        totalWorkHours > 0 ? (nonCapDevHours / totalWorkHours) * 100 : 0,
     },
     {
       name: "Leave",
-      value: totalLeaveHours,
-      color: "#f97316",
+      value: leaveHours,
+      color: "#f97316", // orange-500
       percentage:
-        totalLeaveHours > 0
-          ? (totalLeaveHours / (totalWorkHours + totalLeaveHours)) * 100
-          : 0,
+        leaveHours > 0 ? (leaveHours / (totalWorkHours + leaveHours)) * 100 : 0,
     },
   ];
 
-  const detailedChartData = Array.from(timeTypeHours.entries()).map(
-    ([, data], index) => ({
+  const detailedChartData = Array.from(timeTypeHours.entries())
+    .map(([, data]) => ({
       name: data.name,
       value: data.hours,
-      color: data.isLeave
-        ? "#f97316"
-        : timeTypeColors[index % timeTypeColors.length],
-      isCapDev: data.isCapDev,
-      isLeave: data.isLeave,
-    })
-  );
-
-  const totalDetailedTime = detailedChartData.reduce(
-    (sum, item) => sum + item.value,
-    0
-  );
+      color: data.color,
+      percentage: (data.hours / (totalWorkHours + leaveHours)) * 100,
+    }))
+    .sort((a, b) => b.value - a.value); // Sort by value in descending order
 
   return (
     <div className="grid gap-6 md:grid-cols-2 mb-6">
@@ -208,7 +226,7 @@ export function TimeDistributionCharts({
                 <Tooltip
                   formatter={(value: number) =>
                     `${value.toFixed(1)} hours (${(
-                      (value / totalDetailedTime) *
+                      (value / (totalWorkHours + leaveHours)) *
                       100
                     ).toFixed(1)}%)`
                   }
@@ -225,18 +243,15 @@ export function TimeDistributionCharts({
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-sm font-medium flex items-center gap-2">
-                    {item.name}
-                    {item.isCapDev && (
-                      <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
-                        CapDev
-                      </span>
-                    )}
-                  </span>
+                  <span className="text-sm font-medium">{item.name}</span>
                 </div>
                 <div className="text-right">
                   <span className="font-medium">
-                    {((item.value / totalDetailedTime) * 100).toFixed(1)}%
+                    {(
+                      (item.value / (totalWorkHours + leaveHours)) *
+                      100
+                    ).toFixed(1)}
+                    %
                   </span>
                   <span className="text-sm text-muted-foreground ml-2">
                     ({item.value.toFixed(1)} hours)

@@ -68,7 +68,10 @@ export function ReportDataDisplay({
           isPending ? "opacity-50 pointer-events-none" : "opacity-100"
         )}
       >
-        <TimeDistributionCharts timeReport={data.timeReports} />
+        <TimeDistributionCharts
+          timeReport={data.timeReports}
+          timeTypes={data.timeTypes}
+        />
 
         <UtilizationIssues
           timeReports={data.timeReports}
