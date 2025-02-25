@@ -41,13 +41,13 @@ export default async function GeneralTimeTypesPage() {
               </span>
             </span>
           }
-          description="Manage general time types and their role assignments."
+          description="Configure organization-wide time categories and assign them to specific roles."
         />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Time Types</CardTitle>
+          <CardTitle>Available Time Categories</CardTitle>
         </CardHeader>
         <CardContent>
           <Suspense fallback={<TimeTypesTableSkeleton />}>
