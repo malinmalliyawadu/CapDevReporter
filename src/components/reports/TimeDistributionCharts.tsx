@@ -190,6 +190,14 @@ export function TimeDistributionCharts({
                   ))}
                 </Pie>
                 <Tooltip
+                  contentStyle={{
+                    backgroundColor: "rgba(0, 0, 0, 0.8)",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "8px 12px",
+                  }}
+                  itemStyle={{ color: "#ffffff" }}
+                  labelStyle={{ color: "#ffffff" }}
                   formatter={(value: number, name: string) => {
                     const item = rolledUpData.find((d) => d.name === name);
                     return [
@@ -254,6 +262,14 @@ export function TimeDistributionCharts({
                   tick={false}
                 />
                 <Tooltip
+                  contentStyle={{
+                    backgroundColor: "rgba(0, 0, 0, 0.8)",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "8px 12px",
+                  }}
+                  itemStyle={{ color: "#ffffff" }}
+                  labelStyle={{ color: "#ffffff" }}
                   formatter={(value: number) =>
                     `${value.toFixed(1)} hours (${(
                       (value / (totalWorkHours + leaveHours)) *
