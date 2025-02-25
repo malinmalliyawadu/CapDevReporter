@@ -28,25 +28,25 @@ export function TimeDistributionCharts({
       if (entry.isPublicHoliday) {
         key = "public-holiday";
         name = "Public Holidays";
-        color = "#0891b2"; // cyan-600
+        color = "#06b6d4"; // cyan-500 (brighter)
       } else if (entry.isLeave) {
         if (entry.leaveType?.toLowerCase().includes("sick")) {
           key = "sick-leave";
           name = "Sick Leave";
-          color = "#7e22ce"; // purple-700
+          color = "#a855f7"; // purple-500 (brighter)
         } else if (entry.leaveType?.toLowerCase().includes("annual")) {
           key = "annual-leave";
           name = "Annual Leave";
-          color = "#15803d"; // green-700
+          color = "#22c55e"; // green-500 (brighter)
         } else {
           key = "other-leave";
           name = "Other Leave";
-          color = "#c2410c"; // orange-700
+          color = "#f97316"; // orange-500 (brighter)
         }
       } else if (entry.projectId) {
         key = entry.isCapDev ? "capdev-projects" : "non-capdev-projects";
         name = entry.isCapDev ? "CapDev Projects" : "Non-CapDev Projects";
-        color = entry.isCapDev ? "#1d4ed8" : "#4338ca"; // blue-700 for CapDev, indigo-700 for Non-CapDev
+        color = entry.isCapDev ? "#2563eb" : "#4f46e5"; // blue-600 and indigo-600 (more vibrant)
       } else if (entry.timeTypeId) {
         // Check if this is a general time entry by looking up the time type
         const timeType = timeTypes.find((tt) => tt.id === entry.timeTypeId);
@@ -58,20 +58,20 @@ export function TimeDistributionCharts({
             k.startsWith("general-")
           ).length;
           const generalTimeColors = [
-            "#be185d", // pink-700
-            "#0f766e", // teal-700
-            "#6d28d9", // violet-700
-            "#be123c", // rose-700
-            "#047857", // emerald-700
-            "#4338ca", // indigo-700
-            "#0369a1", // sky-700
-            "#3f6212", // lime-800
-            "#a21caf", // fuchsia-700
-            "#b45309", // amber-700
-            "#b91c1c", // red-700
-            "#115e59", // teal-800
-            "#5b21b6", // purple-800
-            "#9f1239", // rose-800
+            "#ec4899", // pink-500
+            "#14b8a6", // teal-500
+            "#8b5cf6", // violet-500
+            "#f43f5e", // rose-500
+            "#10b981", // emerald-500
+            "#6366f1", // indigo-500
+            "#0ea5e9", // sky-500
+            "#84cc16", // lime-500
+            "#d946ef", // fuchsia-500
+            "#f59e0b", // amber-500
+            "#ef4444", // red-500
+            "#0d9488", // teal-600
+            "#7c3aed", // violet-600
+            "#e11d48", // rose-600
           ];
           color = generalTimeColors[colorIndex % generalTimeColors.length];
         } else {
@@ -81,7 +81,7 @@ export function TimeDistributionCharts({
           );
           key = "other";
           name = "Other";
-          color = "#475569"; // slate-600
+          color = "#64748b"; // slate-500 (brighter)
         }
       } else {
         console.warn("Entry has no project ID or time type ID:", entry);
