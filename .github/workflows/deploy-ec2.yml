@@ -24,27 +24,6 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🧹 Free up disk space
-        run: |
-          echo "::group::Disk space before cleanup"
-          df -h
-          echo "::endgroup::"
-
-          echo "::group::Docker cleanup"
-          docker system prune -af || true
-          echo "::endgroup::"
-
-          echo "::group::Removing unnecessary packages and directories"
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          echo "::endgroup::"
-
-          echo "::group::Disk space after cleanup"
-          df -h
-          echo "::endgroup::"
-
       - name: 🔄 Update version
         id: update_version
         run: |
@@ -260,6 +239,9 @@ jobs:
           echo "::group::🧹 Cleanup Process"
           echo "Starting cleanup process..."
 
+          echo "Performing comprehensive Docker system cleanup..."
+          docker system prune -af --volumes || echo "::warning::Failed to perform complete Docker system prune"
+
           echo "Removing unused images older than 24 hours..."
           docker image prune -af --filter "until=24h" || echo "::warning::Failed to prune images"
 
@@ -271,6 +253,23 @@ jobs:
 
           echo "Removing unused volumes..."
           docker volume prune -f --filter "label!=preserve=true" || echo "::warning::Failed to prune volumes"
+
+          # Clean up system temporary files
+          echo "Cleaning up temporary files..."
+          sudo find /tmp -type f -mtime +7 -delete || echo "::warning::Failed to clean up /tmp"
+          sudo find /var/tmp -type f -mtime +7 -delete || echo "::warning::Failed to clean up /var/tmp"
+
+          # Clean up log files
+          echo "Cleaning up old log files..."
+          sudo find /var/log -type f -name "*.gz" -delete || echo "::warning::Failed to clean up compressed logs"
+          sudo find /var/log -type f -name "*.1" -delete || echo "::warning::Failed to clean up rotated logs"
+
+          # Empty trash if available
+          sudo rm -rf /root/.local/share/Trash/* || echo "::warning::No trash to empty"
+
+          # Clear package manager cache
+          echo "Cleaning package cache..."
+          sudo apt-get clean || echo "::warning::Failed to clean apt cache"
 
           echo "Final disk usage after cleanup:"
           docker system df
