@@ -24,6 +24,27 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: 🧹 Free up disk space
+        run: |
+          echo "::group::Disk space before cleanup"
+          df -h
+          echo "::endgroup::"
+
+          echo "::group::Docker cleanup"
+          docker system prune -af || true
+          echo "::endgroup::"
+
+          echo "::group::Removing unnecessary packages and directories"
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "::endgroup::"
+
+          echo "::group::Disk space after cleanup"
+          df -h
+          echo "::endgroup::"
+
       - name: 🔄 Update version
         id: update_version
         run: |
@@ -95,7 +116,11 @@ jobs:
           echo "::group::🐳 Docker Build Process"
           echo "📦 Building Docker image..."
 
-          # Use Docker's built-in progress formatting
+          # Check available disk space before build
+          echo "Available disk space before build:"
+          df -h
+
+          # Enable BuildKit with improved layer caching and better space efficiency
           DOCKER_BUILDKIT=1 docker build \
             --progress=plain \
             --no-cache \
@@ -110,11 +135,40 @@ jobs:
             --label "org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             --label "org.opencontainers.image.version=${VERSION}" \
             --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --build-arg NEXT_TELEMETRY_DISABLED=1 \
+            --build-arg NEXT_SHARP_PATH=/tmp/node_modules/sharp \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest . || {
-              echo "::error::Docker build failed"
-              exit 1
+              # In case of build failure, show disk space and clean up
+              echo "Docker build failed. Checking disk space:"
+              df -h
+              docker system prune -af || true
+              echo "Retrying build with minimal features..."
+              
+              # Retry with more aggressive space saving options
+              DOCKER_BUILDKIT=1 docker build \
+                --progress=plain \
+                --no-cache \
+                --build-arg DATABASE_URL="file:./dev.db" \
+                --build-arg NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
+                --build-arg JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }} \
+                --build-arg JIRA_USER_EMAIL=malin.malliyawadu@***REMOVED***.com \
+                --build-arg JIRA_HOST=***REMOVED***.atlassian.net \
+                --build-arg IPAYROLL_API_URL=https://api.ipayroll.com \
+                --build-arg IPAYROLL_API_KEY=hehe \
+                --build-arg IPAYROLL_COMPANY_ID=1234567890 \
+                --build-arg NEXT_TELEMETRY_DISABLED=1 \
+                --build-arg NODE_ENV=production \
+                -t $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} \
+                -t $ECR_REGISTRY/$ECR_REPOSITORY:latest . || {
+                  echo "::error::Docker build failed again after cleanup"
+                  exit 1
+                }
             }
+
+          # Show available disk space after build
+          echo "Available disk space after build:"
+          df -h
 
           # Show image details after successful build
           echo "📋 Image details:"
