@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: 🚀 Deploy to EC2
 
 on:
   push:
@@ -13,27 +13,35 @@ jobs:
       NEXT_PUBLIC_JIRA_URL: https://***REMOVED***.atlassian.net
 
     steps:
-      - name: Checkout code
+      - name: 📥 Setup
+        run: |
+          echo "::group::📥 Repository Setup"
+          echo "🔍 Starting deployment process..."
+          echo "::endgroup::"
+
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: 🌍 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-2
 
-      - name: Login to Amazon ECR
+      - name: 🔑 Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push Docker image
+      - name: 🏗️ Build and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ***REMOVED***/timesheet
           IMAGE_TAG: latest
         run: |
-          docker build \
+          echo "::group::🐳 Docker Build Process"
+          echo "📦 Building Docker image..."
+          if ! docker build \
             --build-arg DATABASE_URL="file:./dev.db" \
             --build-arg NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
             --build-arg JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }} \
@@ -42,10 +50,21 @@ jobs:
             --build-arg IPAYROLL_API_URL=https://api.ipayroll.com \
             --build-arg IPAYROLL_API_KEY=hehe \
             --build-arg IPAYROLL_COMPANY_ID=1234567890 \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .; then
+            echo "::error::Docker build failed"
+            exit 1
+          fi
+          echo "::endgroup::"
+          
+          echo "::group::⬆️ Docker Push Process"
+          echo "⬆️ Pushing image to ECR..."
+          if ! docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG; then
+            echo "::error::Failed to push Docker image to ECR"
+            exit 1
+          fi
+          echo "::endgroup::"
 
-      - name: Deploy to EC2
+      - name: 🚀 Deploy to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           EC2_HOST: ${{ vars.EC2_HOST }}
@@ -54,62 +73,109 @@ jobs:
           ECR_REPOSITORY: ***REMOVED***/timesheet
           IMAGE_TAG: latest
         run: |
-          # Write the private key to a file
+          echo "::group::🔑 SSH Setup"
+          echo "Setting up SSH keys..."
           echo "$PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
+          echo "::endgroup::"
 
-          # Create deployment script
+          echo "::group::📝 Deployment Script Creation"
+          echo "Creating deployment script..."
           echo '#!/bin/bash
-          # Stop and remove existing container
-          docker stop timesheet-app || true
-          docker rm timesheet-app || true
+          echo "::group::🛑 Container Management"
+          echo "Stopping existing container..."
+          if ! docker stop timesheet-app 2>/dev/null; then
+            echo "::warning::No existing container to stop"
+          fi
+          docker rm timesheet-app 2>/dev/null || true
+          echo "::endgroup::"
 
-          # Login to ECR
-          aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+          echo "::group::🔑 ECR Authentication"
+          echo "Logging into ECR..."
+          if ! aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}; then
+            echo "::error::Failed to authenticate with ECR"
+            exit 1
+          fi
+          echo "::endgroup::"
 
-          # Pull and run new container
-          docker pull ${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest
-          docker run -d \
+          echo "::group::⬇️ Image Pull"
+          echo "Pulling new container image..."
+          if ! docker pull ${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest; then
+            echo "::error::Failed to pull latest image"
+            exit 1
+          fi
+          echo "::endgroup::"
+
+          echo "::group::🚀 Container Launch"
+          echo "Starting new container..."
+          if ! docker run -d \
             --name=timesheet-app \
             --restart=always \
             -p 3000:3000 \
             -v /app/data:/app/data \
             -e NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
-            ${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest
-
-          # Verify container is running
-          if ! docker ps | grep -q timesheet-app; then
-            echo "Container failed to start"
-            docker logs timesheet-app
+            ${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest; then
+            echo "::error::Failed to start container"
             exit 1
           fi
 
-          # Show initial disk usage
+          echo "Verifying container status..."
+          if ! docker ps | grep -q timesheet-app; then
+            echo "::error::Container failed to start"
+            docker logs timesheet-app
+            exit 1
+          fi
+          echo "::endgroup::"
+
+          echo "::group::📊 System Status"
           echo "Initial disk usage:"
           docker system df
+          echo "::endgroup::"
 
-          # Comprehensive cleanup
-          echo "🧹 Cleaning up Docker system..."
-          # Remove unused images older than 24 hours
-          docker image prune -af --filter "until=24h"
-          # Remove unused containers
-          docker container prune -f
-          # Remove unused networks
-          docker network prune -f
-          # Remove unused volumes (preserving data volume)
-          docker volume prune -f --filter "label!=preserve=true"
+          echo "::group::🧹 Cleanup Process"
+          echo "Starting cleanup process..."
           
-          # Show final disk usage
+          echo "Removing unused images older than 24 hours..."
+          docker image prune -af --filter "until=24h" || echo "::warning::Failed to prune images"
+          
+          echo "Removing unused containers..."
+          docker container prune -f || echo "::warning::Failed to prune containers"
+          
+          echo "Removing unused networks..."
+          docker network prune -f || echo "::warning::Failed to prune networks"
+          
+          echo "Removing unused volumes..."
+          docker volume prune -f --filter "label!=preserve=true" || echo "::warning::Failed to prune volumes"
+          
           echo "Final disk usage after cleanup:"
           docker system df
           
-          # Show available disk space
           echo "Available disk space:"
-          df -h' > deploy.sh
+          df -h
+          echo "::endgroup::"' > deploy.sh
 
-          # Copy and execute the deployment script
-          scp -i private_key.pem -o StrictHostKeyChecking=no deploy.sh $EC2_USERNAME@$EC2_HOST:~/deploy.sh
-          ssh -i private_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST "chmod +x ~/deploy.sh && ~/deploy.sh"
+          echo "::group::📤 Script Deployment"
+          echo "Copying deployment script to EC2..."
+          if ! scp -i private_key.pem -o StrictHostKeyChecking=no deploy.sh $EC2_USERNAME@$EC2_HOST:~/deploy.sh; then
+            echo "::error::Failed to copy deployment script to EC2"
+            exit 1
+          fi
+          
+          echo "Executing deployment script..."
+          if ! ssh -i private_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST "chmod +x ~/deploy.sh && ~/deploy.sh"; then
+            echo "::error::Deployment script execution failed"
+            exit 1
+          fi
+          echo "::endgroup::"
 
-          # Cleanup
+          echo "::group::🧹 Cleanup"
+          echo "Cleaning up local files..."
           rm private_key.pem deploy.sh
+          echo "::endgroup::"
+
+      - name: ✅ Deployment Summary
+        run: |
+          echo "::group::✨ Deployment Results"
+          echo "✅ Deployment completed successfully!"
+          echo "🔗 Application URL: http://${{ vars.EC2_HOST }}:3000"
+          echo "::endgroup::"
