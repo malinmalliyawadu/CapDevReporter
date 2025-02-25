@@ -122,8 +122,8 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy SQLite database
-COPY prisma/timesheet.db ./data/timesheet.db
-RUN chown -R 1001:1001 ./data/timesheet.db
+COPY prisma/dev.db ./prisma/dev.db
+RUN chown -R 1001:1001 ./prisma/dev.db
 
 ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
