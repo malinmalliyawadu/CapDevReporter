@@ -23,6 +23,8 @@ out
 
 # Keep Prisma files
 !prisma/dev.db
+!prisma/timesheet.db
 !prisma/schema.prisma
+!prisma/migrations
 !node_modules/.prisma
 !node_modules/@prisma 

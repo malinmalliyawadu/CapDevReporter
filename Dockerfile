@@ -117,12 +117,13 @@ RUN mkdir -p prisma && chown -R 1001:1001 prisma
 
 # Copy Prisma files and generate client
 COPY --from=builder /app/prisma/schema.prisma ./prisma/
+COPY --from=builder /app/prisma/migrations ./prisma/migrations/
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy SQLite database
-COPY prisma/dev.db ./prisma/dev.db
-RUN chown -R 1001:1001 ./prisma/dev.db
+COPY prisma/timesheet.db ./data/timesheet.db
+RUN chown -R 1001:1001 ./data/timesheet.db
 
 ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
@@ -161,6 +162,7 @@ EXPOSE 3000
 
 # Copy database initialization script
 COPY --chown=nextjs:nodejs prisma/schema.prisma ./prisma/
+COPY --chown=nextjs:nodejs prisma/migrations ./prisma/migrations/
 COPY --chown=nextjs:nodejs scripts/init-db.sh ./scripts/
 
 # Ensure script has correct permissions and line endings
