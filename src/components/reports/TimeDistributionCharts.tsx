@@ -1,15 +1,9 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import type { TimeReport, TimeReportEntry } from "@/types/timeReport";
+import { Badge } from "@/components/ui/badge";
 
 interface TimeDistributionChartsProps {
   timeReport: TimeReport[];
@@ -40,31 +34,51 @@ export function TimeDistributionCharts({
         if (entry.leaveType?.toLowerCase().includes("sick")) {
           key = "sick-leave";
           name = "Sick Leave";
-          color = "#9333ea"; // purple-600
+          color = "#7e22ce"; // purple-700
         } else if (entry.leaveType?.toLowerCase().includes("annual")) {
           key = "annual-leave";
           name = "Annual Leave";
-          color = "#16a34a"; // green-600
+          color = "#15803d"; // green-700
         } else {
           key = "other-leave";
           name = "Other Leave";
-          color = "#ea580c"; // orange-600
+          color = "#c2410c"; // orange-700
         }
       } else if (entry.projectId) {
-        key = "projects";
-        name = "Projects";
-        color = "#2563eb"; // blue-600
+        key = entry.isCapDev ? "capdev-projects" : "non-capdev-projects";
+        name = entry.isCapDev ? "CapDev Projects" : "Non-CapDev Projects";
+        color = entry.isCapDev ? "#1d4ed8" : "#4338ca"; // blue-700 for CapDev, indigo-700 for Non-CapDev
       } else {
         // Check if this is a general time entry by looking up the time type
         const timeType = timeTypes.find((tt) => tt.id === entry.timeTypeId);
         if (timeType) {
           key = `general-${timeType.id}`;
           name = timeType.name;
-          color = "#db2777"; // pink-600
+          // Assign different colors to different general time types
+          const colorIndex = Array.from(timeTypeHours.keys()).filter((k) =>
+            k.startsWith("general-")
+          ).length;
+          const generalTimeColors = [
+            "#be185d", // pink-700
+            "#0f766e", // teal-700
+            "#6d28d9", // violet-700
+            "#be123c", // rose-700
+            "#047857", // emerald-700
+            "#4338ca", // indigo-700
+            "#0369a1", // sky-700
+            "#3f6212", // lime-800
+            "#a21caf", // fuchsia-700
+            "#b45309", // amber-700
+            "#b91c1c", // red-700
+            "#115e59", // teal-800
+            "#5b21b6", // purple-800
+            "#9f1239", // rose-800
+          ];
+          color = generalTimeColors[colorIndex % generalTimeColors.length];
         } else {
           key = "other";
           name = "Other";
-          color = "#94a3b8"; // slate-400
+          color = "#475569"; // slate-600
         }
       }
 
@@ -113,20 +127,20 @@ export function TimeDistributionCharts({
     {
       name: "CapDev",
       value: capDevHours,
-      color: "#0ea5e9", // sky-500
+      color: "#0284c7", // sky-600
       percentage: totalWorkHours > 0 ? (capDevHours / totalWorkHours) * 100 : 0,
     },
     {
       name: "Non-CapDev",
       value: nonCapDevHours,
-      color: "#f43f5e", // rose-500
+      color: "#e11d48", // rose-600
       percentage:
         totalWorkHours > 0 ? (nonCapDevHours / totalWorkHours) * 100 : 0,
     },
     {
       name: "Leave",
       value: leaveHours,
-      color: "#f97316", // orange-500
+      color: "#ea580c", // orange-600
       percentage:
         leaveHours > 0 ? (leaveHours / (totalWorkHours + leaveHours)) * 100 : 0,
     },
@@ -137,17 +151,18 @@ export function TimeDistributionCharts({
       name: data.name,
       value: data.hours,
       color: data.color,
+      capDevHours: data.capDevHours,
       percentage: (data.hours / (totalWorkHours + leaveHours)) * 100,
     }))
     .sort((a, b) => b.value - a.value); // Sort by value in descending order
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 mb-6">
-      <Card className="h-fit">
-        <CardHeader>
+    <div className="grid gap-4 md:grid-cols-2">
+      <Card>
+        <CardHeader className="pb-2">
           <CardTitle>Rolled Up Time Distribution</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -174,7 +189,6 @@ export function TimeDistributionCharts({
                     ];
                   }}
                 />
-                <Legend />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -202,11 +216,11 @@ export function TimeDistributionCharts({
         </CardContent>
       </Card>
 
-      <Card className="h-fit">
-        <CardHeader>
+      <Card>
+        <CardHeader className="pb-2">
           <CardTitle>Detailed Time Distribution</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -231,7 +245,6 @@ export function TimeDistributionCharts({
                     ).toFixed(1)}%)`
                   }
                 />
-                <Legend />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -243,7 +256,17 @@ export function TimeDistributionCharts({
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-sm font-medium">{item.name}</span>
+                  <span className="text-sm font-medium flex items-center gap-2">
+                    {item.name}
+                    {item.capDevHours > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-sky-100 text-sky-700 hover:bg-sky-100"
+                      >
+                        CapDev
+                      </Badge>
+                    )}
+                  </span>
                 </div>
                 <div className="text-right">
                   <span className="font-medium">
