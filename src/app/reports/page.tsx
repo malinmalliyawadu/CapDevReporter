@@ -119,11 +119,20 @@ async function getTimeReportData(searchParams: {
       (leave) => leave.employeeId === employee.id
     );
 
+    // Find appropriate time types for leaves and projects
+    const leaveTimeType = timeTypes.find(
+      (tt) => tt.name === "General Administration"
+    );
+    const capDevTimeType = timeTypes.find((tt) => tt.name === "Tech Debt");
+    const nonCapDevTimeType = timeTypes.find(
+      (tt) => tt.name === "General Administration"
+    );
+
     // Create time report entries from leaves
     const leaveEntries: TimeReportEntry[] = employeeLeaves.map((leave) => ({
       id: leave.id,
       hours: leave.duration,
-      timeTypeId: "leave", // You might want to create a specific time type for leaves
+      timeTypeId: leaveTimeType?.id || "leave",
       isCapDev: false,
       isLeave: true,
       leaveType: leave.type,
@@ -142,8 +151,10 @@ async function getTimeReportData(searchParams: {
       })
       .map((activity) => ({
         id: activity.id,
-        hours: 8, // Default to 8 hours per activity - you might want to adjust this
-        timeTypeId: activity.project.isCapDev ? "capdev" : "non-capdev", // You might want to create proper time types
+        hours: 8, // Default to 8 hours per activity
+        timeTypeId: activity.project.isCapDev
+          ? capDevTimeType?.id || "capdev"
+          : nonCapDevTimeType?.id || "non-capdev",
         isCapDev: activity.project.isCapDev,
         projectId: activity.project.id,
         projectName: activity.project.name,
