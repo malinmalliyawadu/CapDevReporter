@@ -26,5 +26,6 @@ out
 !prisma/timesheet.db
 !prisma/schema.prisma
 !prisma/migrations
+!prisma/seed.ts
 !node_modules/.prisma
 !node_modules/@prisma 

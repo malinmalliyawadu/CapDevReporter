@@ -151,6 +151,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 
+# Install ts-node for seeding
+RUN npm install -g ts-node typescript @types/node
+
 # Ensure Prisma files have correct permissions
 RUN chown -R nextjs:nodejs ./prisma
 RUN chown -R nextjs:nodejs ./node_modules/.prisma
@@ -163,6 +166,7 @@ EXPOSE 3000
 # Copy database initialization script
 COPY --chown=nextjs:nodejs prisma/schema.prisma ./prisma/
 COPY --chown=nextjs:nodejs prisma/migrations ./prisma/migrations/
+COPY --chown=nextjs:nodejs prisma/seed.ts ./prisma/
 COPY --chown=nextjs:nodejs scripts/init-db.sh ./scripts/
 
 # Ensure script has correct permissions and line endings
