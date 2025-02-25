@@ -30,18 +30,18 @@ jobs:
           # Read current version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $CURRENT_VERSION"
-          
+
           # Split version into parts
           IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
           MAJOR="${VERSION_PARTS[0]}"
           MINOR="${VERSION_PARTS[1]}"
           PATCH="${VERSION_PARTS[2]}"
-          
+
           # Increment patch version
           NEW_PATCH=$((PATCH + 1))
           NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
           echo "New version: $NEW_VERSION"
-          
+
           # Update package.json
           node -e "
             const fs = require('fs');
@@ -49,16 +49,16 @@ jobs:
             package.version = '$NEW_VERSION';
             fs.writeFileSync('./package.json', JSON.stringify(package, null, 2) + '\n');
           "
-          
+
           # Configure git
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          
+
           # Commit and push changes
           git add package.json
           git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
           git push
-          
+
           # Set output for later steps
           echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
           echo "release_tag=v${NEW_VERSION}" >> $GITHUB_OUTPUT
@@ -94,7 +94,7 @@ jobs:
         run: |
           echo "::group::🐳 Docker Build Process"
           echo "📦 Building Docker image..."
-          
+
           # Use Docker's built-in progress formatting
           DOCKER_BUILDKIT=1 docker build \
             --progress=plain \
@@ -115,19 +115,19 @@ jobs:
               echo "::error::Docker build failed"
               exit 1
             }
-          
+
           # Show image details after successful build
           echo "📋 Image details:"
           docker images $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} --format "ID: {{.ID}}\nSize: {{.Size}}\nCreated: {{.CreatedSince}}"
           echo "::endgroup::"
-          
+
           echo "::group::⬆️ Docker Push Process"
           echo "⬆️ Pushing image to ECR..."
           if ! docker push $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} || ! docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest; then
             echo "::error::Failed to push Docker image to ECR"
             exit 1
           fi
-          
+
           # Show push summary
           echo "📊 Push summary:"
           docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} --format 'Repository: {{.RepoTags}}\nSize: {{.Size}} bytes\nLayers: {{len .RootFS.Layers}}'
@@ -183,9 +183,9 @@ jobs:
             --restart=always \
             -p 3000:3000 \
             -v /app/data:/app/data \
-            -e NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
-            -e APP_VERSION=${{ env.VERSION }} \
-            ${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:${RELEASE_TAG}; then
+            -e NEXT_PUBLIC_JIRA_URL='${{ env.NEXT_PUBLIC_JIRA_URL }}' \
+            -e APP_VERSION='${VERSION}' \
+            '${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest'; then
             echo "::error::Failed to start container"
             exit 1
           fi
@@ -205,22 +205,22 @@ jobs:
 
           echo "::group::🧹 Cleanup Process"
           echo "Starting cleanup process..."
-          
+
           echo "Removing unused images older than 24 hours..."
           docker image prune -af --filter "until=24h" || echo "::warning::Failed to prune images"
-          
+
           echo "Removing unused containers..."
           docker container prune -f || echo "::warning::Failed to prune containers"
-          
+
           echo "Removing unused networks..."
           docker network prune -f || echo "::warning::Failed to prune networks"
-          
+
           echo "Removing unused volumes..."
           docker volume prune -f --filter "label!=preserve=true" || echo "::warning::Failed to prune volumes"
-          
+
           echo "Final disk usage after cleanup:"
           docker system df
-          
+
           echo "Available disk space:"
           df -h
           echo "::endgroup::"' > deploy.sh
@@ -231,7 +231,7 @@ jobs:
             echo "::error::Failed to copy deployment script to EC2"
             exit 1
           fi
-          
+
           echo "Executing deployment script..."
           if ! ssh -i private_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST "chmod +x ~/deploy.sh && ~/deploy.sh"; then
             echo "::error::Deployment script execution failed"
@@ -250,7 +250,7 @@ jobs:
           script: |
             const version = process.env.VERSION;
             const releaseTag = process.env.RELEASE_TAG;
-            
+
             // Create deployment
             const deployment = await github.rest.repos.createDeployment({
               owner: context.repo.owner,
@@ -280,10 +280,10 @@ jobs:
             * Automated deployment of version ${version}
             * Deployment timestamp: ${new Date().toISOString()}
             * Commit: ${context.sha}
-            
+
             ## Installation
             This release has been automatically deployed to production.
-            
+
             ## Additional Notes
             * Docker image tag: \`${releaseTag}\`
             * Environment: Production
