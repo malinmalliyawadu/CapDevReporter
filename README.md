@@ -4,13 +4,12 @@ Automated timesheet app for ***REMOVED*** employees.
 
 ## 🚀 Technology Stack
 
-- Next.js 15
-- React 19
-- TailwindCSS
-- Prisma ORM
-- Playwright (E2E Testing)
-- Recharts
-- Additional dependencies detailed in package.json
+- [Next.js 15](https://nextjs.org/)
+- [React 19](https://react.dev/)
+- [TailwindCSS](https://tailwindcss.com/)
+- [Prisma ORM](https://www.prisma.io/)
+- [Playwright](https://playwright.dev/) (E2E Testing)
+- [Recharts](https://recharts.org/)
 
 ## 🏃‍♂️ Installation
 
