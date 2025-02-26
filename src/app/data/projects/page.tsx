@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { ProjectsTableSkeleton } from "./loading";
 import { ProjectsTable } from "./ProjectsTable";
-import { getProjects } from "./actions";
+import { deleteProject, getProjects } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +58,8 @@ export default async function ProjectsPage(props: {
               initialProjects={projects}
               totalProjects={total}
               searchParams={params ?? {}}
+              deleteProject={deleteProject}
+              getProjects={getProjects}
             />
           </Suspense>
         </CardContent>

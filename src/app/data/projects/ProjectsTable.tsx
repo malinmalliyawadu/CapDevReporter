@@ -61,7 +61,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { deleteProject, getProjects } from "./actions";
 
 interface Project {
   id: string;
@@ -86,6 +85,12 @@ interface ProjectsTableProps {
   initialProjects: Project[];
   totalProjects: number;
   searchParams: ProjectsPageQueryString;
+  deleteProject: (projectId: string) => Promise<boolean>;
+  getProjects: (params: {
+    page: number;
+    size: number;
+    search?: string;
+  }) => Promise<{ projects: Project[]; total: number }>;
 }
 
 interface JiraBoard {
@@ -101,6 +106,8 @@ export function ProjectsTable({
   initialProjects,
   totalProjects,
   searchParams,
+  deleteProject,
+  getProjects,
 }: ProjectsTableProps) {
   const { toast } = useToast();
   const { openFromEvent: openSyncDialogFromEvent } = useSyncDialog();
@@ -241,7 +248,7 @@ export function ProjectsTable({
   }, [searchParams.sync, router, pathname, openSyncDialogFromEvent]);
 
   // Add fetchProjects function
-  const fetchProjects = useCallback(
+  const fetchProjectsData = useCallback(
     async (params: URLSearchParams) => {
       try {
         const result = await getProjects({
@@ -261,7 +268,7 @@ export function ProjectsTable({
         });
       }
     },
-    [toast]
+    [getProjects, toast]
   );
 
   const handleDeleteProject = async (project: Project) => {
@@ -299,7 +306,7 @@ export function ProjectsTable({
       if (debouncedSearch) {
         params.set("search", formatSearchQuery(debouncedSearch));
       }
-      await fetchProjects(params);
+      await fetchProjectsData(params);
     } catch (error) {
       console.error("Error deleting project:", error);
       toast({
@@ -530,8 +537,8 @@ export function ProjectsTable({
     params.set("page", "1"); // Reset to first page on search
     params.set("size", String(Number(searchParams.size) || 10));
 
-    fetchProjects(params);
-  }, [debouncedSearch, searchParams.size, fetchProjects]);
+    fetchProjectsData(params);
+  }, [debouncedSearch, searchParams.size, fetchProjectsData]);
 
   // Effect to update projects when page changes
   useEffect(() => {
@@ -542,8 +549,8 @@ export function ProjectsTable({
     params.set("page", String(page));
     params.set("size", String(Number(searchParams.size) || 10));
 
-    fetchProjects(params);
-  }, [page, searchParams.size, debouncedSearch, fetchProjects]);
+    fetchProjectsData(params);
+  }, [page, searchParams.size, debouncedSearch, fetchProjectsData]);
 
   return (
     <div>
