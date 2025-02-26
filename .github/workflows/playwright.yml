@@ -35,6 +35,8 @@ jobs:
           npx playwright install --with-deps
           echo "::endgroup::"
       - name: 🧪 Run Playwright tests
+        env:
+          DATABASE_URL: file:./dev.db
         run: |
           echo "::group::Running Playwright tests"
           npx playwright test
