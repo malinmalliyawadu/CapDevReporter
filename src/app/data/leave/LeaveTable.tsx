@@ -50,7 +50,7 @@ interface LeaveTableProps {
 }
 
 export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
-  const [leaveRecords, setLeaveRecords] = useState(initialLeaveRecords);
+  const [leaveRecords] = useState(initialLeaveRecords);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);

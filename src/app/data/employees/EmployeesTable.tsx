@@ -74,7 +74,7 @@ export function EmployeesTable({
   roles,
 }: EmployeesTableProps) {
   const { toast } = useToast();
-  const [employees, setEmployees] = useState(initialEmployees);
+  const [employees] = useState(initialEmployees);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);

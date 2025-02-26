@@ -27,7 +27,10 @@ export async function getBoards() {
     return { success: true, data: boards };
   } catch (error) {
     console.error("Error fetching boards:", error);
-    return { success: false, error: "Failed to fetch boards" };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to fetch boards",
+    };
   }
 }
 
@@ -298,7 +301,9 @@ export async function* syncProjects(config: SyncConfig) {
         }
       } catch (error) {
         yield {
-          message: `Failed to lookup board ${board.name} in Jira`,
+          message: `Failed to lookup board ${board.name} in Jira: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
           progress: Math.round(baseProgress),
           type: "error",
           operation: "fetch-board",

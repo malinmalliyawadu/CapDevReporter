@@ -74,7 +74,6 @@ export function SyncDialog() {
     message: string;
     progress: number;
   } | null>(null);
-  const [, setLastSynced] = useState<Date | null>(null);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
   const [syncConfig, setSyncConfig] = useState<SyncConfig>({

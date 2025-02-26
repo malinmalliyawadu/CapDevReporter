@@ -81,7 +81,10 @@ export async function syncProjects(config: {
     try {
       await writer.close();
     } catch (error) {
-      console.error("Error closing writer:", error);
+      console.error(
+        "Error closing writer:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
     }
   };
 
@@ -337,7 +340,9 @@ export async function syncProjects(config: {
           }
         } catch (error) {
           await sendMessage({
-            message: `Failed to lookup board ${board.name} in Jira`,
+            message: `Failed to lookup board ${board.name} in Jira: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
             progress: Math.round(baseProgress),
             type: "error",
             operation: "fetch-board",
