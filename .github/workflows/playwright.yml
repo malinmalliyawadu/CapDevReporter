@@ -9,6 +9,10 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shards: [1, 2, 3, 4] # Run tests across 4 parallel jobs
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
@@ -41,12 +45,12 @@ jobs:
           DATABASE_URL: file:./dev.db
         run: |
           echo "::group::Running Playwright tests"
-          npx playwright test
+          npx playwright test --shard ${{ matrix.shards }}/4
           echo "::endgroup::"
       - name: 📊 Upload test results
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shards }}
           path: playwright-report/
           retention-days: 30
