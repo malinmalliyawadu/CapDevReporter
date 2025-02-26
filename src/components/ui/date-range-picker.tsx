@@ -20,6 +20,7 @@ interface DateRangePickerProps {
   onDateRangeChange: (range: DateRange | undefined) => void;
   className?: string;
   presets?: DatePreset[];
+  triggerId?: string;
 }
 
 export function DateRangePicker({
@@ -27,13 +28,14 @@ export function DateRangePicker({
   onDateRangeChange,
   className,
   presets,
+  triggerId,
 }: DateRangePickerProps) {
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
         <PopoverTrigger asChild>
           <Button
-            id="date"
+            id={triggerId}
             variant={"outline"}
             className={cn(
               "justify-start text-left font-normal",

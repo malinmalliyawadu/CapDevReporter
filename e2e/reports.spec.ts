@@ -5,38 +5,65 @@ test.describe("Reports Page", () => {
     await page.goto("/reports");
   });
 
-  test("should load reports page with filters", async ({ page }) => {
-    // Check if the page loads with the time report table
-    await expect(page.getByRole("table")).toBeVisible();
-
-    // Check if date filters are present
+  test("should load reports page with filters and sections", async ({
+    page,
+  }) => {
+    // Check page title - using more specific selector for the gradient title
+    await expect(page.locator("h1", { hasText: "Time Reports" })).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /from date/i })
+      page.getByText("View and analyze time tracking data.")
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: /to date/i })).toBeVisible();
+
+    // Check if filters are present
+    await expect(
+      page.getByPlaceholder("Search by name or payroll ID...")
+    ).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Team" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Role" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /date range/i })
+    ).toBeVisible();
+
+    // Check if main sections are present
+    await expect(page.getByRole("table")).toBeVisible(); // Time Report Table
+    await expect(page.getByText("Detailed Time Distribution")).toBeVisible(); // Time Distribution Charts
+    await expect(page.getByText("Rolled Up Time Distribution")).toBeVisible(); // Time Distribution Charts
+    await expect(page.getByText("Issues Summary")).toBeVisible(); // Utilization Issues section
   });
 
-  test("should filter time reports", async ({ page }) => {
-    // Open date picker
-    await page.getByRole("button", { name: /from date/i }).click();
+  test("should filter time reports using search", async ({ page }) => {
+    const searchInput = page.getByPlaceholder(
+      "Search by name or payroll ID..."
+    );
 
-    // Select a date (first available date)
-    await page.getByRole("gridcell").first().click();
+    // Enter search term
+    await searchInput.fill("test");
 
-    // Close the date picker if it's still open
-    await page.keyboard.press("Escape");
-
-    // Verify table updates (table should be visible)
+    // Wait for table to update (table should remain visible)
     await expect(page.getByRole("table")).toBeVisible();
   });
 
-  test("should show utilization issues section", async ({ page }) => {
-    // Check if utilization issues section is present
-    await expect(page.getByText(/utilization issues/i)).toBeVisible();
+  test("should filter by team and role", async ({ page }) => {
+    // Open team dropdown and select first team
+    await page.getByRole("combobox", { name: "Team" }).click();
+    await page.getByRole("option").first().click();
+
+    // Open role dropdown and select first role
+    await page.getByRole("combobox", { name: "Role" }).click();
+    await page.getByRole("option").first().click();
+
+    // Verify table updates
+    await expect(page.getByRole("table")).toBeVisible();
   });
 
-  test("should show general time distribution", async ({ page }) => {
-    // Check if general time distribution section is present
-    await expect(page.getByText(/general time distribution/i)).toBeVisible();
+  test("should filter by date range", async ({ page }) => {
+    // Open date range picker
+    await page.getByRole("button", { name: /date range/i }).click();
+
+    // Select a preset date range (This Week)
+    await page.getByRole("button", { name: "This Week" }).click();
+
+    // Verify table updates
+    await expect(page.getByRole("table")).toBeVisible();
   });
 });

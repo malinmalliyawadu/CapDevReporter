@@ -181,13 +181,15 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">Team</label>
+          <label htmlFor="team" className="text-sm font-medium">
+            Team
+          </label>
           <Select
             value={searchParams.get("team") ?? "all"}
             onValueChange={(value) => updateFilters("team", value)}
             disabled={isPending}
           >
-            <SelectTrigger className={isPending ? "opacity-50" : ""}>
+            <SelectTrigger id="team" className={isPending ? "opacity-50" : ""}>
               <SelectValue placeholder="All teams" />
             </SelectTrigger>
             <SelectContent>
@@ -201,13 +203,15 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
           </Select>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">Role</label>
+          <label htmlFor="role" className="text-sm font-medium">
+            Role
+          </label>
           <Select
             value={searchParams.get("role") ?? "all"}
             onValueChange={(value) => updateFilters("role", value)}
             disabled={isPending}
           >
-            <SelectTrigger className={isPending ? "opacity-50" : ""}>
+            <SelectTrigger id="role" className={isPending ? "opacity-50" : ""}>
               <SelectValue placeholder="All roles" />
             </SelectTrigger>
             <SelectContent>
@@ -221,8 +225,11 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
           </Select>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">Date Range</label>
+          <label htmlFor="date-range" className="text-sm font-medium">
+            Date Range
+          </label>
           <DateRangePicker
+            triggerId="date-range"
             dateRange={dateRange}
             onDateRangeChange={handleDateRangeChange}
             presets={datePresets}
