@@ -6,17 +6,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { prisma } from "@/lib/prisma";
 import { EmployeesTable } from "./EmployeesTable";
 import { EmployeesTableSkeleton } from "./loading";
+import { getEmployees } from "./actions";
 
 export const dynamic = "force-dynamic";
-
-async function getEmployees() {
-  const employees = await prisma.employee.findMany({
-    include: {
-      role: true,
-    },
-  });
-  return employees;
-}
 
 async function getRoles() {
   const roles = await prisma.role.findMany();
@@ -24,7 +16,10 @@ async function getRoles() {
 }
 
 export default async function EmployeesPage() {
-  const [employees, roles] = await Promise.all([getEmployees(), getRoles()]);
+  const [{ data: employees = [] }, roles] = await Promise.all([
+    getEmployees(),
+    getRoles(),
+  ]);
 
   return (
     <div className="space-y-8">

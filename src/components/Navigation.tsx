@@ -160,7 +160,7 @@ export function Navigation() {
                   Data
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-white dark:bg-blue-950 backdrop-blur-none rounded-lg border border-zinc-200 dark:border-blue-800 shadow-sm">
+                  <ul className="grid p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-white dark:bg-blue-950 backdrop-blur-none rounded-lg border border-zinc-200 dark:border-blue-800 shadow-sm">
                     {data.map((component) => (
                       <ListItem
                         key={component.href}

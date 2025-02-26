@@ -47,6 +47,7 @@ import {
   ColumnFiltersState,
   flexRender,
 } from "@tanstack/react-table";
+import { syncEmployees, updateEmployeeHours } from "./actions";
 
 interface Employee {
   id: string;
@@ -193,19 +194,16 @@ export function EmployeesTable({
   const handleSync = async () => {
     try {
       setIsSyncing(true);
-      const response = await fetch("/api/employees/sync", {
-        method: "POST",
-      });
-      if (!response.ok) throw new Error("Failed to sync");
+      const result = await syncEmployees();
 
-      const employeesResponse = await fetch("/api/employees");
-      const updatedEmployees = await employeesResponse.json();
-      setEmployees(updatedEmployees);
-      setLastSynced(new Date());
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      setLastSynced(new Date(result.data.timestamp));
       toast({
         title: "Success",
         description: "Employees synced with iPayroll",
-        className: "data-[testid=sync-success]",
       });
     } catch (error) {
       console.error(error);
@@ -213,7 +211,6 @@ export function EmployeesTable({
         title: "Error",
         description: "Failed to sync employees",
         variant: "destructive",
-        className: "data-[testid=sync-error]",
       });
     } finally {
       setIsSyncing(false);
@@ -234,27 +231,16 @@ export function EmployeesTable({
     }
 
     try {
-      const response = await fetch(
-        `/api/employees/${editingEmployee.id}/hours`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ hoursPerWeek: hours }),
-        }
-      );
+      const result = await updateEmployeeHours(editingEmployee.id, hours);
 
-      if (!response.ok) throw new Error("Failed to update hours");
+      if (result.error) {
+        throw new Error(result.error);
+      }
 
-      const employeesResponse = await fetch("/api/employees");
-      const updatedEmployees = await employeesResponse.json();
-      setEmployees(updatedEmployees);
       setEditingEmployee(null);
       toast({
         title: "Success",
         description: "Hours updated successfully",
-        className: "data-[testid=hours-update-success]",
       });
     } catch (error) {
       console.error(error);
@@ -262,7 +248,6 @@ export function EmployeesTable({
         title: "Error",
         description: "Failed to update hours",
         variant: "destructive",
-        className: "data-[testid=hours-update-error]",
       });
     }
   };
