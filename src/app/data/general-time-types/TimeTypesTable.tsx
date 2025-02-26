@@ -32,6 +32,8 @@ import {
   SortingState,
   flexRender,
 } from "@tanstack/react-table";
+import * as actions from "./actions";
+import { useRouter } from "next/navigation";
 
 interface TimeType {
   id: string;
@@ -56,6 +58,7 @@ interface TimeTypesTableProps {
 
 export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [timeTypes, setTimeTypes] = useState(initialTimeTypes);
   const [newTypeName, setNewTypeName] = useState("");
   const [newTypeDescription, setNewTypeDescription] = useState("");
@@ -265,37 +268,36 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
       return;
     }
 
-    try {
-      const response = await fetch("/api/general-time-types", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: newTypeName.trim(),
-          description: newTypeDescription.trim() || undefined,
-          isCapDev,
-        }),
-      });
+    const result = await actions.createTimeType({
+      name: newTypeName.trim(),
+      description: newTypeDescription.trim() || undefined,
+      isCapDev,
+    });
 
-      if (!response.ok) throw new Error("Failed to create time type");
-
-      const timeTypesResponse = await fetch("/api/general-time-types");
-      const updatedTimeTypes = await timeTypesResponse.json();
-      setTimeTypes(updatedTimeTypes);
+    if (result.success && result.id) {
+      const newTimeType = {
+        id: result.id,
+        name: newTypeName.trim(),
+        description: newTypeDescription.trim() || null,
+        isCapDev,
+        generalAssignments: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setTimeTypes([...timeTypes, newTimeType]);
       setOpen(false);
       setNewTypeName("");
       setNewTypeDescription("");
       setIsCapDev(false);
+      router.refresh();
       toast({
         title: "Success",
         description: "Time type created successfully",
       });
-    } catch (error) {
-      console.error(error);
+    } else {
       toast({
         title: "Error",
-        description: "Failed to create time type",
+        description: result.error || "Failed to create time type",
         variant: "destructive",
       });
     }
@@ -309,30 +311,21 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
   const handleConfirmDelete = async () => {
     if (!timeTypeToDelete) return;
 
-    try {
-      const response = await fetch(
-        `/api/general-time-types/${timeTypeToDelete.id}`,
-        {
-          method: "DELETE",
-        }
-      );
+    const result = await actions.deleteTimeType(timeTypeToDelete.id);
 
-      if (!response.ok) throw new Error("Failed to delete time type");
-
-      const timeTypesResponse = await fetch("/api/general-time-types");
-      const updatedTimeTypes = await timeTypesResponse.json();
-      setTimeTypes(updatedTimeTypes);
+    if (result.success) {
       setDeleteConfirmOpen(false);
       setTimeTypeToDelete(null);
+      setTimeTypes(timeTypes.filter((type) => type.id !== timeTypeToDelete.id));
+      router.refresh();
       toast({
         title: "Success",
         description: "Time type deleted successfully",
       });
-    } catch (error) {
-      console.error(error);
+    } else {
       toast({
         title: "Error",
-        description: "Failed to delete time type",
+        description: result.error || "Failed to delete time type",
         variant: "destructive",
       });
     }
