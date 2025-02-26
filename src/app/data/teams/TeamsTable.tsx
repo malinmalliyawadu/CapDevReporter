@@ -97,7 +97,9 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         return;
       }
 
-      setTeams(result.teams);
+      if (result.teams) {
+        setTeams(result.teams);
+      }
       setIsAddTeamDialogOpen(false);
       setNewTeam({ name: "", description: "" });
       toast.success("Team created successfully");
@@ -114,14 +116,22 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
     }
 
     try {
-      const result = await addJiraBoard(newBoard);
+      const result = await addJiraBoard({
+        name: newBoard.name,
+        boardId: newBoard.boardId,
+        team: {
+          connect: { id: newBoard.teamId },
+        },
+      });
 
       if (!result.success) {
         toast.error(result.error);
         return;
       }
 
-      setTeams(result.teams);
+      if (result.teams) {
+        setTeams(result.teams);
+      }
       setIsAddBoardDialogOpen(false);
       setNewBoard({ name: "", boardId: "", teamId: "" });
       toast.success("Board added successfully");
@@ -142,7 +152,9 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         return;
       }
 
-      setTeams(result.teams);
+      if (result.teams) {
+        setTeams(result.teams);
+      }
       setIsDeleteDialogOpen(false);
       setTeamToDelete(null);
       toast.success("Team deleted successfully");
@@ -166,7 +178,9 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         return;
       }
 
-      setTeams(result.teams);
+      if (result.teams) {
+        setTeams(result.teams);
+      }
       setIsEditDialogOpen(false);
       setSelectedTeam(null);
       toast.success("Team updated successfully");
@@ -209,17 +223,19 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
       const result = await deleteJiraBoard(teamId, boardId);
 
       if (!result.success) {
-        if (result.error.includes("P2003")) {
+        if (result.error?.includes("P2003")) {
           toast.error(
             "Cannot delete board: It has associated projects or timesheets. Please delete or reassign them first."
           );
         } else {
-          toast.error(result.error);
+          toast.error(result.error || "Failed to delete board");
         }
         return;
       }
 
-      setTeams(result.teams);
+      if (result.teams) {
+        setTeams(result.teams);
+      }
       setIsDeleteBoardDialogOpen(false);
       setBoardToDelete(null);
       toast.success("Board deleted successfully");
