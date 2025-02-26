@@ -26,11 +26,12 @@ export interface Project {
   description: string | null;
   jiraId: string;
   isCapDev: boolean;
-  team: Team;
-  teamId: string;
-  timeEntries: TimeEntry[];
-  createdAt: Date;
-  updatedAt: Date;
+  board: {
+    team: {
+      name: string;
+    };
+  };
+  activities?: ProjectActivity[];
 }
 
 export interface TimeEntry {
@@ -68,4 +69,9 @@ export interface LeaveRequest {
   userId: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ProjectActivity {
+  activityDate: string | Date;
+  jiraIssueId: string;
 }

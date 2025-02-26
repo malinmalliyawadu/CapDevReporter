@@ -462,6 +462,7 @@ export function ProjectsTable({
               className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
               onClick={() => setProjectToDelete(project)}
               title="Delete project"
+              data-testid={`delete-project-${project.id}`}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -564,6 +565,7 @@ export function ProjectsTable({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-9 w-[250px] lg:w-[400px] transition-all duration-200 focus:w-[300px] lg:focus:w-[450px] pr-8"
+                  data-testid="projects-search-input"
                 />
                 {searchQuery && (
                   <Button
@@ -571,6 +573,7 @@ export function ProjectsTable({
                     size="sm"
                     className="absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 p-0 hover:bg-muted"
                     onClick={() => setSearchQuery("")}
+                    data-testid="clear-search-button"
                   >
                     <X className="h-4 w-4 text-muted-foreground" />
                   </Button>
@@ -578,7 +581,10 @@ export function ProjectsTable({
               </div>
               <div className="flex items-center gap-2">
                 <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                  <SelectTrigger className="h-9 w-[140px] bg-background/50 hover:bg-background/80 transition-colors">
+                  <SelectTrigger
+                    className="h-9 w-[140px] bg-background/50 hover:bg-background/80 transition-colors"
+                    data-testid="team-filter-select"
+                  >
                     <SelectValue placeholder="Select team" />
                   </SelectTrigger>
                   <SelectContent>
@@ -593,7 +599,10 @@ export function ProjectsTable({
                   </SelectContent>
                 </Select>
                 <Select value={selectedType} onValueChange={setSelectedType}>
-                  <SelectTrigger className="h-9 w-[140px] bg-background/50 hover:bg-background/80 transition-colors">
+                  <SelectTrigger
+                    className="h-9 w-[140px] bg-background/50 hover:bg-background/80 transition-colors"
+                    data-testid="type-filter-select"
+                  >
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -612,6 +621,7 @@ export function ProjectsTable({
               variant="outline"
               size="sm"
               onClick={openSyncDialogFromEvent()}
+              data-testid="sync-with-jira-button"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Sync with Jira
@@ -621,7 +631,7 @@ export function ProjectsTable({
       </div>
 
       <div className="rounded-lg border bg-card shadow-sm">
-        <Table>
+        <Table data-testid="projects-table">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
@@ -648,7 +658,10 @@ export function ProjectsTable({
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <React.Fragment key={row.id}>
-                  <TableRow className="hover:bg-muted/50 transition-colors">
+                  <TableRow
+                    className="hover:bg-muted/50 transition-colors"
+                    data-testid={`project-row-${row.original.id}`}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="px-4 py-3">
                         {flexRender(
@@ -688,13 +701,19 @@ export function ProjectsTable({
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
             className="h-8 w-8 p-0 hover:bg-muted"
+            data-testid="previous-page-button"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-1">
-            <div className="text-sm font-medium">{page}</div>
+            <div className="text-sm font-medium" data-testid="current-page">
+              {page}
+            </div>
             <div className="text-sm text-muted-foreground">/</div>
-            <div className="text-sm text-muted-foreground">
+            <div
+              className="text-sm text-muted-foreground"
+              data-testid="total-pages"
+            >
               {Math.ceil(projectsCount / (Number(searchParams.size) || 10))}
             </div>
           </div>
@@ -707,6 +726,7 @@ export function ProjectsTable({
               Math.ceil(projectsCount / (Number(searchParams.size) || 10))
             }
             className="h-8 w-8 p-0 hover:bg-muted"
+            data-testid="next-page-button"
           >
             <ChevronRightIcon className="h-4 w-4" />
           </Button>

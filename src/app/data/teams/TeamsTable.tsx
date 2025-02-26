@@ -382,7 +382,7 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
                       });
                       setIsEditDialogOpen(true);
                     }}
-                    data-testid={`edit-team-button-${team.id}`}
+                    data-testid={`edit-team-button-${team.name}`}
                   >
                     <Pencil className="w-4 h-4" />
                   </Button>
