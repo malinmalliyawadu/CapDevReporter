@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   createTeam,
@@ -53,6 +53,7 @@ interface TeamsTableProps {
 
 export function TeamsTable({ initialTeams }: TeamsTableProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [teams, setTeams] = useState(initialTeams);
   const [newTeam, setNewTeam] = useState({
@@ -89,7 +90,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTeam.name.trim()) {
-      toast.error("Team name is required");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Team name is required",
+      });
       return;
     }
 
@@ -98,7 +103,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         const result = await createTeam(newTeam);
 
         if (!result.success) {
-          toast.error(result.error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: result.error,
+          });
           return;
         }
 
@@ -107,11 +116,18 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         }
         setIsAddTeamDialogOpen(false);
         setNewTeam({ name: "", description: "" });
-        toast.success("Team created successfully");
+        toast({
+          title: "Success",
+          description: "Team created successfully",
+        });
         router.refresh();
       } catch (error) {
         console.error(error);
-        toast.error("Failed to create team");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to create team",
+        });
       }
     });
   };
@@ -119,7 +135,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
   const handleAddJiraBoard = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBoard.name.trim() || !newBoard.boardId.trim() || !newBoard.teamId) {
-      toast.error("All fields are required");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "All fields are required",
+      });
       return;
     }
 
@@ -134,7 +154,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         });
 
         if (!result.success) {
-          toast.error(result.error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: result.error,
+          });
           return;
         }
 
@@ -143,11 +167,18 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         }
         setIsAddBoardDialogOpen(false);
         setNewBoard({ name: "", boardId: "", teamId: "" });
-        toast.success("Board added successfully");
+        toast({
+          title: "Success",
+          description: "Board added successfully",
+        });
         router.refresh();
       } catch (error) {
         console.error(error);
-        toast.error("Failed to add board");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to add board",
+        });
       }
     });
   };
@@ -160,7 +191,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         const result = await deleteTeam(teamToDelete.id);
 
         if (!result.success) {
-          toast.error(result.error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: result.error,
+          });
           return;
         }
 
@@ -169,11 +204,18 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         }
         setIsDeleteDialogOpen(false);
         setTeamToDelete(null);
-        toast.success("Team deleted successfully");
+        toast({
+          title: "Success",
+          description: "Team deleted successfully",
+        });
         router.refresh();
       } catch (error) {
         console.error(error);
-        toast.error("Failed to delete team");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to delete team",
+        });
       }
     });
   };
@@ -181,7 +223,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
   const handleUpdateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTeam || !editTeamData.name.trim()) {
-      toast.error("Team name is required");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Team name is required",
+      });
       return;
     }
 
@@ -190,7 +236,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         const result = await updateTeam(selectedTeam.id, editTeamData);
 
         if (!result.success) {
-          toast.error(result.error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: result.error,
+          });
           return;
         }
 
@@ -199,11 +249,18 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         }
         setIsEditDialogOpen(false);
         setSelectedTeam(null);
-        toast.success("Team updated successfully");
+        toast({
+          title: "Success",
+          description: "Team updated successfully",
+        });
         router.refresh();
       } catch (error) {
         console.error(error);
-        toast.error("Failed to update team");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to update team",
+        });
       }
     });
   };
@@ -219,11 +276,19 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
       if (result.success && result.board) {
         setBoardProjects(result.board.projects);
       } else {
-        toast.error("Failed to fetch board details");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to fetch board details",
+        });
       }
     } catch (error) {
       console.error(error);
-      toast.error("Failed to fetch board details");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch board details",
+      });
     } finally {
       setIsFetchingProjects(false);
     }
@@ -243,11 +308,18 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
 
         if (!result.success) {
           if (result.error?.includes("P2003")) {
-            toast.error(
-              "Cannot delete board: It has associated projects or timesheets. Please delete or reassign them first."
-            );
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description:
+                "Cannot delete board: It has associated projects or timesheets. Please delete or reassign them first.",
+            });
           } else {
-            toast.error(result.error || "Failed to delete board");
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: result.error || "Failed to delete board",
+            });
           }
           return;
         }
@@ -257,11 +329,18 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         }
         setIsDeleteBoardDialogOpen(false);
         setBoardToDelete(null);
-        toast.success("Board deleted successfully");
+        toast({
+          title: "Success",
+          description: "Board deleted successfully",
+        });
         router.refresh();
       } catch (error) {
         console.error(error);
-        toast.error("Failed to delete board");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to delete board",
+        });
       }
     });
   };
@@ -269,8 +348,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <Button onClick={() => setIsAddTeamDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button
+          onClick={() => setIsAddTeamDialogOpen(true)}
+          data-testid="add-team-button"
+        >
+          <Plus className="w-4 h-4 mr-2" />
           Add Team
         </Button>
       </div>
@@ -300,8 +382,9 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
                       });
                       setIsEditDialogOpen(true);
                     }}
+                    data-testid={`edit-team-button-${team.id}`}
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Pencil className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -310,8 +393,9 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
                       setNewBoard((prev) => ({ ...prev, teamId: team.id }));
                       setIsAddBoardDialogOpen(true);
                     }}
+                    data-testid={`add-board-button-${team.name}`}
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="w-4 h-4 mr-2" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -320,8 +404,9 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
                       setTeamToDelete(team);
                       setIsDeleteDialogOpen(true);
                     }}
+                    data-testid={`delete-team-button-${team.name}`}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
@@ -358,8 +443,9 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
                                 board.name
                               );
                             }}
+                            data-testid={`delete-board-button-${team.name}-${board.name}`}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -406,7 +492,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={isPending}>
+              <Button
+                type="submit"
+                data-testid="create-team-submit"
+                disabled={isPending}
+              >
                 {isPending ? "Creating..." : "Create Team"}
               </Button>
             </DialogFooter>
@@ -451,7 +541,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={isPending}>
+              <Button
+                type="submit"
+                disabled={isPending}
+                data-testid="add-board-submit"
+              >
                 {isPending ? "Adding..." : "Add Board"}
               </Button>
             </DialogFooter>
@@ -482,7 +576,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
             >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteTeam}>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteTeam}
+              data-testid="confirm-delete-team"
+            >
               Delete Team
             </Button>
           </DialogFooter>
@@ -533,7 +631,11 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button
+                type="submit"
+                data-testid="update-team-submit"
+                disabled={isPending}
+              >
                 {isPending ? "Saving..." : "Save Changes"}
               </Button>
             </DialogFooter>
@@ -649,6 +751,7 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
                 boardToDelete &&
                 handleDeleteBoard(boardToDelete.teamId, boardToDelete.boardId)
               }
+              data-testid="confirm-delete-board"
               disabled={boardProjects.length > 0 || isFetchingProjects}
             >
               Delete Board
