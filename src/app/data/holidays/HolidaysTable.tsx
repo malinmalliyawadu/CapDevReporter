@@ -95,24 +95,26 @@ export function HolidaysTable({ initialHolidays }: HolidaysTableProps) {
   const columns: ColumnDef<Holiday>[] = [
     {
       accessorKey: "date",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="group"
-          >
-            Date
-            {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="ml-2 h-4 w-4" />
-            ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="ml-2 h-4 w-4" />
-            ) : (
-              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-            )}
-          </Button>
-        );
-      },
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="group"
+          data-testid="sort-button-date"
+        >
+          Date
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-date" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-date" />
+          ) : (
+            <ArrowUpDown
+              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+              data-testid="sort-icon-date"
+            />
+          )}
+        </Button>
+      ),
       cell: ({ row }) =>
         new Date(row.getValue("date")).toLocaleDateString("en-NZ", {
           weekday: "long",
@@ -131,24 +133,49 @@ export function HolidaysTable({ initialHolidays }: HolidaysTableProps) {
     },
     {
       accessorKey: "name",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="group"
-          >
-            Holiday
-            {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="ml-2 h-4 w-4" />
-            ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="ml-2 h-4 w-4" />
-            ) : (
-              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-            )}
-          </Button>
-        );
-      },
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="group"
+          data-testid="sort-button-name"
+        >
+          Name
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-name" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-name" />
+          ) : (
+            <ArrowUpDown
+              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+              data-testid="sort-icon-name"
+            />
+          )}
+        </Button>
+      ),
+    },
+    {
+      accessorKey: "type",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="group"
+          data-testid="sort-button-type"
+        >
+          Type
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-type" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-type" />
+          ) : (
+            <ArrowUpDown
+              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+              data-testid="sort-icon-type"
+            />
+          )}
+        </Button>
+      ),
     },
   ];
 
