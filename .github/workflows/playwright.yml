@@ -21,6 +21,13 @@ jobs:
           echo "::group::Installing npm dependencies"
           npm ci
           echo "::endgroup::"
+      - name: 🗃️ Initialize database
+        run: |
+          echo "::group::Setting up database"
+          npx prisma generate
+          npx prisma migrate deploy
+          npx prisma db seed
+          echo "::endgroup::"
       - name: 🎭 Install Playwright Browsers
         run: |
           echo "::group::Installing Playwright browsers"
