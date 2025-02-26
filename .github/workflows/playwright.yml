@@ -49,7 +49,7 @@ jobs:
           JIRA_API_TOKEN: hehe
           JIRA_USER_EMAIL: hahaha@gmail.com
         run: |
-          npx playwright test --shard ${{ matrix.shardIndex }}/{{ matrix.shardTotal }}
+          npx playwright test --shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=html,json,line --coverage
 
       - name: 📊 Upload test results
         if: ${{ !cancelled() }}
@@ -59,10 +59,17 @@ jobs:
           path: blob-report
           retention-days: 1
 
+      - name: 📈 Upload coverage results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ matrix.shardIndex }}
+          path: playwright-coverage
+          retention-days: 1
+
   merge-reports:
     if: ${{ !cancelled() }}
     needs: [playwright-tests]
-
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -79,8 +86,18 @@ jobs:
           pattern: blob-report-*
           merge-multiple: true
 
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          path: all-coverage-reports
+          pattern: coverage-report-*
+          merge-multiple: true
+
       - name: Merge into HTML Report
         run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Generate coverage report
+        run: npx playwright merge-reports --reporter html ./all-coverage-reports
 
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
@@ -88,3 +105,72 @@ jobs:
           name: html-report--attempt-${{ github.run_attempt }}
           path: playwright-report
           retention-days: 14
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report--attempt-${{ github.run_attempt }}
+          path: playwright-coverage
+          retention-days: 14
+
+  post-coverage:
+    if: github.event_name == 'pull_request'
+    needs: [merge-reports]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report--attempt-${{ github.run_attempt }}
+          path: coverage-report
+
+      - name: Post coverage comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Read the coverage summary
+            const summaryPath = path.join(process.env.GITHUB_WORKSPACE, 'coverage-report', 'index.html');
+            const coverageData = fs.readFileSync(summaryPath, 'utf8');
+
+            // Extract coverage percentage (this is a simple example, adjust based on your needs)
+            const coverageMatch = coverageData.match(/Total Coverage: (\d+\.\d+)%/);
+            const coverage = coverageMatch ? coverageMatch[1] : 'N/A';
+
+            const comment = `## 📊 Test Coverage Report
+
+            Total Coverage: ${coverage}%
+
+            [View detailed coverage report](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`;
+
+            // Post comment on PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Test Coverage Report')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
