@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 jobs:
   playwright-tests:
-     container:
+    container:
       image: mcr.microsoft.com/playwright:v1.34.3-jammy
     timeout-minutes: 60
     runs-on: ubuntu-latest
