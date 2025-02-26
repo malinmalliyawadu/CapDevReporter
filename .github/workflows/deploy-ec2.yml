@@ -105,12 +105,6 @@ jobs:
                 --no-cache \
                 --build-arg DATABASE_URL="file:./dev.db" \
                 --build-arg NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
-                --build-arg JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }} \
-                --build-arg JIRA_USER_EMAIL=malin.malliyawadu@***REMOVED***.com \
-                --build-arg JIRA_HOST=***REMOVED***.atlassian.net \
-                --build-arg IPAYROLL_API_URL=https://api.ipayroll.com \
-                --build-arg IPAYROLL_API_KEY=hehe \
-                --build-arg IPAYROLL_COMPANY_ID=1234567890 \
                 --build-arg NEXT_TELEMETRY_DISABLED=1 \
                 --build-arg NODE_ENV=production \
                 -t $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} \
@@ -195,6 +189,12 @@ jobs:
             -v /app/data:/app/data \
             -e NEXT_PUBLIC_JIRA_URL='${{ env.NEXT_PUBLIC_JIRA_URL }}' \
             -e APP_VERSION='${VERSION}' \
+            -e JIRA_API_TOKEN='${{ secrets.JIRA_API_TOKEN }}' \
+            -e JIRA_USER_EMAIL='malin.malliyawadu@***REMOVED***.com' \
+            -e JIRA_HOST='***REMOVED***.atlassian.net' \
+            -e IPAYROLL_API_URL='https://api.ipayroll.com' \
+            -e IPAYROLL_API_KEY='${{ secrets.IPAYROLL_API_KEY }}' \
+            -e IPAYROLL_COMPANY_ID='${{ secrets.IPAYROLL_COMPANY_ID }}' \
             '${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest'; then
             echo "::error::Failed to start container"
             exit 1
