@@ -20,13 +20,15 @@ export interface ProjectsPageQueryString {
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: ProjectsPageQueryString;
+  searchParams: Promise<ProjectsPageQueryString>;
 }) {
+  const params = await searchParams;
+
   // Fetch initial data on the server
   const { projects, total } = await getProjects({
-    page: Number(searchParams.page) || 1,
-    size: Number(searchParams.size) || 10,
-    search: searchParams.search,
+    page: Number(params.page) || 1,
+    size: Number(params.size) || 10,
+    search: params.search,
   });
 
   return (
@@ -54,7 +56,7 @@ export default async function ProjectsPage({
             <ProjectsTable
               initialProjects={projects}
               totalProjects={total}
-              searchParams={searchParams}
+              searchParams={params}
             />
           </Suspense>
         </CardContent>

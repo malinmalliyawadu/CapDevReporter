@@ -4,7 +4,7 @@ import { jiraClient } from "@/utils/jira";
 import { prisma } from "@/lib/prisma";
 
 // Helper function to check for capdev label up the parent chain
-async function checkForCapDevLabel(
+export async function checkForCapDevLabel(
   issueKey: string,
   depth = 0
 ): Promise<boolean> {

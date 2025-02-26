@@ -1,8 +1,8 @@
 "use server";
 
+import { checkForCapDevLabel } from "@/app/actions/sync";
 import { prisma } from "@/lib/prisma";
-import { jiraClient } from "@/lib/jira";
-import { checkForCapDevLabel } from "@/lib/jira-utils";
+import { jiraClient } from "@/utils/jira";
 
 export interface JiraBoard {
   id: string;

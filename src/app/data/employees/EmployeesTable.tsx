@@ -200,7 +200,7 @@ export function EmployeesTable({
         throw new Error(result.error);
       }
 
-      setLastSynced(new Date(result.data.timestamp));
+      setLastSynced(new Date(result.data?.timestamp ?? Date.now()));
       toast({
         title: "Success",
         description: "Employees synced with iPayroll",
