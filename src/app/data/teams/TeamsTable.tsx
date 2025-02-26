@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Pencil, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Table,
@@ -32,6 +32,7 @@ import {
   getBoardDetails,
 } from "./actions";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useRouter } from "next/navigation";
 
 interface JiraBoard {
   id: string;
@@ -51,6 +52,8 @@ interface TeamsTableProps {
 }
 
 export function TeamsTable({ initialTeams }: TeamsTableProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [teams, setTeams] = useState(initialTeams);
   const [newTeam, setNewTeam] = useState({
     name: "",
@@ -83,111 +86,126 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
   const [isFetchingProjects, setIsFetchingProjects] = useState(false);
   const [showFullList, setShowFullList] = useState(false);
 
-  const handleCreateTeam = async () => {
+  const handleCreateTeam = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!newTeam.name.trim()) {
       toast.error("Team name is required");
       return;
     }
 
-    try {
-      const result = await createTeam(newTeam);
+    startTransition(async () => {
+      try {
+        const result = await createTeam(newTeam);
 
-      if (!result.success) {
-        toast.error(result.error);
-        return;
-      }
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
 
-      if (result.teams) {
-        setTeams(result.teams);
+        if (result.teams) {
+          setTeams(result.teams);
+        }
+        setIsAddTeamDialogOpen(false);
+        setNewTeam({ name: "", description: "" });
+        toast.success("Team created successfully");
+        router.refresh();
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to create team");
       }
-      setIsAddTeamDialogOpen(false);
-      setNewTeam({ name: "", description: "" });
-      toast.success("Team created successfully");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to create team");
-    }
+    });
   };
 
-  const handleAddJiraBoard = async () => {
+  const handleAddJiraBoard = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!newBoard.name.trim() || !newBoard.boardId.trim() || !newBoard.teamId) {
       toast.error("All fields are required");
       return;
     }
 
-    try {
-      const result = await addJiraBoard({
-        name: newBoard.name,
-        boardId: newBoard.boardId,
-        team: {
-          connect: { id: newBoard.teamId },
-        },
-      });
+    startTransition(async () => {
+      try {
+        const result = await addJiraBoard({
+          name: newBoard.name,
+          boardId: newBoard.boardId,
+          team: {
+            connect: { id: newBoard.teamId },
+          },
+        });
 
-      if (!result.success) {
-        toast.error(result.error);
-        return;
-      }
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
 
-      if (result.teams) {
-        setTeams(result.teams);
+        if (result.teams) {
+          setTeams(result.teams);
+        }
+        setIsAddBoardDialogOpen(false);
+        setNewBoard({ name: "", boardId: "", teamId: "" });
+        toast.success("Board added successfully");
+        router.refresh();
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to add board");
       }
-      setIsAddBoardDialogOpen(false);
-      setNewBoard({ name: "", boardId: "", teamId: "" });
-      toast.success("Board added successfully");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to add board");
-    }
+    });
   };
 
   const handleDeleteTeam = async () => {
     if (!teamToDelete) return;
 
-    try {
-      const result = await deleteTeam(teamToDelete.id);
+    startTransition(async () => {
+      try {
+        const result = await deleteTeam(teamToDelete.id);
 
-      if (!result.success) {
-        toast.error(result.error);
-        return;
-      }
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
 
-      if (result.teams) {
-        setTeams(result.teams);
+        if (result.teams) {
+          setTeams(result.teams);
+        }
+        setIsDeleteDialogOpen(false);
+        setTeamToDelete(null);
+        toast.success("Team deleted successfully");
+        router.refresh();
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete team");
       }
-      setIsDeleteDialogOpen(false);
-      setTeamToDelete(null);
-      toast.success("Team deleted successfully");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to delete team");
-    }
+    });
   };
 
-  const handleUpdateTeam = async () => {
+  const handleUpdateTeam = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!selectedTeam || !editTeamData.name.trim()) {
       toast.error("Team name is required");
       return;
     }
 
-    try {
-      const result = await updateTeam(selectedTeam.id, editTeamData);
+    startTransition(async () => {
+      try {
+        const result = await updateTeam(selectedTeam.id, editTeamData);
 
-      if (!result.success) {
-        toast.error(result.error);
-        return;
-      }
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
 
-      if (result.teams) {
-        setTeams(result.teams);
+        if (result.teams) {
+          setTeams(result.teams);
+        }
+        setIsEditDialogOpen(false);
+        setSelectedTeam(null);
+        toast.success("Team updated successfully");
+        router.refresh();
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to update team");
       }
-      setIsEditDialogOpen(false);
-      setSelectedTeam(null);
-      toast.success("Team updated successfully");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to update team");
-    }
+    });
   };
 
   const handleDeleteBoardClick = async (
@@ -219,30 +237,33 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
   };
 
   const handleDeleteBoard = async (teamId: string, boardId: string) => {
-    try {
-      const result = await deleteJiraBoard(teamId, boardId);
+    startTransition(async () => {
+      try {
+        const result = await deleteJiraBoard(teamId, boardId);
 
-      if (!result.success) {
-        if (result.error?.includes("P2003")) {
-          toast.error(
-            "Cannot delete board: It has associated projects or timesheets. Please delete or reassign them first."
-          );
-        } else {
-          toast.error(result.error || "Failed to delete board");
+        if (!result.success) {
+          if (result.error?.includes("P2003")) {
+            toast.error(
+              "Cannot delete board: It has associated projects or timesheets. Please delete or reassign them first."
+            );
+          } else {
+            toast.error(result.error || "Failed to delete board");
+          }
+          return;
         }
-        return;
-      }
 
-      if (result.teams) {
-        setTeams(result.teams);
+        if (result.teams) {
+          setTeams(result.teams);
+        }
+        setIsDeleteBoardDialogOpen(false);
+        setBoardToDelete(null);
+        toast.success("Board deleted successfully");
+        router.refresh();
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete board");
       }
-      setIsDeleteBoardDialogOpen(false);
-      setBoardToDelete(null);
-      toast.success("Board deleted successfully");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to delete board");
-    }
+    });
   };
 
   return (
@@ -353,39 +374,43 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
 
       <Dialog open={isAddTeamDialogOpen} onOpenChange={setIsAddTeamDialogOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Team</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="team-name">Team Name</Label>
-              <Input
-                id="team-name"
-                value={newTeam.name}
-                onChange={(e) =>
-                  setNewTeam((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Engineering Team"
-              />
+          <form onSubmit={handleCreateTeam}>
+            <DialogHeader>
+              <DialogTitle>Add New Team</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="team-name">Team Name</Label>
+                <Input
+                  id="team-name"
+                  value={newTeam.name}
+                  onChange={(e) =>
+                    setNewTeam((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="Engineering Team"
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  value={newTeam.description}
+                  onChange={(e) =>
+                    setNewTeam((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="Team description"
+                />
+              </div>
             </div>
-            <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={newTeam.description}
-                onChange={(e) =>
-                  setNewTeam((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Team description"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleCreateTeam}>Create Team</Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Creating..." : "Create Team"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
@@ -394,36 +419,43 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         onOpenChange={setIsAddBoardDialogOpen}
       >
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Jira Board</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="board-name">Board Name</Label>
-              <Input
-                id="board-name"
-                value={newBoard.name}
-                onChange={(e) =>
-                  setNewBoard((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Team Board"
-              />
+          <form onSubmit={handleAddJiraBoard}>
+            <DialogHeader>
+              <DialogTitle>Add Jira Board</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="board-name">Board Name</Label>
+                <Input
+                  id="board-name"
+                  value={newBoard.name}
+                  onChange={(e) =>
+                    setNewBoard((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="Team Board"
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="board-id">Board ID</Label>
+                <Input
+                  id="board-id"
+                  value={newBoard.boardId}
+                  onChange={(e) =>
+                    setNewBoard((prev) => ({
+                      ...prev,
+                      boardId: e.target.value,
+                    }))
+                  }
+                  placeholder="123"
+                />
+              </div>
             </div>
-            <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="board-id">Board ID</Label>
-              <Input
-                id="board-id"
-                value={newBoard.boardId}
-                onChange={(e) =>
-                  setNewBoard((prev) => ({ ...prev, boardId: e.target.value }))
-                }
-                placeholder="123"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleAddJiraBoard}>Add Board</Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Adding..." : "Add Board"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
@@ -459,45 +491,53 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Team</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="edit-team-name">Team Name</Label>
-              <Input
-                id="edit-team-name"
-                value={editTeamData.name}
-                onChange={(e) =>
-                  setEditTeamData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Engineering Team"
-              />
+          <form onSubmit={handleUpdateTeam}>
+            <DialogHeader>
+              <DialogTitle>Edit Team</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="edit-team-name">Team Name</Label>
+                <Input
+                  id="edit-team-name"
+                  value={editTeamData.name}
+                  onChange={(e) =>
+                    setEditTeamData((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  placeholder="Engineering Team"
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="edit-description">Description</Label>
+                <Input
+                  id="edit-description"
+                  value={editTeamData.description}
+                  onChange={(e) =>
+                    setEditTeamData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="Team description"
+                />
+              </div>
             </div>
-            <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="edit-description">Description</Label>
-              <Input
-                id="edit-description"
-                value={editTeamData.description}
-                onChange={(e) =>
-                  setEditTeamData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Team description"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateTeam}>Save Changes</Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
