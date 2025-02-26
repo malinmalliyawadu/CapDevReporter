@@ -48,8 +48,10 @@ jobs:
           JIRA_HOST: ***REMOVED***.atlassian.net
           JIRA_API_TOKEN: hehe
           JIRA_USER_EMAIL: hahaha@gmail.com
+          NODE_V8_COVERAGE: ./coverage
         run: |
-          npx playwright test --shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=html,json,line --coverage
+          npx playwright test --shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=html,json,line
+          npx c8 report --reporter=text --reporter=html --reporter=json
 
       - name: 📊 Upload test results
         if: ${{ !cancelled() }}
@@ -64,7 +66,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-${{ matrix.shardIndex }}
-          path: playwright-coverage
+          path: coverage
           retention-days: 1
 
   merge-reports:
@@ -77,7 +79,9 @@ jobs:
         with:
           node-version: lts/*
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          npm install -g c8
 
       - name: Download blob reports from GitHub Actions Artifacts
         uses: actions/download-artifact@v4
@@ -96,8 +100,11 @@ jobs:
       - name: Merge into HTML Report
         run: npx playwright merge-reports --reporter html ./all-blob-reports
 
-      - name: Generate coverage report
-        run: npx playwright merge-reports --reporter html ./all-coverage-reports
+      - name: Merge coverage reports
+        run: |
+          mkdir -p ./merged-coverage
+          c8 merge all-coverage-reports/* -o ./merged-coverage/coverage-final.json
+          c8 report -r text -r html --reporter=json -o ./merged-coverage
 
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
@@ -110,7 +117,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report--attempt-${{ github.run_attempt }}
-          path: playwright-coverage
+          path: merged-coverage
           retention-days: 14
 
   post-coverage:
@@ -133,13 +140,20 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            // Read the coverage summary
-            const summaryPath = path.join(process.env.GITHUB_WORKSPACE, 'coverage-report', 'index.html');
-            const coverageData = fs.readFileSync(summaryPath, 'utf8');
+            // Read the coverage summary JSON
+            const summaryPath = path.join(process.env.GITHUB_WORKSPACE, 'coverage-report', 'coverage-final.json');
+            const coverageData = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
 
-            // Extract coverage percentage (this is a simple example, adjust based on your needs)
-            const coverageMatch = coverageData.match(/Total Coverage: (\d+\.\d+)%/);
-            const coverage = coverageMatch ? coverageMatch[1] : 'N/A';
+            // Calculate total coverage
+            let totalStatements = 0;
+            let coveredStatements = 0;
+
+            Object.values(coverageData).forEach(file => {
+              totalStatements += file.s.total;
+              coveredStatements += file.s.covered;
+            });
+
+            const coverage = ((coveredStatements / totalStatements) * 100).toFixed(2);
 
             const comment = `## 📊 Test Coverage Report
 

@@ -37,7 +37,13 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        // Enable JavaScript coverage collection
+        contextOptions: {
+          collectCoverage: true,
+        },
+      },
     },
 
     {
