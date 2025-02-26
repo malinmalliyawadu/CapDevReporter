@@ -67,3 +67,130 @@ test.describe("Reports Page", () => {
     await expect(page.getByRole("table")).toBeVisible();
   });
 });
+
+test.describe("Time Reports Table", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/reports");
+    await page.waitForSelector("table");
+  });
+
+  test("can sort by employee name", async ({ page }) => {
+    const sortButton = page.getByTestId("sort-button-employee");
+    const sortIcon = page.getByTestId("sort-icon-employee");
+
+    // Initially, sort icon should be hidden
+    await expect(sortIcon).toHaveClass(/opacity-0/);
+
+    // On hover, sort icon should be visible
+    await sortButton.hover();
+    await expect(sortIcon).toHaveClass(/group-hover:opacity-100/);
+
+    // Click to sort ascending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
+
+    // Click again to sort descending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
+  });
+
+  test("can sort by week", async ({ page }) => {
+    const sortButton = page.getByTestId("sort-button-week");
+    const sortIcon = page.getByTestId("sort-icon-week");
+
+    // Initially, sort icon should be hidden
+    await expect(sortIcon).toHaveClass(/opacity-0/);
+
+    // On hover, sort icon should be visible
+    await sortButton.hover();
+    await expect(sortIcon).toHaveClass(/group-hover:opacity-100/);
+
+    // Click to sort ascending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
+
+    // Click again to sort descending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
+  });
+
+  test("can sort by payroll ID", async ({ page }) => {
+    const sortButton = page.getByTestId("sort-button-payroll");
+    const sortIcon = page.getByTestId("sort-icon-payroll");
+
+    // Initially, sort icon should be hidden
+    await expect(sortIcon).toHaveClass(/opacity-0/);
+
+    // On hover, sort icon should be visible
+    await sortButton.hover();
+    await expect(sortIcon).toHaveClass(/group-hover:opacity-100/);
+
+    // Click to sort ascending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
+
+    // Click again to sort descending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
+  });
+
+  test("can sort by total hours", async ({ page }) => {
+    const sortButton = page.getByTestId("sort-button-hours");
+    const sortIcon = page.getByTestId("sort-icon-hours");
+
+    // Initially, sort icon should be hidden
+    await expect(sortIcon).toHaveClass(/opacity-0/);
+
+    // On hover, sort icon should be visible
+    await sortButton.hover();
+    await expect(sortIcon).toHaveClass(/group-hover:opacity-100/);
+
+    // Click to sort ascending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
+
+    // Click again to sort descending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
+  });
+
+  test("can sort by team", async ({ page }) => {
+    const sortButton = page.getByTestId("sort-button-team");
+    const sortIcon = page.getByTestId("sort-icon-team");
+
+    // Initially, sort icon should be hidden
+    await expect(sortIcon).toHaveClass(/opacity-0/);
+
+    // On hover, sort icon should be visible
+    await sortButton.hover();
+    await expect(sortIcon).toHaveClass(/group-hover:opacity-100/);
+
+    // Click to sort ascending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
+
+    // Click again to sort descending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
+  });
+
+  test("can sort by role", async ({ page }) => {
+    const sortButton = page.getByTestId("sort-button-role");
+    const sortIcon = page.getByTestId("sort-icon-role");
+
+    // Initially, sort icon should be hidden
+    await expect(sortIcon).toHaveClass(/opacity-0/);
+
+    // On hover, sort icon should be visible
+    await sortButton.hover();
+    await expect(sortIcon).toHaveClass(/group-hover:opacity-100/);
+
+    // Click to sort ascending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
+
+    // Click again to sort descending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
+  });
+});
