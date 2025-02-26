@@ -21,7 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +72,7 @@ export function EmployeesTable({
   initialEmployees,
   roles,
 }: EmployeesTableProps) {
+  const { toast } = useToast();
   const [employees, setEmployees] = useState(initialEmployees);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -144,8 +145,8 @@ export function EmployeesTable({
       cell: ({ row }: { row: { original: Employee } }) => (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {row.original.hoursPerWeek || "-"}
-            {!row.original.hoursPerWeek && (
+            {row.original.hoursPerWeek ?? "-"}
+            {row.original.hoursPerWeek === null && (
               <AlertCircle className="h-4 w-4 text-yellow-500" />
             )}
           </div>
@@ -156,7 +157,7 @@ export function EmployeesTable({
               setEditingEmployee({
                 id: row.original.id,
                 name: row.original.name,
-                hoursPerWeek: row.original.hoursPerWeek,
+                hoursPerWeek: row.original.hoursPerWeek ?? 0,
               })
             }
           >
@@ -201,10 +202,19 @@ export function EmployeesTable({
       const updatedEmployees = await employeesResponse.json();
       setEmployees(updatedEmployees);
       setLastSynced(new Date());
-      toast.success("Employees synced with iPayroll");
+      toast({
+        title: "Success",
+        description: "Employees synced with iPayroll",
+        className: "data-[testid=sync-success]",
+      });
     } catch (error) {
       console.error(error);
-      toast.error("Failed to sync employees");
+      toast({
+        title: "Error",
+        description: "Failed to sync employees",
+        variant: "destructive",
+        className: "data-[testid=sync-error]",
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -215,7 +225,11 @@ export function EmployeesTable({
 
     const hours = Number(editingEmployee.hoursPerWeek);
     if (isNaN(hours) || hours < 0 || hours > 168) {
-      toast.error("Please enter a valid number of hours (0-168)");
+      toast({
+        title: "Error",
+        description: "Please enter a valid number of hours (0-168)",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -237,10 +251,19 @@ export function EmployeesTable({
       const updatedEmployees = await employeesResponse.json();
       setEmployees(updatedEmployees);
       setEditingEmployee(null);
-      toast.success("Hours updated successfully");
+      toast({
+        title: "Success",
+        description: "Hours updated successfully",
+        className: "data-[testid=hours-update-success]",
+      });
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update hours");
+      toast({
+        title: "Error",
+        description: "Failed to update hours",
+        variant: "destructive",
+        className: "data-[testid=hours-update-error]",
+      });
     }
   };
 
@@ -269,7 +292,7 @@ export function EmployeesTable({
                 ?.setFilterValue(value === "all" ? undefined : value)
             }
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px]" data-testid="role-filter">
               <SelectValue placeholder="Filter by role" />
             </SelectTrigger>
             <SelectContent>
