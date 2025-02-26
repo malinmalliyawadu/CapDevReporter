@@ -27,8 +27,7 @@ jobs:
         run: |
           echo "::group::Setting up database"
           npx prisma generate
-          npx prisma migrate deploy
-          npx prisma db seed
+          npx prisma migrate reset --force
           echo "::endgroup::"
       - name: 🎭 Install Playwright Browsers
         run: |
