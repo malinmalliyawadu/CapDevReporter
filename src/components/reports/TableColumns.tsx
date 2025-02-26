@@ -5,8 +5,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { TimeReport } from "@/types/timeReport";
 import {
   ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   ChevronDown,
   ChevronRight,
   AlertTriangle,
@@ -57,16 +55,9 @@ export const createColumns = (): ColumnDef<TimeReport>[] => [
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="group"
       >
         Employee
-        {column.getIsSorted() === "asc" ? (
-          <ArrowUp className="ml-2 h-4 w-4" />
-        ) : column.getIsSorted() === "desc" ? (
-          <ArrowDown className="ml-2 h-4 w-4" />
-        ) : (
-          <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-        )}
+        <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
   },
@@ -76,16 +67,9 @@ export const createColumns = (): ColumnDef<TimeReport>[] => [
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="group"
       >
         Week
-        {column.getIsSorted() === "asc" ? (
-          <ArrowUp className="ml-2 h-4 w-4" />
-        ) : column.getIsSorted() === "desc" ? (
-          <ArrowDown className="ml-2 h-4 w-4" />
-        ) : (
-          <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-        )}
+        <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
   },
@@ -95,16 +79,9 @@ export const createColumns = (): ColumnDef<TimeReport>[] => [
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="group"
       >
         Payroll ID
-        {column.getIsSorted() === "asc" ? (
-          <ArrowUp className="ml-2 h-4 w-4" />
-        ) : column.getIsSorted() === "desc" ? (
-          <ArrowDown className="ml-2 h-4 w-4" />
-        ) : (
-          <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-        )}
+        <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
   },
@@ -114,16 +91,9 @@ export const createColumns = (): ColumnDef<TimeReport>[] => [
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="group"
       >
         Total Hours
-        {column.getIsSorted() === "asc" ? (
-          <ArrowUp className="ml-2 h-4 w-4" />
-        ) : column.getIsSorted() === "desc" ? (
-          <ArrowDown className="ml-2 h-4 w-4" />
-        ) : (
-          <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-        )}
+        <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
     cell: ({ row }) => {
@@ -187,16 +157,9 @@ export const createColumns = (): ColumnDef<TimeReport>[] => [
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="group"
       >
         Team
-        {column.getIsSorted() === "asc" ? (
-          <ArrowUp className="ml-2 h-4 w-4" />
-        ) : column.getIsSorted() === "desc" ? (
-          <ArrowDown className="ml-2 h-4 w-4" />
-        ) : (
-          <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-        )}
+        <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
   },
@@ -206,16 +169,9 @@ export const createColumns = (): ColumnDef<TimeReport>[] => [
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="group"
       >
         Role
-        {column.getIsSorted() === "asc" ? (
-          <ArrowUp className="ml-2 h-4 w-4" />
-        ) : column.getIsSorted() === "desc" ? (
-          <ArrowDown className="ml-2 h-4 w-4" />
-        ) : (
-          <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-        )}
+        <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
   },

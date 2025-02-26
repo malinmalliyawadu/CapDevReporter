@@ -2,14 +2,7 @@
 
 import * as React from "react";
 import { useState } from "react";
-import {
-  Plus,
-  Search,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  Trash2,
-} from "lucide-react";
+import { Plus, Search, ChevronUp, ChevronDown, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -85,16 +78,14 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="group"
+          className="pl-0"
         >
           Type Name
           {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" />
+            <ChevronUp className="ml-2 h-4 w-4" />
           ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" />
-          ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-          )}
+            <ChevronDown className="ml-2 h-4 w-4" />
+          ) : null}
         </Button>
       ),
     },
@@ -113,16 +104,14 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="group"
+          className="pl-0"
         >
           Usage Stats
           {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" />
+            <ChevronUp className="ml-2 h-4 w-4" />
           ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" />
-          ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-          )}
+            <ChevronDown className="ml-2 h-4 w-4" />
+          ) : null}
         </Button>
       ),
       cell: ({ row }) => {
