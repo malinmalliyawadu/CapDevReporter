@@ -40,6 +40,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useSyncDialog } from "@/contexts/dialog-context";
 import confetti, { Options as ConfettiOptions } from "canvas-confetti";
+import { getBoards, syncProjects, type SyncMessage } from "@/app/actions/sync";
 
 interface JiraBoard {
   id: string;
@@ -128,12 +129,11 @@ export function SyncDialog() {
     const fetchBoards = async () => {
       if (isOpen && availableBoards.length === 0) {
         try {
-          const response = await fetch("/api/boards");
-          if (!response.ok) {
-            throw new Error("Failed to fetch boards");
+          const result = await getBoards();
+          if (!result.success) {
+            throw new Error(result.error);
           }
-          const data = await response.json();
-          setAvailableBoards(data);
+          setAvailableBoards(result.boards as JiraBoard[]);
         } catch (error) {
           console.error("Failed to fetch boards:", error);
           addSyncLog("Failed to fetch available boards", "error");
@@ -254,30 +254,13 @@ export function SyncDialog() {
       // Add initial sync log
       addSyncLog("Starting sync...", "info", "sync-start");
 
-      // Create URL with config parameters
-      const params = new URLSearchParams();
+      const stream = await syncProjects({
+        issueKey: syncConfig.issueKey,
+        boards: syncConfig.boards,
+        maxIssuesPerBoard: syncConfig.maxIssuesPerBoard,
+      });
 
-      if (syncConfig.issueKey) {
-        params.append("issueKey", syncConfig.issueKey);
-        // When syncing by issue key, we don't need other parameters
-        addSyncLog(
-          `Fetching issue ${syncConfig.issueKey}...`,
-          "info",
-          "fetch-issue"
-        );
-      } else {
-        params.append("boards", syncConfig.boards.join(","));
-        params.append(
-          "maxIssuesPerBoard",
-          syncConfig.maxIssuesPerBoard.toString()
-        );
-      }
-
-      const response = await fetch(`/api/projects/sync?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to start sync");
-      if (!response.body) throw new Error("No response body");
-
-      const reader = response.body.getReader();
+      const reader = stream.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
 
@@ -295,35 +278,12 @@ export function SyncDialog() {
           if (!line) continue;
 
           try {
-            const data = JSON.parse(line) as {
-              type?: "complete";
-              message: string;
-              progress: number;
-              operation?: string;
-            };
-
-            if (data.type === "complete") {
-              setLastSynced(new Date());
-              // Update the initial sync message
-              addSyncLog("Sync started successfully", "success", "sync-start");
-              if (syncConfig.issueKey) {
-                addSyncLog(
-                  `Issue ${syncConfig.issueKey} fetched successfully`,
-                  "success",
-                  "fetch-issue"
-                );
-              }
-              addSyncLog("Sync complete!", "success", "finalize");
-              setIsSyncing(false);
-              setSyncProgress(null);
-            } else {
-              setSyncProgress(data);
-              addSyncLog(
-                data.message,
-                data.type || "info",
-                data.operation || "sync"
-              );
-            }
+            const data = JSON.parse(line) as SyncMessage;
+            setSyncProgress({
+              message: data.message,
+              progress: data.progress,
+            });
+            addSyncLog(data.message, data.type, data.operation);
           } catch (error) {
             console.error("Error parsing sync message:", error);
           }
@@ -337,6 +297,8 @@ export function SyncDialog() {
       setIsSyncing(false);
       setSyncProgress(null);
       addSyncLog("Sync process failed with an error", "error", "sync-error");
+    } finally {
+      setIsSyncing(false);
     }
   };
 

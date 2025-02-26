@@ -149,7 +149,9 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
           name: newBoard.name,
           boardId: newBoard.boardId,
           team: {
-            connect: { id: newBoard.teamId },
+            connect: {
+              id: newBoard.teamId,
+            },
           },
         });
 

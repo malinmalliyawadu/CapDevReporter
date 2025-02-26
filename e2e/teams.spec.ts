@@ -76,7 +76,7 @@ test.describe("Teams Page", () => {
     // Fill in the board details
     const testBoardName = `Test Board ${Date.now()}`;
     await page.getByLabel("Name").fill(testBoardName);
-    await page.getByLabel("Board ID").fill("12345");
+    await page.getByLabel("Board ID").fill(`${Date.now()}`);
 
     // Submit the form
     await page.getByTestId("add-board-submit").click();
