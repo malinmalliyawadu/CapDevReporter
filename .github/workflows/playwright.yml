@@ -97,14 +97,33 @@ jobs:
           pattern: coverage-report-*
           merge-multiple: true
 
+      - name: List downloaded artifacts
+        run: |
+          echo "Blob reports:"
+          ls -R all-blob-reports || true
+          echo "Coverage reports:"
+          ls -R all-coverage-reports || true
+
       - name: Merge into HTML Report
-        run: npx playwright merge-reports --reporter html ./all-blob-reports
+        run: |
+          if [ -d "all-blob-reports" ] && [ "$(ls -A all-blob-reports)" ]; then
+            npx playwright merge-reports --reporter html all-blob-reports
+          else
+            echo "No blob reports found to merge"
+            mkdir -p playwright-report
+          fi
 
       - name: Merge coverage reports
         run: |
-          mkdir -p ./merged-coverage
-          c8 merge all-coverage-reports/* -o ./merged-coverage/coverage-final.json
-          c8 report -r text -r html --reporter=json -o ./merged-coverage
+          if [ -d "all-coverage-reports" ] && [ "$(ls -A all-coverage-reports)" ]; then
+            mkdir -p ./merged-coverage
+            c8 merge all-coverage-reports/* -o ./merged-coverage/coverage-final.json
+            c8 report -r text -r html --reporter=json -o ./merged-coverage
+          else
+            echo "No coverage reports found to merge"
+            mkdir -p merged-coverage
+            echo "{}" > ./merged-coverage/coverage-final.json
+          fi
 
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
