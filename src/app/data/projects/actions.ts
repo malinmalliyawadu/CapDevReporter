@@ -3,6 +3,34 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
+export interface Project {
+  id: string;
+  name: string;
+  description: string | null;
+  jiraId: string;
+  isCapDev: boolean;
+  board: {
+    team: {
+      name: string;
+    };
+  };
+  activities?: ProjectActivity[];
+}
+
+interface ProjectActivity {
+  activityDate: string | Date;
+  jiraIssueId: string;
+}
+
+export interface JiraBoard {
+  id: string;
+  boardId: string;
+  name: string;
+  team: {
+    name: string;
+  };
+}
+
 export async function deleteProject(projectId: string): Promise<boolean> {
   if (!projectId) {
     console.error("No project ID provided");
@@ -109,4 +137,22 @@ export async function getProjects(params: {
   ]);
 
   return { projects, total };
+}
+
+export async function getBoards(): Promise<JiraBoard[]> {
+  try {
+    const boards = await prisma.jiraBoard.findMany({
+      include: {
+        team: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    return boards;
+  } catch (error) {
+    console.error("Error fetching boards:", error);
+    throw new Error("Failed to fetch boards");
+  }
 }

@@ -59,22 +59,22 @@ test.describe("Projects Page", () => {
     const teamFilter = page.getByTestId("team-filter-select");
     await teamFilter.click();
 
-    // Select Frontend Team
-    await page.getByRole("option", { name: "Frontend Team" }).click();
+    // Select Backend Team
+    await page.getByRole("option", { name: "Backend Team" }).click();
 
     // Wait for table update
     await page.waitForTimeout(500);
 
-    // Verify Frontend Team projects are shown
+    // Verify Backend Team projects are shown
     await expect(
-      page.getByRole("cell", { name: "Web Application", exact: true })
+      page.getByRole("cell", { name: "Microservices", exact: true })
     ).toBeVisible();
-    await expect(
-      page.getByRole("cell", { name: "Mobile App", exact: true })
-    ).toBeVisible();
-    // Backend project should not be visible
     await expect(
       page.getByRole("cell", { name: "API Development", exact: true })
+    ).toBeVisible();
+    // Frontend project should not be visible
+    await expect(
+      page.getByRole("cell", { name: "Mobile App", exact: true })
     ).not.toBeVisible();
 
     // Reset filter

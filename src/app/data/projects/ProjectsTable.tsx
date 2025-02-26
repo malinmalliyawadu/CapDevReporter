@@ -61,53 +61,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-interface Project {
-  id: string;
-  name: string;
-  description: string | null;
-  jiraId: string;
-  isCapDev: boolean;
-  board: {
-    team: {
-      name: string;
-    };
-  };
-  activities?: ProjectActivity[];
-}
-
-interface ProjectActivity {
-  activityDate: string | Date;
-  jiraIssueId: string;
-}
+import {
+  getProjects,
+  deleteProject,
+  getBoards,
+  type Project,
+  type JiraBoard,
+} from "./actions";
 
 interface ProjectsTableProps {
   initialProjects: Project[];
   totalProjects: number;
   searchParams: ProjectsPageQueryString;
-  deleteProject: (projectId: string) => Promise<boolean>;
-  getProjects: (params: {
-    page: number;
-    size: number;
-    search?: string;
-  }) => Promise<{ projects: Project[]; total: number }>;
-}
-
-interface JiraBoard {
-  id: string;
-  boardId: string;
-  name: string;
-  team: {
-    name: string;
-  };
 }
 
 export function ProjectsTable({
   initialProjects,
   totalProjects,
   searchParams,
-  deleteProject,
-  getProjects,
 }: ProjectsTableProps) {
   const { toast } = useToast();
   const { openFromEvent: openSyncDialogFromEvent } = useSyncDialog();
@@ -210,17 +181,12 @@ export function ProjectsTable({
     setColumnFilters(filters);
   }, [selectedTeam, selectedType]);
 
-  // Fetch available boards when dialog opens
+  // Update the boards fetching effect
   useEffect(() => {
     const fetchBoards = async () => {
       if (availableBoards.length === 0) {
         try {
-          const response = await fetch("/api/boards");
-          if (!response.ok) {
-            throw new Error("Failed to fetch boards");
-          }
-          const data = await response.json();
-          console.log("Fetched boards:", data); // Debug log
+          const data = await getBoards();
           setAvailableBoards(data);
         } catch (error) {
           console.error("Failed to fetch boards:", error);
@@ -247,30 +213,7 @@ export function ProjectsTable({
     }
   }, [searchParams.sync, router, pathname, openSyncDialogFromEvent]);
 
-  // Add fetchProjects function
-  const fetchProjectsData = useCallback(
-    async (params: URLSearchParams) => {
-      try {
-        const result = await getProjects({
-          page: Number(params.get("page")) || 1,
-          size: Number(params.get("size")) || 10,
-          search: params.get("search") || undefined,
-        });
-
-        setProjects(result.projects);
-        setProjectsCount(result.total);
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch projects",
-          variant: "destructive",
-        });
-      }
-    },
-    [getProjects, toast]
-  );
-
+  // Update handleDeleteProject
   const handleDeleteProject = async (project: Project) => {
     if (!project?.id) {
       toast({
@@ -282,11 +225,7 @@ export function ProjectsTable({
     }
 
     try {
-      const success = await deleteProject(project.id);
-
-      if (!success) {
-        throw new Error("Failed to delete project");
-      }
+      await deleteProject(project.id);
 
       // Update local state
       setProjects((prev) => prev.filter((p) => p.id !== project.id));
@@ -318,6 +257,30 @@ export function ProjectsTable({
       setProjectToDelete(null);
     }
   };
+
+  // Update fetchProjectsData
+  const fetchProjectsData = useCallback(
+    async (params: URLSearchParams) => {
+      try {
+        const result = await getProjects({
+          page: Number(params.get("page")) || 1,
+          size: Number(params.get("size")) || 10,
+          search: params.get("search") || undefined,
+        });
+
+        setProjects(result.projects);
+        setProjectsCount(result.total);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch projects",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
 
   const columns: ColumnDef<Project>[] = [
     {

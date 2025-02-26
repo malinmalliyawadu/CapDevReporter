@@ -5,31 +5,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { ProjectsTableSkeleton } from "./loading";
 import { ProjectsTable } from "./ProjectsTable";
-import { deleteProject, getProjects } from "./actions";
+import { getProjects } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export type ProjectsPageQueryString = {
-  search?: string;
+export interface ProjectsPageQueryString {
   page?: string;
   size?: string;
-  projectId?: string;
+  search?: string;
   sync?: string;
-};
+  projectId?: string;
+}
 
-export default async function ProjectsPage(props: {
-  searchParams?: Promise<{
-    search?: string;
-    page?: string;
-    size?: string;
-    projectId?: string;
-  }>;
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: ProjectsPageQueryString;
 }) {
-  const params = await props.searchParams;
+  // Fetch initial data on the server
   const { projects, total } = await getProjects({
-    page: Number(params?.page) || 1,
-    size: Number(params?.size) || 10,
-    search: params?.search,
+    page: Number(searchParams.page) || 1,
+    size: Number(searchParams.size) || 10,
+    search: searchParams.search,
   });
 
   return (
@@ -57,9 +54,7 @@ export default async function ProjectsPage(props: {
             <ProjectsTable
               initialProjects={projects}
               totalProjects={total}
-              searchParams={params ?? {}}
-              deleteProject={deleteProject}
-              getProjects={getProjects}
+              searchParams={searchParams}
             />
           </Suspense>
         </CardContent>
