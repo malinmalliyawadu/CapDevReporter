@@ -7,13 +7,14 @@ test.describe("Holidays Page", () => {
 
   test("should display the holidays page correctly", async ({ page }) => {
     // Check page title and header
-    await expect(page.getByRole("heading", { name: "Holidays" })).toBeVisible();
     await expect(
-      page.getByText("View and manage public holidays.")
+      page.getByRole("heading", { name: "Public Holidays" })
     ).toBeVisible();
-
-    // Check for the party popper icon
-    await expect(page.locator("svg.text-pink-500")).toBeVisible();
+    await expect(
+      page.getByText(
+        "View and manage public holidays for Wellington, New Zealand."
+      )
+    ).toBeVisible();
   });
 
   test("should display the holidays table", async ({ page }) => {
