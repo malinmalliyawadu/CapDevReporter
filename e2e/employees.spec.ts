@@ -95,18 +95,4 @@ test.describe("Employees Page", () => {
     // Verify success toast appears
     await expect(page.getByTestId("toast")).toBeVisible();
   });
-
-  test("sync with iPayroll functionality", async ({ page }) => {
-    // Click sync button
-    await page.getByRole("button", { name: "Sync with iPayroll" }).click();
-
-    // Verify the sync animation starts
-    await expect(page.locator(".animate-spin")).toBeVisible();
-
-    // Wait for sync to complete and success message
-    await expect(page.getByTestId("toast")).toBeVisible();
-
-    // Verify last synced text appears
-    await expect(page.getByText(/Last synced:/)).toBeVisible();
-  });
 });

@@ -22,7 +22,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import {
   useReactTable,
   getCoreRowModel,
@@ -55,6 +55,7 @@ interface TimeTypesTableProps {
 }
 
 export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
+  const { toast } = useToast();
   const [timeTypes, setTimeTypes] = useState(initialTimeTypes);
   const [newTypeName, setNewTypeName] = useState("");
   const [newTypeDescription, setNewTypeDescription] = useState("");
@@ -136,11 +137,15 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
                       ? `Roles: ${rolesList.join(", ")}`
                       : "No roles assigned"
                   }
+                  data-testid="role-count-badge"
                 >
                   {uniqueRoles.size} {uniqueRoles.size === 1 ? "role" : "roles"}
                 </span>
                 {row.original.isCapDev && (
-                  <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-100">
+                  <span
+                    className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-100"
+                    data-testid="capdev-badge"
+                  >
                     CapDev
                   </span>
                 )}
@@ -149,7 +154,10 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
             {assignments.length > 0 && (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden dark:bg-gray-800">
+                  <div
+                    className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden dark:bg-gray-800"
+                    data-testid="usage-progress-container"
+                  >
                     <div
                       className="h-full bg-blue-500 rounded-full transition-all"
                       style={{
@@ -162,14 +170,21 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
                         (totalHoursPerWeek / (40 * uniqueRoles.size)) *
                         100
                       ).toFixed(1)}% of total capacity`}
+                      data-testid="usage-progress-bar"
                     />
                   </div>
-                  <span className="text-xs font-medium">
+                  <span
+                    className="text-xs font-medium"
+                    data-testid="total-hours"
+                  >
                     {totalHoursPerWeek.toFixed(1)}h
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  <div title="Total hours per week across all roles">
+                  <div
+                    title="Total hours per week across all roles"
+                    data-testid="total-hours-per-week"
+                  >
                     <span className="font-medium">
                       {totalHoursPerWeek.toFixed(1)}
                     </span>{" "}
@@ -178,6 +193,7 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
                   <div
                     title="Average hours per week per role"
                     className="text-right"
+                    data-testid="avg-hours-per-role"
                   >
                     <span className="font-medium">
                       {(totalHoursPerWeek / uniqueRoles.size).toFixed(1)}
@@ -228,7 +244,11 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
 
   const handleAddTimeType = async () => {
     if (!newTypeName.trim()) {
-      toast.error("Please enter a time type name");
+      toast({
+        title: "Error",
+        description: "Please enter a time type name",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -237,7 +257,11 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
         (type) => type.name.toLowerCase() === newTypeName.trim().toLowerCase()
       )
     ) {
-      toast.error("This time type already exists");
+      toast({
+        title: "Error",
+        description: "This time type already exists",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -263,10 +287,17 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
       setNewTypeName("");
       setNewTypeDescription("");
       setIsCapDev(false);
-      toast.success("Time type created successfully");
+      toast({
+        title: "Success",
+        description: "Time type created successfully",
+      });
     } catch (error) {
       console.error(error);
-      toast.error("Failed to create time type");
+      toast({
+        title: "Error",
+        description: "Failed to create time type",
+        variant: "destructive",
+      });
     }
   };
 
@@ -293,10 +324,17 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
       setTimeTypes(updatedTimeTypes);
       setDeleteConfirmOpen(false);
       setTimeTypeToDelete(null);
-      toast.success("Time type deleted successfully");
+      toast({
+        title: "Success",
+        description: "Time type deleted successfully",
+      });
     } catch (error) {
       console.error(error);
-      toast.error("Failed to delete time type");
+      toast({
+        title: "Error",
+        description: "Failed to delete time type",
+        variant: "destructive",
+      });
     }
   };
 
@@ -310,6 +348,7 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
               placeholder="Search time types..."
               value={globalFilter ?? ""}
               onChange={(e) => setGlobalFilter(e.target.value)}
+              data-testid="time-types-search"
               className="pl-8"
             />
           </div>
