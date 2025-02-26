@@ -95,14 +95,18 @@ export function EmployeesTable({
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="group"
+          data-testid="sort-button-name"
         >
           Name
           {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" />
+            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-name" />
           ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" />
+            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-name" />
           ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            <ArrowUpDown
+              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+              data-testid="sort-icon-name"
+            />
           )}
         </Button>
       ),
@@ -119,14 +123,18 @@ export function EmployeesTable({
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="group"
+          data-testid="sort-button-role"
         >
           Role
           {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" />
+            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-role" />
           ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" />
+            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-role" />
           ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            <ArrowUpDown
+              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+              data-testid="sort-icon-role"
+            />
           )}
         </Button>
       ),
@@ -142,14 +150,18 @@ export function EmployeesTable({
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="group"
+          data-testid="sort-button-hours"
         >
           Hours per Week
           {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" />
+            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-hours" />
           ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" />
+            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-hours" />
           ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            <ArrowUpDown
+              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+              data-testid="sort-icon-hours"
+            />
           )}
         </Button>
       ),
