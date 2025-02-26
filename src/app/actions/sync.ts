@@ -1,6 +1,6 @@
 "use server";
 
-import { jiraClient } from "@/utils/jira";
+import { getJiraClient } from "@/utils/jira";
 import { prisma } from "@/lib/prisma";
 
 // Helper function to check for capdev label up the parent chain
@@ -11,7 +11,7 @@ export async function checkForCapDevLabel(
   if (depth > 5) return false; // Prevent infinite loops by limiting depth
 
   try {
-    const issue = await jiraClient.getIssue(
+    const issue = await getJiraClient().getIssue(
       issueKey,
       ["labels", "parent"],
       undefined
@@ -101,7 +101,7 @@ export async function syncProjects(config: {
         });
 
         try {
-          const issue = await jiraClient.getIssue(
+          const issue = await getJiraClient().getIssue(
             issueKey,
             [
               "summary",
@@ -209,7 +209,7 @@ export async function syncProjects(config: {
 
       if (!dbBoards.length) {
         // Try to fetch and create boards from Jira
-        const jiraBoards = await jiraClient.getAllBoards(
+        const jiraBoards = await getJiraClient().getAllBoards(
           undefined,
           undefined,
           undefined,
@@ -320,7 +320,7 @@ export async function syncProjects(config: {
         // First, get the actual Jira board details
         let jiraBoard;
         try {
-          const jiraBoards = await jiraClient.getAllBoards(
+          const jiraBoards = await getJiraClient().getAllBoards(
             undefined,
             undefined,
             undefined,
@@ -362,7 +362,7 @@ export async function syncProjects(config: {
         try {
           // First fetch initiatives and epics
           const jql = `project = "${jiraBoard.location.projectKey}" AND issuetype in (Initiative, Epic) ORDER BY issuetype ASC, updatedDate DESC`;
-          issues = await jiraClient.getIssuesForBoard(
+          issues = await getJiraClient().getIssuesForBoard(
             jiraBoard.id,
             0,
             maxIssuesPerBoard,
@@ -370,7 +370,7 @@ export async function syncProjects(config: {
           );
 
           // Then fetch stories and other issue types
-          const otherIssues = await jiraClient.getIssuesForBoard(
+          const otherIssues = await getJiraClient().getIssuesForBoard(
             jiraBoard.id,
             0,
             maxIssuesPerBoard,
@@ -444,7 +444,7 @@ export async function syncProjects(config: {
               operation: `process-issue-${issue.key}`,
             });
 
-            const issueDetails = await jiraClient.getIssue(
+            const issueDetails = await getJiraClient().getIssue(
               issue.key,
               ["summary", "description", "labels"],
               "changelog"

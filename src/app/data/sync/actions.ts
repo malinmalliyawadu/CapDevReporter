@@ -2,7 +2,7 @@
 
 import { checkForCapDevLabel } from "@/app/actions/sync";
 import { prisma } from "@/lib/prisma";
-import { jiraClient } from "@/utils/jira";
+import { getJiraClient } from "@/utils/jira";
 
 export interface JiraBoard {
   id: string;
@@ -63,7 +63,7 @@ export async function* syncProjects(config: SyncConfig) {
       } as SyncMessage;
 
       try {
-        const issue = await jiraClient.getIssue(
+        const issue = await getJiraClient().getIssue(
           issueKey,
           [
             "summary",
@@ -169,7 +169,7 @@ export async function* syncProjects(config: SyncConfig) {
 
     if (!boards.length) {
       // Try to fetch and create boards from Jira
-      const jiraBoards = await jiraClient.getAllBoards(
+      const jiraBoards = await getJiraClient().getAllBoards(
         undefined,
         undefined,
         undefined,
@@ -282,7 +282,7 @@ export async function* syncProjects(config: SyncConfig) {
       // First, get the actual Jira board details
       let jiraBoard;
       try {
-        const jiraBoards = await jiraClient.getAllBoards(
+        const jiraBoards = await getJiraClient().getAllBoards(
           undefined,
           undefined,
           undefined,
@@ -323,7 +323,7 @@ export async function* syncProjects(config: SyncConfig) {
       try {
         // First fetch initiatives and epics
         const jql = `project = "${jiraBoard.location.projectKey}" AND issuetype in (Initiative, Epic) ORDER BY issuetype ASC, updatedDate DESC`;
-        issues = await jiraClient.getIssuesForBoard(
+        issues = await getJiraClient().getIssuesForBoard(
           jiraBoard.id,
           0,
           maxIssuesPerBoard,
@@ -331,7 +331,7 @@ export async function* syncProjects(config: SyncConfig) {
         );
 
         // Then fetch stories and other issue types
-        const otherIssues = await jiraClient.getIssuesForBoard(
+        const otherIssues = await getJiraClient().getIssuesForBoard(
           jiraBoard.id,
           0,
           maxIssuesPerBoard,
@@ -401,7 +401,7 @@ export async function* syncProjects(config: SyncConfig) {
             operation: `process-issue-${issue.key}`,
           } as SyncMessage;
 
-          const issueDetails = await jiraClient.getIssue(
+          const issueDetails = await getJiraClient().getIssue(
             issue.key,
             ["summary", "description", "labels"],
             "changelog"
