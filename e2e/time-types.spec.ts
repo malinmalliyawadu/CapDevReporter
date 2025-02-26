@@ -40,14 +40,43 @@ test.describe("General Time Types Page", () => {
   });
 
   test("can sort time types by name", async ({ page }) => {
-    // Click the Type Name column header to sort
-    await page.locator('th button:has-text("Type Name")').click();
+    const sortButton = page.getByTestId("sort-button-name");
+    const sortIcon = page.getByTestId("sort-icon-name");
 
-    // Check if sort indicator appears
-    await expect(page.locator(".ml-2.h-4.w-4")).toBeVisible();
+    // Initially, sort icon should be hidden
+    await expect(sortIcon).toHaveClass(/opacity-0/);
 
-    // Click again to reverse sort
-    await page.locator('th button:has-text("Type Name")').click();
+    // On hover, sort icon should be visible
+    await sortButton.hover();
+    await expect(sortIcon).toHaveClass(/group-hover:opacity-100/);
+
+    // Click to sort ascending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
+
+    // Click again to sort descending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
+  });
+
+  test("can sort time types by usage stats", async ({ page }) => {
+    const sortButton = page.getByTestId("sort-button-usage");
+    const sortIcon = page.getByTestId("sort-icon-usage");
+
+    // Initially, sort icon should be hidden
+    await expect(sortIcon).toHaveClass(/opacity-0/);
+
+    // On hover, sort icon should be visible
+    await sortButton.hover();
+    await expect(sortIcon).toHaveClass(/group-hover:opacity-100/);
+
+    // Click to sort ascending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
+
+    // Click again to sort descending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
   });
 
   test("can filter time types using search", async ({ page }) => {

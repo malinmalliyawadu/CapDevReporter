@@ -2,7 +2,16 @@
 
 import * as React from "react";
 import { useState } from "react";
-import { Plus, Search, ChevronUp, ChevronDown, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -78,14 +87,20 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="pl-0"
+          className="group"
+          data-testid="sort-button-name"
         >
           Type Name
           {column.getIsSorted() === "asc" ? (
-            <ChevronUp className="ml-2 h-4 w-4" />
+            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-name" />
           ) : column.getIsSorted() === "desc" ? (
-            <ChevronDown className="ml-2 h-4 w-4" />
-          ) : null}
+            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-name" />
+          ) : (
+            <ArrowUpDown
+              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+              data-testid="sort-icon-name"
+            />
+          )}
         </Button>
       ),
     },
@@ -104,14 +119,20 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="pl-0"
+          className="group"
+          data-testid="sort-button-usage"
         >
           Usage Stats
           {column.getIsSorted() === "asc" ? (
-            <ChevronUp className="ml-2 h-4 w-4" />
+            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-usage" />
           ) : column.getIsSorted() === "desc" ? (
-            <ChevronDown className="ml-2 h-4 w-4" />
-          ) : null}
+            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-usage" />
+          ) : (
+            <ArrowUpDown
+              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+              data-testid="sort-icon-usage"
+            />
+          )}
         </Button>
       ),
       cell: ({ row }) => {
