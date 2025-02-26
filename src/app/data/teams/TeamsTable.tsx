@@ -501,8 +501,8 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete the board "{boardToDelete?.name}"?
-              This action cannot be undone.
+              Are you sure you want to delete the board &quot;
+              {boardToDelete?.name}&quot;? This action cannot be undone.
             </p>
             {isFetchingProjects ? (
               <p className="text-sm text-muted-foreground mt-2">
