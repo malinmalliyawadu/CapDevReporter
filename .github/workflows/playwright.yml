@@ -8,9 +8,6 @@ on:
 jobs:
   playwright-tests:
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.50.1-noble
-      options: --user 1001
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -38,6 +35,7 @@ jobs:
           npx prisma migrate reset --force
 
       - name: 🧪 Run Playwright tests
+        uses: docker://mcr.microsoft.com/playwright:v1.34.3-jammy
         env:
           DATABASE_URL: file:./dev.db
           IPAYROLL_API_KEY: hehe
@@ -47,8 +45,8 @@ jobs:
           JIRA_HOST: ***REMOVED***.atlassian.net
           JIRA_API_TOKEN: hehe
           JIRA_USER_EMAIL: hahaha@gmail.com
-        run: |
-          npx playwright test --shard ${{ matrix.shardIndex }}/{{ matrix.shardTotal }}
+        with:
+          args: npx playwright test --shard ${{ matrix.shardIndex }}/{{ matrix.shardTotal }}
 
       - name: 📊 Upload test results
         if: ${{ !cancelled() }}
