@@ -50,7 +50,7 @@ jobs:
           JIRA_USER_EMAIL: hahaha@gmail.com
           NODE_V8_COVERAGE: ./coverage-tmp
         run: |
-          npx playwright test --shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=html,json,line
+          npx playwright test --shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
           npx c8 report --reporter=json --temp-directory ./coverage-tmp -o ./coverage-json
 
       - name: 📊 Upload test results
@@ -75,9 +75,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+
       - name: Install dependencies
         run: |
           npm ci
