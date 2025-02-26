@@ -22,6 +22,8 @@ jobs:
           npm ci
           echo "::endgroup::"
       - name: 🗃️ Initialize database
+        env:
+          DATABASE_URL: file:./dev.db
         run: |
           echo "::group::Setting up database"
           npx prisma generate

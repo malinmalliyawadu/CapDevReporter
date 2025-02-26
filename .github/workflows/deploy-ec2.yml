@@ -103,6 +103,7 @@ jobs:
           DOCKER_BUILDKIT=1 docker build \
             --progress=plain \
             --no-cache \
+            --build-arg DATABASE_URL="file:./dev.db" \
             --build-arg JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }} \
             --build-arg JIRA_USER_EMAIL=malin.malliyawadu@***REMOVED***.com \
             --build-arg IPAYROLL_API_KEY=hehe \
