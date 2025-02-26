@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -23,6 +23,15 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  createTeam,
+  updateTeam,
+  deleteTeam,
+  addJiraBoard,
+  deleteJiraBoard,
+  getBoardDetails,
+} from "./actions";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface JiraBoard {
   id: string;
@@ -58,10 +67,21 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [boardToDelete, setBoardToDelete] = useState<{
+    teamId: string;
+    boardId: string;
+    name: string;
+  } | null>(null);
+  const [isDeleteBoardDialogOpen, setIsDeleteBoardDialogOpen] = useState(false);
   const [editTeamData, setEditTeamData] = useState({
     name: "",
     description: "",
   });
+  const [boardProjects, setBoardProjects] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [isFetchingProjects, setIsFetchingProjects] = useState(false);
+  const [showFullList, setShowFullList] = useState(false);
 
   const handleCreateTeam = async () => {
     if (!newTeam.name.trim()) {
@@ -70,19 +90,14 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
     }
 
     try {
-      const response = await fetch("/api/teams", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newTeam),
-      });
+      const result = await createTeam(newTeam);
 
-      if (!response.ok) throw new Error("Failed to create team");
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
 
-      const teamsResponse = await fetch("/api/teams");
-      const updatedTeams = await teamsResponse.json();
-      setTeams(updatedTeams);
+      setTeams(result.teams);
       setIsAddTeamDialogOpen(false);
       setNewTeam({ name: "", description: "" });
       toast.success("Team created successfully");
@@ -99,22 +114,14 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
     }
 
     try {
-      const response = await fetch(`/api/teams/${newBoard.teamId}/boards`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: newBoard.name,
-          boardId: newBoard.boardId,
-        }),
-      });
+      const result = await addJiraBoard(newBoard);
 
-      if (!response.ok) throw new Error("Failed to add board");
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
 
-      const teamsResponse = await fetch("/api/teams");
-      const updatedTeams = await teamsResponse.json();
-      setTeams(updatedTeams);
+      setTeams(result.teams);
       setIsAddBoardDialogOpen(false);
       setNewBoard({ name: "", boardId: "", teamId: "" });
       toast.success("Board added successfully");
@@ -128,15 +135,14 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
     if (!teamToDelete) return;
 
     try {
-      const response = await fetch(`/api/teams/${teamToDelete.id}`, {
-        method: "DELETE",
-      });
+      const result = await deleteTeam(teamToDelete.id);
 
-      if (!response.ok) throw new Error("Failed to delete team");
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
 
-      const teamsResponse = await fetch("/api/teams");
-      const updatedTeams = await teamsResponse.json();
-      setTeams(updatedTeams);
+      setTeams(result.teams);
       setIsDeleteDialogOpen(false);
       setTeamToDelete(null);
       toast.success("Team deleted successfully");
@@ -153,19 +159,14 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
     }
 
     try {
-      const response = await fetch(`/api/teams/${selectedTeam.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(editTeamData),
-      });
+      const result = await updateTeam(selectedTeam.id, editTeamData);
 
-      if (!response.ok) throw new Error("Failed to update team");
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
 
-      const teamsResponse = await fetch("/api/teams");
-      const updatedTeams = await teamsResponse.json();
-      setTeams(updatedTeams);
+      setTeams(result.teams);
       setIsEditDialogOpen(false);
       setSelectedTeam(null);
       toast.success("Team updated successfully");
@@ -175,17 +176,52 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
     }
   };
 
+  const handleDeleteBoardClick = async (
+    teamId: string,
+    boardId: string,
+    name: string
+  ) => {
+    setIsFetchingProjects(true);
+    try {
+      const result = await getBoardDetails(boardId);
+      if (result.success && result.board) {
+        setBoardProjects(result.board.projects);
+      } else {
+        toast.error("Failed to fetch board details");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to fetch board details");
+    } finally {
+      setIsFetchingProjects(false);
+    }
+
+    setBoardToDelete({
+      teamId,
+      boardId,
+      name,
+    });
+    setIsDeleteBoardDialogOpen(true);
+  };
+
   const handleDeleteBoard = async (teamId: string, boardId: string) => {
     try {
-      const response = await fetch(`/api/teams/${teamId}/boards/${boardId}`, {
-        method: "DELETE",
-      });
+      const result = await deleteJiraBoard(teamId, boardId);
 
-      if (!response.ok) throw new Error("Failed to delete board");
+      if (!result.success) {
+        if (result.error.includes("P2003")) {
+          toast.error(
+            "Cannot delete board: It has associated projects or timesheets. Please delete or reassign them first."
+          );
+        } else {
+          toast.error(result.error);
+        }
+        return;
+      }
 
-      const teamsResponse = await fetch("/api/teams");
-      const updatedTeams = await teamsResponse.json();
-      setTeams(updatedTeams);
+      setTeams(result.teams);
+      setIsDeleteBoardDialogOpen(false);
+      setBoardToDelete(null);
       toast.success("Board deleted successfully");
     } catch (error) {
       console.error(error);
@@ -278,7 +314,13 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDeleteBoard(team.id, board.id)}
+                            onClick={() => {
+                              handleDeleteBoardClick(
+                                team.id,
+                                board.id,
+                                board.name
+                              );
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -439,6 +481,122 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
               Cancel
             </Button>
             <Button onClick={handleUpdateTeam}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isDeleteBoardDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteBoardDialogOpen(open);
+          if (!open) {
+            setBoardProjects([]);
+            setShowFullList(false);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Board</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete the board "{boardToDelete?.name}"?
+              This action cannot be undone.
+            </p>
+            {isFetchingProjects ? (
+              <p className="text-sm text-muted-foreground mt-2">
+                Checking for associated projects...
+              </p>
+            ) : boardProjects.length > 0 ? (
+              <div className="mt-4">
+                <p className="text-sm font-medium text-destructive">
+                  This board cannot be deleted because it has{" "}
+                  {boardProjects.length} associated project
+                  {boardProjects.length === 1 ? "" : "s"}.
+                </p>
+                {boardProjects.length > 3 ? (
+                  <div className="mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-between"
+                      onClick={() => setShowFullList(!showFullList)}
+                    >
+                      <span>
+                        {showFullList ? "Hide" : "Show"} full list of projects
+                      </span>
+                      {showFullList ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                    {showFullList ? (
+                      <ScrollArea className="mt-2 h-[200px] rounded-md border p-4">
+                        <ul className="space-y-1">
+                          {boardProjects.map((project) => (
+                            <li
+                              key={project.id}
+                              className="text-sm text-muted-foreground"
+                            >
+                              • {project.name}
+                            </li>
+                          ))}
+                        </ul>
+                      </ScrollArea>
+                    ) : (
+                      <ul className="mt-2 space-y-1">
+                        {boardProjects.slice(0, 3).map((project) => (
+                          <li
+                            key={project.id}
+                            className="text-sm text-muted-foreground"
+                          >
+                            • {project.name}
+                          </li>
+                        ))}
+                        <li className="text-sm text-muted-foreground">
+                          • ... and {boardProjects.length - 3} more
+                        </li>
+                      </ul>
+                    )}
+                  </div>
+                ) : (
+                  <ul className="mt-2 space-y-1">
+                    {boardProjects.map((project) => (
+                      <li
+                        key={project.id}
+                        className="text-sm text-muted-foreground"
+                      >
+                        • {project.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-2">
+                This board has no associated projects and can be safely deleted.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteBoardDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() =>
+                boardToDelete &&
+                handleDeleteBoard(boardToDelete.teamId, boardToDelete.boardId)
+              }
+              disabled={boardProjects.length > 0 || isFetchingProjects}
+            >
+              Delete Board
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
