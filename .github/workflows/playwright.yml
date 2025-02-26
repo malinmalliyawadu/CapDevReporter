@@ -24,6 +24,8 @@ jobs:
       - name: 🗃️ Initialize database
         env:
           DATABASE_URL: file:./dev.db
+          IPAYROLL_API_KEY: hehe
+          IPAYROLL_COMPANY_ID: 1234567890
         run: |
           echo "::group::Setting up database"
           npx prisma generate

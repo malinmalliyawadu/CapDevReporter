@@ -115,31 +115,11 @@ jobs:
             --build-arg NEXT_SHARP_PATH=/tmp/node_modules/sharp \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest . || {
-              # In case of build failure, show disk space and clean up
-              echo "Docker build failed. Checking disk space:"
+              echo "::error::Docker build failed"
+              echo "Checking disk space after failure:"
               df -h
-              docker system prune -af || true
-              echo "Retrying build with minimal features..."
-              
-              # Retry with more aggressive space saving options
-              DOCKER_BUILDKIT=1 docker build \
-                --progress=plain \
-                --no-cache \
-                --build-arg DATABASE_URL="file:./dev.db" \
-                --build-arg NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
-                --build-arg JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }} \
-                --build-arg JIRA_USER_EMAIL=malin.malliyawadu@***REMOVED***.com \
-                --build-arg JIRA_HOST=***REMOVED***.atlassian.net \
-                --build-arg IPAYROLL_API_URL=https://api.ipayroll.com \
-                --build-arg IPAYROLL_API_KEY=hehe \
-                --build-arg IPAYROLL_COMPANY_ID=1234567890 \
-                --build-arg NEXT_TELEMETRY_DISABLED=1 \
-                --build-arg NODE_ENV=production \
-                -t $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} \
-                -t $ECR_REGISTRY/$ECR_REPOSITORY:latest . || {
-                  echo "::error::Docker build failed again after cleanup"
-                  exit 1
-                }
+              docker system df
+              exit 1
             }
 
           # Show available disk space after build
