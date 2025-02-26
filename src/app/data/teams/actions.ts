@@ -157,7 +157,7 @@ export async function deleteJiraBoard(
     const teams = await getTeams();
     revalidatePath("/data/teams");
     return { success: true, teams };
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error("Failed to delete Jira board:", error);
     return {
       success: false,
