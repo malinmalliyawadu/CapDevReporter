@@ -20,7 +20,7 @@ test.describe("Holidays Page", () => {
   test("should display the holidays table", async ({ page }) => {
     // Check table headers
     await expect(page.locator("th", { hasText: "Date" })).toBeVisible();
-    await expect(page.locator("th", { hasText: "Holiday" })).toBeVisible();
+    await expect(page.locator("th", { hasText: "Name" })).toBeVisible();
 
     // Wait for the table to load and verify it contains data
     const rowCount = await page.getByRole("row").count();
