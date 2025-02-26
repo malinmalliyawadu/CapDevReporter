@@ -22,6 +22,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { createRole, deleteRole } from "./actions";
 
 interface Role {
   id: string;
@@ -48,7 +49,7 @@ export function RolesTable({ initialRoles }: RolesTableProps) {
       if (!newRoleName.trim()) {
         toast({
           title: "Error",
-          description: "Please enter a role name",
+          description: "Role name is required",
           variant: "destructive",
         });
         return;
@@ -62,25 +63,25 @@ export function RolesTable({ initialRoles }: RolesTableProps) {
       ) {
         toast({
           title: "Error",
-          description: "This role already exists",
+          description: "Role already exists",
           variant: "destructive",
         });
         return;
       }
 
-      const response = await fetch("/api/roles", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: newRoleName.trim() }),
-      });
+      const result = await createRole(newRoleName);
 
-      if (!response.ok) throw new Error("Failed to create role");
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const rolesResponse = await fetch("/api/roles");
-      const updatedRoles = await rolesResponse.json();
-      setRoles(updatedRoles);
+      // Update local state optimistically
+      setRoles((prev) => [...prev, result.data!]);
       setNewRoleName("");
       setOpen(false);
 
@@ -100,15 +101,19 @@ export function RolesTable({ initialRoles }: RolesTableProps) {
 
   const handleDeleteRole = async (id: string) => {
     try {
-      const response = await fetch(`/api/roles/${id}`, {
-        method: "DELETE",
-      });
+      const result = await deleteRole(id);
 
-      if (!response.ok) throw new Error("Failed to delete role");
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const rolesResponse = await fetch("/api/roles");
-      const updatedRoles = await rolesResponse.json();
-      setRoles(updatedRoles);
+      // Update local state optimistically
+      setRoles((prev) => prev.filter((role) => role.id !== id));
 
       toast({
         title: "Success",
@@ -167,7 +172,7 @@ export function RolesTable({ initialRoles }: RolesTableProps) {
           </TableHeader>
           <TableBody>
             {roles.map((role) => (
-              <TableRow key={role.id}>
+              <TableRow key={role.id} data-role-id={role.id}>
                 <TableCell>{role.name}</TableCell>
                 <TableCell>
                   <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
