@@ -116,18 +116,20 @@ jobs:
       - name: Merge coverage reports
         run: |
           if [ -d "all-coverage-reports" ] && [ "$(ls -A all-coverage-reports)" ]; then
-            # Create temp directory for JSON files
-            mkdir -p coverage-json
-            # Move all JSON files to the temp directory
-            find all-coverage-reports -name "*.json" -exec cp {} coverage-json/ \;
-            
-            # Merge coverage reports
+            # Create merged coverage directory
             mkdir -p ./merged-coverage
-            c8 merge coverage-json/* -o ./merged-coverage/coverage-final.json
+            
+            # Copy the first coverage report as the base
+            cp $(find all-coverage-reports -name "coverage-final.json" | head -n 1) ./merged-coverage/coverage-final.json
+            
+            # Merge any additional coverage reports
+            for report in $(find all-coverage-reports -name "coverage-final.json" | tail -n +2); do
+              npx c8 merge ./merged-coverage/coverage-final.json "$report" -o ./merged-coverage/coverage-final.json
+            done
             
             # Generate reports in different formats
             cd merged-coverage
-            c8 report --reporter=text --reporter=html --reporter=json
+            npx c8 report --reporter=text --reporter=html --reporter=json -o .
           else
             echo "No coverage reports found to merge"
             mkdir -p merged-coverage
