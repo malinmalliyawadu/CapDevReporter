@@ -48,10 +48,10 @@ jobs:
           JIRA_HOST: ***REMOVED***.atlassian.net
           JIRA_API_TOKEN: hehe
           JIRA_USER_EMAIL: hahaha@gmail.com
-          NODE_V8_COVERAGE: ./coverage
+          NODE_V8_COVERAGE: ./coverage-tmp
         run: |
           npx playwright test --shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=html,json,line
-          npx c8 report --reporter=json -o coverage-json
+          npx c8 report --reporter=json --temp-directory ./coverage-tmp -o ./coverage-json
 
       - name: 📊 Upload test results
         if: ${{ !cancelled() }}
@@ -128,8 +128,10 @@ jobs:
             done
             
             # Generate reports in different formats
+            mkdir -p ./merged-coverage/tmp
+            cp ./merged-coverage/coverage-final.json ./merged-coverage/tmp/coverage.json
             cd merged-coverage
-            npx c8 report --reporter=text --reporter=html --reporter=json -o .
+            npx c8 report --temp-directory ./tmp --reporter=text --reporter=html --reporter=json -o .
           else
             echo "No coverage reports found to merge"
             mkdir -p merged-coverage
