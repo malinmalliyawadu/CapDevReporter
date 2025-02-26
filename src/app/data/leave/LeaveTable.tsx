@@ -99,14 +99,24 @@ export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="group"
+            data-testid="sort-button-employee"
           >
             Employee
             {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="ml-2 h-4 w-4" />
+              <ArrowUp
+                className="ml-2 h-4 w-4"
+                data-testid="sort-icon-employee"
+              />
             ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="ml-2 h-4 w-4" />
+              <ArrowDown
+                className="ml-2 h-4 w-4"
+                data-testid="sort-icon-employee"
+              />
             ) : (
-              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+              <ArrowUpDown
+                className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+                data-testid="sort-icon-employee"
+              />
             )}
           </Button>
         );
@@ -123,14 +133,21 @@ export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="group"
+            data-testid="sort-button-date"
           >
             Date
             {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="ml-2 h-4 w-4" />
+              <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-date" />
             ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="ml-2 h-4 w-4" />
+              <ArrowDown
+                className="ml-2 h-4 w-4"
+                data-testid="sort-icon-date"
+              />
             ) : (
-              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+              <ArrowUpDown
+                className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+                data-testid="sort-icon-date"
+              />
             )}
           </Button>
         );
@@ -173,14 +190,24 @@ export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="group"
+            data-testid="sort-button-duration"
           >
             Duration
             {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="ml-2 h-4 w-4" />
+              <ArrowUp
+                className="ml-2 h-4 w-4"
+                data-testid="sort-icon-duration"
+              />
             ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="ml-2 h-4 w-4" />
+              <ArrowDown
+                className="ml-2 h-4 w-4"
+                data-testid="sort-icon-duration"
+              />
             ) : (
-              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+              <ArrowUpDown
+                className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+                data-testid="sort-icon-duration"
+              />
             )}
           </Button>
         );
