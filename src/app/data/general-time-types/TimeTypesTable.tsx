@@ -5,8 +5,6 @@ import { useState } from "react";
 import {
   Plus,
   Search,
-  ChevronUp,
-  ChevronDown,
   Trash2,
   ArrowUp,
   ArrowDown,
