@@ -15,14 +15,25 @@ interface Holiday {
 
 async function getHolidays(): Promise<Holiday[]> {
   const hd = new Holidays("NZ", "WGN");
-  const currentYear = new Date().getFullYear();
-  const lastYear = currentYear - 2;
+  const currentDate = new Date();
+  const twelveMonthsAgo = new Date();
+  twelveMonthsAgo.setMonth(currentDate.getMonth() - 12);
+
+  const startYear = twelveMonthsAgo.getFullYear();
+  const endYear = currentDate.getFullYear();
   const holidayList: Holiday[] = [];
 
-  for (let year = lastYear; year <= currentYear; year++) {
+  for (let year = startYear; year <= endYear; year++) {
     const yearHolidays = hd
       .getHolidays(year)
-      .filter((h) => h.type === "public")
+      .filter((h) => {
+        const holidayDate = new Date(h.date);
+        return (
+          h.type === "public" &&
+          holidayDate >= twelveMonthsAgo &&
+          holidayDate <= currentDate
+        );
+      })
       .map((h) => ({
         date: h.date,
         name: h.name,
