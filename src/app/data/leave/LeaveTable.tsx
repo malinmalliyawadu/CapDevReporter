@@ -2,7 +2,13 @@
 
 import * as React from "react";
 import { useState } from "react";
-import { RefreshCw, Search, ChevronDown } from "lucide-react";
+import {
+  RefreshCw,
+  Search,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -87,32 +93,48 @@ export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
   const columns: ColumnDef<LeaveRecord>[] = [
     {
       accessorKey: "employee.name",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          className="p-0 hover:bg-transparent"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Employee
-          <ChevronDown className="ml-1 h-4 w-4" />
-        </Button>
-      ),
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="group"
+          >
+            Employee
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            )}
+          </Button>
+        );
+      },
       cell: ({ row }) => (
         <span className="font-medium">{row.original.employee.name}</span>
       ),
     },
     {
       accessorKey: "date",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          className="p-0 hover:bg-transparent"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Date
-          <ChevronDown className="ml-1 h-4 w-4" />
-        </Button>
-      ),
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="group"
+          >
+            Date
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            )}
+          </Button>
+        );
+      },
       cell: ({ row }) => format(new Date(row.original.date), "dd MMM yyyy"),
     },
     {
@@ -145,16 +167,24 @@ export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
     },
     {
       accessorKey: "duration",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          className="p-0 hover:bg-transparent"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Duration
-          <ChevronDown className="ml-1 h-4 w-4" />
-        </Button>
-      ),
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="group"
+          >
+            Duration
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+            )}
+          </Button>
+        );
+      },
       cell: ({ row }) => (
         <span className="font-medium">
           {row.original.duration} day{row.original.duration !== 1 ? "s" : ""}

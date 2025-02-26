@@ -6,8 +6,9 @@ import {
   RefreshCw,
   AlertCircle,
   Pencil,
-  ChevronDown,
-  ChevronUp,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   Search,
 } from "lucide-react";
 import {
@@ -93,13 +94,16 @@ export function EmployeesTable({
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="group"
         >
           Name
           {column.getIsSorted() === "asc" ? (
-            <ChevronUp className="ml-2 h-4 w-4" />
+            <ArrowUp className="ml-2 h-4 w-4" />
           ) : column.getIsSorted() === "desc" ? (
-            <ChevronDown className="ml-2 h-4 w-4" />
-          ) : null}
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+          )}
         </Button>
       ),
     },
@@ -114,13 +118,16 @@ export function EmployeesTable({
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="group"
         >
           Role
           {column.getIsSorted() === "asc" ? (
-            <ChevronUp className="ml-2 h-4 w-4" />
+            <ArrowUp className="ml-2 h-4 w-4" />
           ) : column.getIsSorted() === "desc" ? (
-            <ChevronDown className="ml-2 h-4 w-4" />
-          ) : null}
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+          )}
         </Button>
       ),
       filterFn: (row, columnId, filterValue) => {
@@ -134,13 +141,16 @@ export function EmployeesTable({
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="group"
         >
           Hours per Week
           {column.getIsSorted() === "asc" ? (
-            <ChevronUp className="ml-2 h-4 w-4" />
+            <ArrowUp className="ml-2 h-4 w-4" />
           ) : column.getIsSorted() === "desc" ? (
-            <ChevronDown className="ml-2 h-4 w-4" />
-          ) : null}
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
+          )}
         </Button>
       ),
       cell: ({ row }: { row: { original: Employee } }) => (
