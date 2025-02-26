@@ -177,3 +177,50 @@ test.describe("Projects Page", () => {
     }
   });
 });
+
+test.describe("Projects Table", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/data/projects");
+    await page.waitForSelector("table");
+  });
+
+  test("can sort by project name", async ({ page }) => {
+    const sortButton = page.getByTestId("sort-button-name");
+    const sortIcon = page.getByTestId("sort-icon-name");
+
+    // Initially, sort icon should be hidden
+    await expect(sortIcon).toHaveClass(/opacity-0/);
+
+    // On hover, sort icon should be visible
+    await sortButton.hover();
+    await expect(sortIcon).toHaveClass(/group-hover:opacity-100/);
+
+    // Click to sort ascending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
+
+    // Click again to sort descending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
+  });
+
+  test("can sort by team", async ({ page }) => {
+    const sortButton = page.getByTestId("sort-button-team");
+    const sortIcon = page.getByTestId("sort-icon-team");
+
+    // Initially, sort icon should be hidden
+    await expect(sortIcon).toHaveClass(/opacity-0/);
+
+    // On hover, sort icon should be visible
+    await sortButton.hover();
+    await expect(sortIcon).toHaveClass(/group-hover:opacity-100/);
+
+    // Click to sort ascending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
+
+    // Click again to sort descending
+    await sortButton.click();
+    await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
+  });
+});

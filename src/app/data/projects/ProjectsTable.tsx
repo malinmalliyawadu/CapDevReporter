@@ -322,24 +322,26 @@ export function ProjectsTable({
     },
     {
       accessorKey: "name",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="group"
-          >
-            Project Name
-            {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="ml-2 h-4 w-4" />
-            ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="ml-2 h-4 w-4" />
-            ) : (
-              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-            )}
-          </Button>
-        );
-      },
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="group"
+          data-testid="sort-button-name"
+        >
+          Project Name
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-name" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-name" />
+          ) : (
+            <ArrowUpDown
+              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+              data-testid="sort-icon-name"
+            />
+          )}
+        </Button>
+      ),
       filterFn: (row, id, value) => {
         return row.getValue<string>(id).toLowerCase().includes(value);
       },
@@ -358,24 +360,26 @@ export function ProjectsTable({
     {
       accessorKey: "board.team.name",
       id: "teamName",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="group"
-          >
-            Team
-            {column.getIsSorted() === "asc" ? (
-              <ArrowUp className="ml-2 h-4 w-4" />
-            ) : column.getIsSorted() === "desc" ? (
-              <ArrowDown className="ml-2 h-4 w-4" />
-            ) : (
-              <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100" />
-            )}
-          </Button>
-        );
-      },
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="group"
+          data-testid="sort-button-team"
+        >
+          Team
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-team" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-team" />
+          ) : (
+            <ArrowUpDown
+              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+              data-testid="sort-icon-team"
+            />
+          )}
+        </Button>
+      ),
     },
     {
       accessorKey: "isCapDev",
