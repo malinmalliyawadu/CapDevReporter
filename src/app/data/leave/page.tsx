@@ -3,28 +3,9 @@ import { Suspense } from "react";
 import { Palmtree } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { prisma } from "@/lib/prisma";
 import { LeaveTable } from "./LeaveTable";
 import { LeaveTableSkeleton } from "./loading";
-
-async function getLeaveRecords() {
-  const leaveRecords = await prisma.leave.findMany({
-    include: {
-      employee: true,
-    },
-  });
-  return leaveRecords.map((record) => ({
-    ...record,
-    date: record.date.toISOString(),
-    createdAt: record.createdAt.toISOString(),
-    updatedAt: record.updatedAt.toISOString(),
-    employee: {
-      ...record.employee,
-      createdAt: record.employee.createdAt.toISOString(),
-      updatedAt: record.employee.updatedAt.toISOString(),
-    },
-  }));
-}
+import { getLeaveRecords } from "./actions";
 
 export default async function LeavePage() {
   const leaveRecords = await getLeaveRecords();

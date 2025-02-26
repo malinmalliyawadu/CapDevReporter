@@ -34,6 +34,7 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
+import { syncLeaveRecords } from "./actions";
 
 interface LeaveRecord {
   id: string;
@@ -180,14 +181,13 @@ export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
   const handleSync = async () => {
     try {
       setIsSyncing(true);
-      const response = await fetch("/api/leave/sync", {
-        method: "POST",
-      });
-      if (!response.ok) throw new Error("Failed to sync");
+      const result = await syncLeaveRecords();
 
-      const leaveResponse = await fetch("/api/leave");
-      const updatedLeaveRecords = await leaveResponse.json();
-      setLeaveRecords(updatedLeaveRecords);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      // The page will automatically revalidate and refresh the data
       setLastSynced(new Date());
       toast.success("Leave data synced successfully");
     } catch (error) {
