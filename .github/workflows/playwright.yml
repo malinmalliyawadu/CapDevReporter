@@ -30,6 +30,9 @@ jobs:
           DATABASE_URL: file:./dev.db
           IPAYROLL_API_KEY: hehe
           IPAYROLL_COMPANY_ID: 1234567890
+          JIRA_HOST: ***REMOVED***.atlassian.net
+          NEXT_PUBLIC_JIRA_URL: https://***REMOVED***.atlassian.net
+          IPAYROLL_API_URL: https://api.ipayroll.com
         run: |
           echo "::group::Setting up database"
           npx prisma generate
