@@ -156,11 +156,11 @@ export function Navigation() {
           <NavigationMenu className="relative">
             <NavigationMenuList className="gap-3">
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/80 dark:to-zinc-900/50 hover:from-white hover:to-white/80 dark:hover:from-zinc-800 dark:hover:to-zinc-800/80 transition-all duration-200 rounded-lg font-medium text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 data-[state=open]:text-cyan-700 dark:data-[state=open]:text-cyan-400 shadow-sm">
+                <NavigationMenuTrigger className="bg-transparent hover:bg-zinc-100 dark:hover:bg-blue-800/50 transition-all duration-200 rounded-lg font-medium text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 data-[state=open]:text-cyan-700 dark:data-[state=open]:text-cyan-400">
                   Data
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-gradient-to-b from-white to-white/95 dark:from-zinc-900 dark:to-zinc-900/95 backdrop-blur-md rounded-lg shadow-lg border border-zinc-200/50 dark:border-zinc-700/50">
+                  <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-white dark:bg-blue-950 backdrop-blur-none rounded-lg border border-zinc-200 dark:border-blue-800 shadow-sm">
                     {data.map((component) => (
                       <ListItem
                         key={component.href}
@@ -174,11 +174,11 @@ export function Navigation() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/80 dark:to-zinc-900/50 hover:from-white hover:to-white/80 dark:hover:from-zinc-800 dark:hover:to-zinc-800/80 transition-all duration-200 rounded-lg font-medium text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 data-[state=open]:text-cyan-700 dark:data-[state=open]:text-cyan-400 shadow-sm">
+                <NavigationMenuTrigger className="bg-transparent hover:bg-zinc-100 dark:hover:bg-blue-800/50 transition-all duration-200 rounded-lg font-medium text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 data-[state=open]:text-cyan-700 dark:data-[state=open]:text-cyan-400">
                   Assignments
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-6 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-gradient-to-b from-white to-white/95 dark:from-zinc-900 dark:to-zinc-900/95 backdrop-blur-md rounded-lg shadow-lg border border-zinc-200/50 dark:border-zinc-700/50">
+                  <ul className="grid w-[400px] gap-3 p-6 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-white dark:bg-blue-950 backdrop-blur-none rounded-lg border border-zinc-200 dark:border-blue-800 shadow-sm">
                     {assignments.map((component) => (
                       <ListItem
                         key={component.href}
@@ -196,7 +196,7 @@ export function Navigation() {
                   <Link
                     href="/reports"
                     className={cn(
-                      "bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/80 dark:to-zinc-900/50 hover:from-white hover:to-white/80 dark:hover:from-zinc-800 dark:hover:to-zinc-800/80 px-4 py-2 rounded-lg inline-flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 transition-all duration-200 shadow-sm",
+                      "bg-transparent hover:bg-zinc-100 dark:hover:bg-blue-800/50 px-4 py-2 rounded-lg inline-flex items-center text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 transition-all duration-200",
                       "hover:scale-105"
                     )}
                   >
@@ -212,7 +212,7 @@ export function Navigation() {
           <Button
             variant="outline"
             size="sm"
-            className="bg-gradient-to-b from-white/80 to-white/50 dark:from-zinc-900/80 dark:to-zinc-900/50 hover:from-white hover:to-white/80 dark:hover:from-zinc-800 dark:hover:to-zinc-800/80 transition-all duration-200"
+            className="bg-transparent hover:bg-zinc-100 dark:hover:bg-blue-800/50 text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 border-zinc-200 dark:border-blue-600 transition-all duration-200"
             onClick={() => openSyncDialog()}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -222,50 +222,6 @@ export function Navigation() {
         </div>
       </div>
     </header>
-
-    // <nav className="bg-white shadow">
-    //   <div className="container mx-auto px-4">
-    //     <div className="flex h-16 justify-between items-center">
-    //       <div className="flex items-center">
-    //         <Link href="/" className="text-xl font-bold text-gray-800">
-    //           Timesheet
-    //         </Link>
-    //       </div>
-    //       <div className="flex space-x-4">
-    //         <Link
-    //           href="/timesheet"
-    //           className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-    //         >
-    //           Timesheet
-    //         </Link>
-    //         <Link
-    //           href="/projects"
-    //           className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-    //         >
-    //           Projects
-    //         </Link>
-    //         <Link
-    //           href="/teams"
-    //           className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-    //         >
-    //           Teams
-    //         </Link>
-    //         <Link
-    //           href="/leave"
-    //           className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-    //         >
-    //           Leave
-    //         </Link>
-    //         <Link
-    //           href="/reports"
-    //           className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-    //         >
-    //           Reports
-    //         </Link>
-    //       </div>
-    //     </div>
-    //   </div>
-    // </nav>
   );
 }
 
@@ -286,17 +242,17 @@ const ListItem = ({
         <Link
           className={cn(
             "block select-none rounded-md p-3 no-underline outline-none transition-all duration-200",
-            "hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80 hover:scale-[1.02]",
+            "hover:bg-zinc-50 dark:hover:bg-blue-800/50",
             "focus:bg-accent focus:text-accent-foreground",
-            "border border-transparent hover:border-zinc-200/50 dark:hover:border-zinc-700/50",
+            "border border-transparent hover:border-zinc-200 dark:hover:border-blue-800",
             className
           )}
           href={href ?? ""}
         >
-          <div className="text-sm font-medium leading-none mb-2 text-zinc-800 dark:text-zinc-200">
+          <div className="text-sm font-medium leading-none mb-2 text-zinc-800 dark:text-zinc-200 group-hover:text-cyan-700 dark:group-hover:text-cyan-400">
             {title}
           </div>
-          <p className="text-sm leading-snug text-zinc-600 dark:text-zinc-400">
+          <p className="text-sm leading-snug text-zinc-500 dark:text-zinc-400">
             {children}
           </p>
         </Link>
