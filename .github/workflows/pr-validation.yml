@@ -1,0 +1,45 @@
+name: PR Validation
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run Lint
+        run: npm run lint
+
+      - name: 🏗️ Build Project
+        env:
+          DATABASE_URL: file:./dev.db
+        run: npm run build
+
+      - name: 🧪 Run Tests and Generate Coverage
+        id: run-tests
+        run: |
+          npm test -- --coverage | tee test-results.txt
+          cat coverage/lcov-report/index.html | grep -A 3 "All files" > coverage-summary.txt
+
+      - name: 📄 Post Test and Coverage Results
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TEST_RESULTS=$(cat test-results.txt)
+          COVERAGE_RESULTS=$(cat coverage-summary.txt)
+          PR_NUMBER=$(echo ${{ github.event.pull_request.number }})
+          curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            -X POST \
+            -d "{\"body\": \"Test Results:\n\`\`\`\n$TEST_RESULTS\n\`\`\`\nCoverage Summary:\n\`\`\`\n$COVERAGE_RESULTS\n\`\`\`\"}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUMBER/comments"
