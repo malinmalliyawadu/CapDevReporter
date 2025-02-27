@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { useSyncDialog } from "@/contexts/dialog-context";
-import { format } from "date-fns";
+import { format, endOfWeek } from "date-fns";
 
 interface TimeReportExpandedRowProps {
   report: TimeReport;
@@ -64,15 +64,27 @@ export function TimeReportExpandedRow({
     if (entry.projectName)
       return <Briefcase className="h-4 w-4 text-violet-500" />;
     if (entry.isCapDev) return <Code className="h-4 w-4 text-green-500" />;
+    if (entry.isRolledUp) return <Clock className="h-4 w-4 text-orange-500" />;
     return <Wrench className="h-4 w-4 text-slate-500" />;
   };
 
-  const formatActivityDate = (dateString?: string) => {
+  const formatActivityDate = (dateString?: string, isRolledUp?: boolean) => {
     if (!dateString) return "-";
     try {
       // Parse the date string in the format "yyyy-MM-dd"
       const [year, month, day] = dateString.split("-").map(Number);
       const date = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+
+      // For rolled-up entries, show that it applies to the whole week
+      if (isRolledUp) {
+        const weekStart = format(date, "MMM dd");
+        const weekEnd = format(
+          endOfWeek(date, { weekStartsOn: 1 }),
+          "MMM dd, yyyy"
+        );
+        return `Week of ${weekStart} - ${weekEnd}`;
+      }
+
       return format(date, "MMM dd, yyyy");
     } catch (error) {
       console.error("Error formatting date:", error);
@@ -133,6 +145,8 @@ export function TimeReportExpandedRow({
                             >
                               Project - {entry.projectName}
                             </a>
+                          ) : entry.isRolledUp ? (
+                            `${displayType} (Weekly)`
                           ) : (
                             displayType
                           )}
@@ -159,7 +173,10 @@ export function TimeReportExpandedRow({
                       </TableCell>
                       <TableCell className="py-3">
                         <span className="text-sm text-muted-foreground">
-                          {formatActivityDate(entry.activityDate)}
+                          {formatActivityDate(
+                            entry.activityDate,
+                            entry.isRolledUp
+                          )}
                         </span>
                       </TableCell>
                       <TableCell className="py-3 text-right">

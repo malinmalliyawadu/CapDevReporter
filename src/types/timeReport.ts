@@ -61,4 +61,6 @@ export interface TimeReportEntry {
   activityDate?: string;
   isScheduled?: boolean;
   scheduledTimeTypeName?: string;
+  isRolledUp?: boolean;
+  rolledUpHoursPerWeek?: number;
 }

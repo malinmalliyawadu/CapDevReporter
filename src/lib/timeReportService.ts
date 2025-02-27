@@ -216,7 +216,7 @@ export async function getTimeReportData(
         });
 
         // Calculate working days (excluding weekends and public holidays)
-        const workingDays = daysInWeek.filter((date) => {
+        const workingDaysInWeek = daysInWeek.filter((date) => {
           if (isWeekend(date)) return false;
           const holiday = holidays.isHoliday(date);
           return !holiday;
@@ -224,7 +224,7 @@ export async function getTimeReportData(
 
         // Calculate available hours for work based on employee's hours per week setting
         const hoursPerDay = employee.hoursPerWeek / 5; // Assuming 5-day work week
-        const availableHours = workingDays * hoursPerDay;
+        const availableHours = workingDaysInWeek * hoursPerDay;
 
         // Initialize time report
         const report: TimeReport = {
@@ -263,33 +263,6 @@ export async function getTimeReportData(
           const holiday = holidays.isHoliday(date);
           const leaveRecord = leaveMap.get(dateKey)?.get(employee.id);
 
-          // Add project activities for this day
-          weekAssignments.forEach((assignment) => {
-            assignment.team.jiraBoards.forEach((board) => {
-              board.projects.forEach((project) => {
-                const activities = project.activities.filter(
-                  (activity) =>
-                    format(activity.activityDate, "yyyy-MM-dd") === dateKey
-                );
-
-                if (activities.length > 0) {
-                  report.timeEntries.push({
-                    id: `${employee.id}-${dateKey}-${project.id}`,
-                    hours: 8, // Default to 8 hours per day
-                    timeTypeId: timeTypes.find((t) => !t.isCapDev)?.id ?? "",
-                    isCapDev: project.isCapDev,
-                    date: dateKey,
-                    activityDate: dateKey,
-                    projectId: project.id,
-                    projectName: project.name,
-                    teamName: assignment.team.name,
-                  });
-                  report.fullHours += 8;
-                }
-              });
-            });
-          });
-
           // Add public holiday entry
           if (holiday) {
             report.timeEntries.push({
@@ -320,7 +293,7 @@ export async function getTimeReportData(
           }
         });
 
-        // Process scheduled time types
+        // Process scheduled time types (with weekly schedule)
         timeTypes.forEach((timeType) => {
           // Access the weeklySchedule property directly
           const weeklySchedule = parseWeeklySchedule(timeType.weeklySchedule);
@@ -362,6 +335,140 @@ export async function getTimeReportData(
             }
           });
         });
+
+        // Process regular time types (without weekly schedule)
+        // Get all regular time types (those without a weekly schedule)
+        const regularTimeTypes = timeTypes.filter(
+          (timeType) => !timeType.weeklySchedule
+        );
+
+        // Get the working days in the week (excluding weekends and holidays)
+        const regularWorkingDays = daysInWeek.filter((date) => {
+          if (isWeekend(date)) return false;
+          const holiday = holidays.isHoliday(date);
+          return !holiday;
+        });
+
+        // Process each regular time type
+        regularTimeTypes.forEach((timeType) => {
+          // Find the general time assignment for this time type and employee's role
+          const generalAssignment = generalAssignments.find(
+            (assignment) =>
+              assignment.timeTypeId === timeType.id &&
+              assignment.roleId === employee.roleId
+          );
+
+          // Skip if there's no assignment for this time type and role
+          if (!generalAssignment) return;
+
+          // Get the total hours per week for this time type
+          const hoursPerWeek = generalAssignment.hoursPerWeek;
+
+          // Skip if hours per week is 0
+          if (hoursPerWeek === 0) return;
+
+          // Instead of creating daily entries, create a single rolled-up entry for the week
+          // Use the first working day of the week as the date for the rolled-up entry
+          const firstWorkingDay =
+            regularWorkingDays.length > 0 ? regularWorkingDays[0] : weekStart;
+          const formattedDate = format(firstWorkingDay, "yyyy-MM-dd");
+
+          // Create a single entry for this regular time type for the whole week
+          const regularEntry: TimeReportEntry = {
+            id: `regular-${timeType.id}-${weekKey}`,
+            hours: hoursPerWeek,
+            timeTypeId: timeType.id,
+            isCapDev: !!timeType.isCapDev,
+            date: formattedDate,
+            activityDate: formattedDate,
+            isScheduled: false,
+            scheduledTimeTypeName: timeType.name,
+            isRolledUp: true, // Add a flag to indicate this is a rolled-up entry
+            rolledUpHoursPerWeek: hoursPerWeek, // Store the total hours per week
+          };
+
+          // Add to time entries
+          report.timeEntries.push(regularEntry);
+          report.fullHours += hoursPerWeek;
+        });
+
+        // Calculate remaining hours for project activities
+        const totalRemainingHours = Math.max(
+          0,
+          employee.hoursPerWeek - report.fullHours
+        );
+
+        // Collect all project activities for the week
+        const weekProjectActivities: {
+          date: string;
+          projectId: string;
+          projectName: string;
+          teamName: string;
+          isCapDev: boolean;
+          jiraId: string;
+        }[] = [];
+
+        // Create a map to track unique project-date combinations
+        const uniqueProjectDates = new Map<string, boolean>();
+
+        weekAssignments.forEach((assignment) => {
+          assignment.team.jiraBoards.forEach((board) => {
+            board.projects.forEach((project) => {
+              project.activities.forEach((activity) => {
+                const activityDate = new Date(activity.activityDate);
+                const dateKey = format(activityDate, "yyyy-MM-dd");
+
+                // Only include activities that fall within the current week
+                // and are on working days (not weekends or holidays)
+                if (
+                  activityDate >= weekStart &&
+                  activityDate <= weekEnd &&
+                  !isWeekend(activityDate) &&
+                  !holidays.isHoliday(activityDate)
+                ) {
+                  // Create a unique key for project-date combination
+                  const projectDateKey = `${project.id}-${dateKey}`;
+
+                  // Only add if this project-date combination hasn't been seen before
+                  if (!uniqueProjectDates.has(projectDateKey)) {
+                    uniqueProjectDates.set(projectDateKey, true);
+                    weekProjectActivities.push({
+                      date: dateKey,
+                      projectId: project.id,
+                      projectName: project.name,
+                      teamName: assignment.team.name,
+                      isCapDev: project.isCapDev,
+                      jiraId: activity.jiraIssueId,
+                    });
+                  }
+                }
+              });
+            });
+          });
+        });
+
+        // If there are project activities, distribute remaining hours evenly
+        if (weekProjectActivities.length > 0) {
+          const hoursPerActivity =
+            totalRemainingHours / weekProjectActivities.length;
+
+          weekProjectActivities.forEach((activity) => {
+            report.timeEntries.push({
+              id: `${employee.id}-${activity.date}-${activity.projectId}`,
+              hours: hoursPerActivity,
+              timeTypeId: timeTypes.find((t) => !t.isCapDev)?.id ?? "",
+              isCapDev: activity.isCapDev,
+              date: activity.date,
+              activityDate: activity.date,
+              projectId: activity.projectId,
+              projectName: activity.projectName,
+              teamName: activity.teamName,
+              jiraId: activity.jiraId,
+              jiraUrl: `https://jira.example.com/browse/${activity.jiraId}`,
+            });
+            report.fullHours += hoursPerActivity;
+          });
+        }
 
         // Sort entries to prioritize scheduled entries
         report.timeEntries.sort((a, b) => {
