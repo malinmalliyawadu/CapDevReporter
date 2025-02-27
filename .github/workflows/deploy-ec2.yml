@@ -156,14 +156,6 @@ jobs:
           echo "::group::📝 Deployment Script Creation"
           echo "Creating deployment script..."
           echo '#!/bin/bash
-          echo "::group::🛑 Container Management"
-          echo "Stopping existing container..."
-          if ! docker stop timesheet-app 2>/dev/null; then
-            echo "::warning::No existing container to stop"
-          fi
-          docker rm timesheet-app 2>/dev/null || true
-          echo "::endgroup::"
-
           echo "::group::🔑 ECR Authentication"
           echo "Logging into ECR..."
           if ! aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}; then
@@ -180,12 +172,40 @@ jobs:
           fi
           echo "::endgroup::"
 
-          echo "::group::🚀 Container Launch"
-          echo "Starting new container..."
+          echo "::group::🔄 Zero-Downtime Deployment"
+          # Create Docker network if it doesn't exist
+          if ! docker network inspect timesheet-network >/dev/null 2>&1; then
+            echo "Creating Docker network..."
+            docker network create timesheet-network
+          fi
+
+          # Check if existing container is connected to the network
+          if docker ps | grep -q timesheet-app; then
+            if ! docker network inspect timesheet-network | grep -q timesheet-app; then
+              echo "Connecting existing container to network..."
+              docker network connect timesheet-network timesheet-app
+            fi
+          fi
+
+          # Generate unique name for the new container
+          NEW_CONTAINER="timesheet-app-${VERSION}"
+          echo "Starting new container: $NEW_CONTAINER..."
+
+          # Ensure data directory exists
+          mkdir -p /app/data
+
+          # Copy SQLite database from the current container if it exists
+          if docker ps | grep -q timesheet-app; then
+            echo "Ensuring database consistency..."
+            # Create a temporary backup of the database
+            docker exec timesheet-app sh -c "if [ -f /app/data/dev.db ]; then cp /app/data/dev.db /app/data/dev.db.backup; fi"
+          fi
+
+          # Start new container with the new version
           if ! docker run -d \
-            --name=timesheet-app \
+            --name=$NEW_CONTAINER \
             --restart=always \
-            -p 3000:3000 \
+            --network=timesheet-network \
             -v /app/data:/app/data \
             -e NEXT_PUBLIC_JIRA_URL='${{ env.NEXT_PUBLIC_JIRA_URL }}' \
             -e APP_VERSION='${VERSION}' \
@@ -196,16 +216,126 @@ jobs:
             -e IPAYROLL_API_KEY='${{ secrets.IPAYROLL_API_KEY }}' \
             -e IPAYROLL_COMPANY_ID='${{ secrets.IPAYROLL_COMPANY_ID }}' \
             '${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest'; then
-            echo "::error::Failed to start container"
+            echo "::error::Failed to start new container"
             exit 1
           fi
 
-          echo "Verifying container status..."
-          if ! docker ps | grep -q timesheet-app; then
-            echo "::error::Container failed to start"
-            docker logs timesheet-app
-            exit 1
+          # Wait for the new container to be ready
+          echo "Waiting for new container to be ready..."
+          HEALTH_CHECK_RETRIES=30
+          HEALTH_CHECK_DELAY=2
+
+          for i in $(seq 1 $HEALTH_CHECK_RETRIES); do
+            if docker exec $NEW_CONTAINER curl -s http://localhost:3000 >/dev/null; then
+              echo "New container is ready!"
+              break
+            fi
+            
+            if [ $i -eq $HEALTH_CHECK_RETRIES ]; then
+              echo "::error::New container failed to become ready"
+              docker logs $NEW_CONTAINER
+              docker rm -f $NEW_CONTAINER
+              # Restore database backup if it exists
+              docker exec timesheet-app sh -c "if [ -f /app/data/dev.db.backup ]; then mv /app/data/dev.db.backup /app/data/dev.db; fi"
+              exit 1
+            fi
+            
+            echo "Waiting for container to be ready... ($i/$HEALTH_CHECK_RETRIES)"
+            sleep $HEALTH_CHECK_DELAY
+          done
+
+          # Update Nginx configuration to point to the new container
+          echo "Updating Nginx configuration..."
+
+          # Get the IP address of the new container
+          NEW_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $NEW_CONTAINER)
+
+          # Update the existing Nginx configuration
+          sudo tee /etc/nginx/conf.d/timesheet.conf > /dev/null << EOF
+          server {
+              listen 80;
+              server_name _;
+              
+              location / {
+                  proxy_pass http://$NEW_CONTAINER_IP:3000;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+                  
+                  # WebSocket support
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade \$http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_read_timeout 86400;
+              }
+          }
+          EOF
+
+          # Reload Nginx configuration
+          echo "Reloading Nginx configuration..."
+          sudo systemctl reload nginx || sudo service nginx reload
+
+          # Verify the new setup works
+          echo "Verifying new deployment..."
+          VERIFICATION_RETRIES=5
+          for i in $(seq 1 $VERIFICATION_RETRIES); do
+            if curl -s http://localhost >/dev/null; then
+              echo "Verification successful!"
+              break
+            fi
+            
+            if [ $i -eq $VERIFICATION_RETRIES ]; then
+              echo "::error::New deployment verification failed"
+              # Rollback to previous container if available
+              if docker ps -a | grep -q timesheet-app; then
+                echo "Rolling back to previous container..."
+                ORIGINAL_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' timesheet-app)
+                sudo tee /etc/nginx/conf.d/timesheet.conf > /dev/null << EOF
+          server {
+              listen 80;
+              server_name _;
+              
+              location / {
+                  proxy_pass http://$ORIGINAL_CONTAINER_IP:3000;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+                  
+                  # WebSocket support
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade \$http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_read_timeout 86400;
+              }
+          }
+          EOF
+                sudo systemctl reload nginx || sudo service nginx reload
+                docker rm -f $NEW_CONTAINER
+                # Restore database backup if it exists
+                docker exec timesheet-app sh -c "if [ -f /app/data/dev.db.backup ]; then mv /app/data/dev.db.backup /app/data/dev.db; fi"
+              fi
+              exit 1
+            fi
+            
+            echo "Retrying verification... ($i/$VERIFICATION_RETRIES)"
+            sleep 2
+          done
+
+          # If everything is successful, remove the old container
+          echo "Deployment successful, cleaning up old container..."
+          if docker ps -a | grep -q "timesheet-app$"; then
+            # Remove database backup if it exists
+            docker exec $NEW_CONTAINER sh -c "if [ -f /app/data/dev.db.backup ]; then rm /app/data/dev.db.backup; fi"
+            
+            # Stop and remove the old container
+            docker stop timesheet-app
+            docker rm timesheet-app
           fi
+
+          # Rename the new container to the standard name for future deployments
+          docker rename $NEW_CONTAINER timesheet-app
           echo "::endgroup::"
 
           echo "::group::📊 System Status"
@@ -216,14 +346,11 @@ jobs:
           echo "::group::🧹 Cleanup Process"
           echo "Starting cleanup process..."
 
-          echo "Performing comprehensive Docker system cleanup..."
-          docker system prune -af --volumes || echo "::warning::Failed to perform complete Docker system prune"
+          echo "Removing unused containers..."
+          docker container prune -f || echo "::warning::Failed to prune containers"
 
           echo "Removing unused images older than 24 hours..."
           docker image prune -af --filter "until=24h" || echo "::warning::Failed to prune images"
-
-          echo "Removing unused containers..."
-          docker container prune -f || echo "::warning::Failed to prune containers"
 
           echo "Removing unused networks..."
           docker network prune -f || echo "::warning::Failed to prune networks"
