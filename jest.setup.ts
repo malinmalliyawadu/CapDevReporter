@@ -29,13 +29,23 @@ export const createTestContext = () => {
 };
 
 // Add test data factories
+const defaultDate = new Date();
+
 export const createMockEmployee = (overrides = {}) => ({
   id: "test-emp-id",
   name: "Test Employee",
   payrollId: "P123",
   hoursPerWeek: 40,
   roleId: "test-role-id",
-  role: { id: "test-role-id", name: "Developer" },
+  createdAt: defaultDate,
+  updatedAt: defaultDate,
+  role: {
+    id: "test-role-id",
+    name: "Developer",
+    createdAt: defaultDate,
+    updatedAt: defaultDate,
+    description: null,
+  },
   assignments: [
     {
       startDate: new Date("2024-01-01"),
@@ -43,6 +53,9 @@ export const createMockEmployee = (overrides = {}) => ({
       team: {
         id: "test-team-id",
         name: "Test Team",
+        createdAt: defaultDate,
+        updatedAt: defaultDate,
+        description: null,
         jiraBoards: [],
       },
     },
@@ -55,6 +68,9 @@ export const createMockTimeType = (overrides = {}) => ({
   name: "Regular Work",
   isCapDev: false,
   weeklySchedule: null,
+  createdAt: defaultDate,
+  updatedAt: defaultDate,
+  description: null,
   ...overrides,
 });
 
@@ -63,6 +79,8 @@ export const createMockGeneralTimeAssignment = (overrides = {}) => ({
   roleId: "test-role-id",
   timeTypeId: "test-time-type-id",
   hoursPerWeek: 40,
+  createdAt: defaultDate,
+  updatedAt: defaultDate,
   timeType: createMockTimeType(),
   ...overrides,
 });

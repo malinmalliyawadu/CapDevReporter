@@ -6,6 +6,14 @@ import {
   createMockTimeType,
   createMockGeneralTimeAssignment,
 } from "../../../jest.setup";
+import {
+  Employee,
+  Team,
+  Role,
+  TimeType,
+  GeneralTimeAssignment,
+  Leave,
+} from "@prisma/client";
 
 // Mock the Prisma client
 jest.mock("@/lib/prisma", () => ({
@@ -43,12 +51,27 @@ jest.mock("date-holidays", () => {
 
 // Helper function to set up common mocks
 interface MockSetupParams {
-  employees?: any[];
-  teams?: any[];
-  roles?: any[];
-  timeTypes?: any[];
-  generalAssignments?: any[];
-  leaves?: any[];
+  employees?: Array<
+    Employee & {
+      role: Role;
+      assignments: Array<{
+        startDate: Date;
+        endDate: Date | null;
+        team: Team & {
+          jiraBoards: Array<any>; // We can expand this if needed
+        };
+      }>;
+    }
+  >;
+  teams?: Array<Team>;
+  roles?: Array<Role>;
+  timeTypes?: Array<TimeType>;
+  generalAssignments?: Array<
+    GeneralTimeAssignment & {
+      timeType: TimeType;
+    }
+  >;
+  leaves?: Array<Leave>;
 }
 
 const setupCommonMocks = ({
