@@ -1,0 +1,27 @@
+name: PR Validation
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run Lint
+        run: npm run lint
+
+      - name: 🏗️ Build Project
+        run: npm run build
+
+      - name: 🧪 Run Tests
+        run: npm test
