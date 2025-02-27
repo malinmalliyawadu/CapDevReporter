@@ -1,7 +1,6 @@
 import { getTimeReportData } from "@/lib/timeReportService";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
-import Holidays from "date-holidays";
 import {
   createMockEmployee,
   createMockTimeType,
@@ -231,6 +230,167 @@ describe("timeReportService", () => {
           }),
         })
       );
+    });
+
+    it("should validate date range", async () => {
+      // Setup minimal mocks
+      (prisma.employee.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.team.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.role.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.timeType.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.generalTimeAssignment.findMany as jest.Mock).mockResolvedValue(
+        []
+      );
+      (prisma.leave.findMany as jest.Mock).mockResolvedValue([]);
+
+      // Test invalid date range (to before from)
+      const result = await getTimeReportData({
+        from: new Date("2024-01-15"),
+        to: new Date("2024-01-01"),
+      });
+
+      // Expect empty results for invalid date range
+      expect(result.timeReports).toHaveLength(0);
+    });
+
+    it("should handle multiple employees with different assignments", async () => {
+      const employee1 = createMockEmployee({
+        id: "emp1",
+        name: "Employee 1",
+        assignments: [
+          {
+            startDate: new Date("2024-01-01"),
+            endDate: null,
+            team: { id: "team1", name: "Team A", jiraBoards: [] },
+          },
+        ],
+      });
+
+      const employee2 = createMockEmployee({
+        id: "emp2",
+        name: "Employee 2",
+        assignments: [
+          {
+            startDate: new Date("2024-01-01"),
+            endDate: new Date("2024-01-15"),
+            team: { id: "team2", name: "Team B", jiraBoards: [] },
+          },
+          {
+            startDate: new Date("2024-01-16"),
+            endDate: null,
+            team: { id: "team3", name: "Team C", jiraBoards: [] },
+          },
+        ],
+      });
+
+      // Setup mocks
+      (prisma.employee.findMany as jest.Mock).mockResolvedValue([
+        employee1,
+        employee2,
+      ]);
+      (prisma.team.findMany as jest.Mock).mockResolvedValue([
+        employee1.assignments[0].team,
+        employee2.assignments[0].team,
+        employee2.assignments[1].team,
+      ]);
+      (prisma.role.findMany as jest.Mock).mockResolvedValue([
+        { id: "test-role-id", name: "Developer" },
+      ]);
+      (prisma.timeType.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.generalTimeAssignment.findMany as jest.Mock).mockResolvedValue(
+        []
+      );
+      (prisma.leave.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await getTimeReportData({
+        from: new Date("2024-01-01"),
+        to: new Date("2024-01-31"),
+      });
+
+      // Group reports by employee
+      const emp1Reports = result.timeReports.filter(
+        (r) => r.employeeId === "emp1"
+      );
+      const emp2Reports = result.timeReports.filter(
+        (r) => r.employeeId === "emp2"
+      );
+
+      // Each employee should have reports for each week
+      expect(emp1Reports.length).toBe(5); // 5 weeks in January 2024
+      expect(emp2Reports.length).toBe(5);
+
+      // Check employee 1's team assignment (should be consistent)
+      expect(emp1Reports.every((r) => r.team === "Team A")).toBe(true);
+
+      // Check employee 2's team changes
+      const emp2TeamProgression = emp2Reports.map((r) => r.team);
+      expect(emp2TeamProgression).toEqual([
+        "Team B", // Week 1 (Jan 1-7)
+        "Team B", // Week 2 (Jan 8-14)
+        "Team B, Team C", // Week 3 (Jan 15-21, transition week)
+        "Team C", // Week 4 (Jan 22-28)
+        "Team C", // Week 5 (Jan 29-31)
+      ]);
+    });
+
+    it("should handle holidays correctly", async () => {
+      // Mock the date-holidays to return true for a specific date
+      const mockHolidays = jest.requireMock("date-holidays");
+      mockHolidays.mockImplementation(() => ({
+        isHoliday: (date: Date) => {
+          const dateStr = format(date, "yyyy-MM-dd");
+          if (dateStr === "2024-01-15") {
+            return [
+              {
+                name: "Test Holiday",
+                type: "public",
+              },
+            ];
+          }
+          return false;
+        },
+      }));
+
+      const mockEmployee = createMockEmployee();
+      const regularWork = createMockTimeType({
+        id: "regular",
+        name: "Regular Work",
+      });
+      const leaveType = createMockTimeType({
+        id: "leave",
+        name: "Leave",
+      });
+
+      // Setup mocks
+      (prisma.employee.findMany as jest.Mock).mockResolvedValue([mockEmployee]);
+      (prisma.team.findMany as jest.Mock).mockResolvedValue([
+        mockEmployee.assignments[0].team,
+      ]);
+      (prisma.role.findMany as jest.Mock).mockResolvedValue([
+        mockEmployee.role,
+      ]);
+      (prisma.timeType.findMany as jest.Mock).mockResolvedValue([
+        regularWork,
+        leaveType,
+      ]);
+      (prisma.generalTimeAssignment.findMany as jest.Mock).mockResolvedValue([
+        createMockGeneralTimeAssignment({ timeType: regularWork }),
+      ]);
+      (prisma.leave.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await getTimeReportData({
+        from: new Date("2024-01-15"),
+        to: new Date("2024-01-15"),
+      });
+
+      const timeEntries = result.timeReports[0].timeEntries;
+      const holidayEntry = timeEntries.find(
+        (e) => e.isPublicHoliday && e.date === "2024-01-15"
+      );
+
+      expect(holidayEntry).toBeDefined();
+      expect(holidayEntry?.hours).toBe(8);
+      expect(holidayEntry?.publicHolidayName).toBe("Test Holiday");
     });
   });
 });
