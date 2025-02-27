@@ -53,6 +53,7 @@ export interface TimeType {
   id: string;
   name: string;
   description: string | null;
+  weeklySchedule: string | null;
   timeEntries: TimeEntry[];
   createdAt: Date;
   updatedAt: Date;

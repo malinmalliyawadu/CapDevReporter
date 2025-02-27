@@ -7,6 +7,7 @@ export async function createTimeType(data: {
   name: string;
   description?: string;
   isCapDev: boolean;
+  weeklySchedule?: string | null;
 }) {
   try {
     const timeType = await prisma.timeType.create({
@@ -14,6 +15,7 @@ export async function createTimeType(data: {
         name: data.name,
         description: data.description,
         isCapDev: data.isCapDev,
+        weeklySchedule: data.weeklySchedule,
       },
     });
     revalidatePath("/data/general-time-types");
