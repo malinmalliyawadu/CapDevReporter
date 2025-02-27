@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
+import { fetchTimeReportData } from "@/app/actions/reports";
 
 interface ReportData {
   timeReports: TimeReport[];
@@ -37,11 +38,14 @@ export function ReportDataDisplay({
   useEffect(() => {
     startTransition(async () => {
       try {
-        const response = await fetch(`/api/reports?${searchParams.toString()}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
-        const newData = await response.json();
+        // Convert searchParams to a plain object
+        const paramsObject: Record<string, string> = {};
+        searchParams.forEach((value, key) => {
+          paramsObject[key] = value;
+        });
+
+        // Use the server action instead of fetch
+        const newData = await fetchTimeReportData(paramsObject);
         setData(newData);
       } catch (error) {
         console.error("Error fetching data:", error);
