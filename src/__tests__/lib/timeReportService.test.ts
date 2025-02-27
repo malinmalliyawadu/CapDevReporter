@@ -327,8 +327,11 @@ describe("timeReportService", () => {
       expect(firstFridayEntry?.timeTypeId).toBe("tt1");
       expect(firstFridayEntry?.scheduledTimeTypeName).toBe("Friday Update");
       expect(firstFridayEntry?.hours).toBe(1);
-      // Also check that activityDate is set to the Friday
+
+      // Explicitly verify that activityDate is set to the Friday and matches the date field
       expect(firstFridayEntry?.activityDate).toBe(formattedFirstFriday);
+      expect(firstFridayEntry?.activityDate).toBe(firstFridayEntry?.date);
+      expect(firstFridayEntry?.activityDate).toBe("2025-01-03");
 
       // Verify the second Friday Update entry
       const secondFridayEntry = allEntries.find(
@@ -339,8 +342,11 @@ describe("timeReportService", () => {
       expect(secondFridayEntry?.timeTypeId).toBe("tt1");
       expect(secondFridayEntry?.scheduledTimeTypeName).toBe("Friday Update");
       expect(secondFridayEntry?.hours).toBe(1);
-      // Also check that activityDate is set to the Friday
+
+      // Explicitly verify that activityDate is set to the Friday and matches the date field
       expect(secondFridayEntry?.activityDate).toBe(formattedSecondFriday);
+      expect(secondFridayEntry?.activityDate).toBe(secondFridayEntry?.date);
+      expect(secondFridayEntry?.activityDate).toBe("2025-01-10");
 
       // Check total hours - should be 2 hours (1 hour for each Friday)
       expect(result.timeReports[0].fullHours).toBe(2);
@@ -433,8 +439,10 @@ describe("timeReportService", () => {
       expect(fridayEntry.scheduledTimeTypeName).toBe("Friday Update");
       expect(fridayEntry.hours).toBe(1);
 
-      // Also check that activityDate is set to the Friday
+      // Explicitly verify that activityDate is set to the Friday and matches the date field
       expect(fridayEntry.activityDate).toBe(formattedFriday);
+      expect(fridayEntry.activityDate).toBe(fridayEntry.date);
+      expect(fridayEntry.activityDate).toBe("2025-01-03");
 
       // Check total hours - should be 1 hour (just one Friday)
       expect(result.timeReports[0].fullHours).toBe(1);

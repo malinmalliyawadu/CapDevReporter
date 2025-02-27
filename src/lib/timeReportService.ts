@@ -233,10 +233,8 @@ export async function getTimeReportData(
 
     // Process each time type with a weekly schedule
     timeTypes.forEach((timeType) => {
-      // Use type assertion to access the weeklySchedule property
-      const weeklySchedule = parseWeeklySchedule(
-        (timeType as any).weeklySchedule
-      );
+      // Access the weeklySchedule property directly
+      const weeklySchedule = parseWeeklySchedule(timeType.weeklySchedule);
       if (!weeklySchedule) return;
 
       // For each date in the range
