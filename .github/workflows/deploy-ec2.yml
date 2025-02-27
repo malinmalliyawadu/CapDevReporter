@@ -191,14 +191,21 @@ jobs:
           NEW_CONTAINER="timesheet-app-${VERSION}"
           echo "Starting new container: $NEW_CONTAINER..."
 
-          # Ensure data directory exists
-          mkdir -p /app/data
+          # Ensure data directory exists with proper permissions
+          DATA_DIR="/home/$USER/timesheet-data"
+          echo "Creating data directory at $DATA_DIR..."
+          mkdir -p $DATA_DIR
 
           # Copy SQLite database from the current container if it exists
           if docker ps | grep -q timesheet-app; then
             echo "Ensuring database consistency..."
-            # Create a temporary backup of the database
-            docker exec timesheet-app sh -c "if [ -f /app/data/dev.db ]; then cp /app/data/dev.db /app/data/dev.db.backup; fi"
+            # Copy database from container to host if needed
+            if docker exec timesheet-app sh -c "[ -f /app/data/dev.db ]"; then
+              echo "Copying database from container to host..."
+              docker cp timesheet-app:/app/data/dev.db $DATA_DIR/dev.db
+              # Create a backup of the database
+              cp $DATA_DIR/dev.db $DATA_DIR/dev.db.backup
+            fi
           fi
 
           # Start new container with the new version
@@ -206,7 +213,7 @@ jobs:
             --name=$NEW_CONTAINER \
             --restart=always \
             --network=timesheet-network \
-            -v /app/data:/app/data \
+            -v $DATA_DIR:/app/data \
             -e NEXT_PUBLIC_JIRA_URL='${{ env.NEXT_PUBLIC_JIRA_URL }}' \
             -e APP_VERSION='${VERSION}' \
             -e JIRA_API_TOKEN='${{ secrets.JIRA_API_TOKEN }}' \
@@ -236,7 +243,10 @@ jobs:
               docker logs $NEW_CONTAINER
               docker rm -f $NEW_CONTAINER
               # Restore database backup if it exists
-              docker exec timesheet-app sh -c "if [ -f /app/data/dev.db.backup ]; then mv /app/data/dev.db.backup /app/data/dev.db; fi"
+              if [ -f "$DATA_DIR/dev.db.backup" ]; then
+                echo "Restoring database backup..."
+                mv "$DATA_DIR/dev.db.backup" "$DATA_DIR/dev.db"
+              fi
               exit 1
             fi
             
@@ -314,7 +324,10 @@ jobs:
                 sudo systemctl reload nginx || sudo service nginx reload
                 docker rm -f $NEW_CONTAINER
                 # Restore database backup if it exists
-                docker exec timesheet-app sh -c "if [ -f /app/data/dev.db.backup ]; then mv /app/data/dev.db.backup /app/data/dev.db; fi"
+                if [ -f "$DATA_DIR/dev.db.backup" ]; then
+                  echo "Restoring database backup..."
+                  mv "$DATA_DIR/dev.db.backup" "$DATA_DIR/dev.db"
+                fi
               fi
               exit 1
             fi
@@ -327,7 +340,10 @@ jobs:
           echo "Deployment successful, cleaning up old container..."
           if docker ps -a | grep -q "timesheet-app$"; then
             # Remove database backup if it exists
-            docker exec $NEW_CONTAINER sh -c "if [ -f /app/data/dev.db.backup ]; then rm /app/data/dev.db.backup; fi"
+            if [ -f "$DATA_DIR/dev.db.backup" ]; then
+              echo "Removing database backup..."
+              rm "$DATA_DIR/dev.db.backup"
+            fi
             
             # Stop and remove the old container
             docker stop timesheet-app
