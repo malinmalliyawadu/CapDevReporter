@@ -20,8 +20,15 @@ export const createTestContext = () => {
 
   beforeEach(() => {
     mockedPrisma.$transaction.mockImplementation(
-      <T>(fn: (prisma: Prisma.TransactionClient) => Promise<T>) =>
-        fn(mockedPrisma)
+      async (arg1: any, arg2?: any) => {
+        if (typeof arg1 === "function") {
+          // Handle the function overload
+          return arg1(mockedPrisma);
+        } else {
+          // Handle the array overload
+          return Promise.all(arg1);
+        }
+      }
     );
   });
 

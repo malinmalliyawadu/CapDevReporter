@@ -11,8 +11,6 @@ import {
 import type { TimeReport } from "@/types/timeReport";
 import { Badge } from "@/components/ui/badge";
 import {
-  TrendingDown,
-  TrendingUp,
   Clock,
   Briefcase,
   Calendar,
@@ -22,12 +20,7 @@ import {
   ExternalLink,
   RefreshCw,
 } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { useSyncDialog } from "@/contexts/dialog-context";
 import { format, endOfWeek } from "date-fns";
@@ -35,18 +28,11 @@ import { format, endOfWeek } from "date-fns";
 interface TimeReportExpandedRowProps {
   report: TimeReport;
   timeTypes: Array<{ id: string; name: string }>;
-  deviations: Array<{
-    timeTypeName: string;
-    expectedHours: number;
-    actualHours: number;
-    deviation: number;
-  }>;
 }
 
 export function TimeReportExpandedRow({
   report,
   timeTypes,
-  deviations,
 }: TimeReportExpandedRowProps) {
   const { openFromEvent: openSyncDialogFromEvent } = useSyncDialog();
 
@@ -211,46 +197,6 @@ export function TimeReportExpandedRow({
             </Table>
           </div>
         </div>
-
-        {deviations.length > 0 && (
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              Time Deviations
-            </h4>
-            <div className="flex gap-2 flex-wrap">
-              {deviations.map((deviation) => (
-                <Tooltip key={deviation.timeTypeName}>
-                  <TooltipTrigger>
-                    <Badge
-                      variant={
-                        deviation.deviation > 0 ? "default" : "secondary"
-                      }
-                      className="flex items-center gap-1"
-                    >
-                      {deviation.timeTypeName}
-                      {deviation.deviation > 0 ? (
-                        <TrendingUp className="h-3 w-3" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3" />
-                      )}
-                      <span className="ml-1">
-                        {deviation.deviation > 0 ? "+" : ""}
-                        {deviation.deviation.toFixed(1)}h
-                      </span>
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-sm">
-                      <p>Expected: {deviation.expectedHours.toFixed(1)}h</p>
-                      <p>Actual: {deviation.actualHours.toFixed(1)}h</p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </TooltipProvider>
   );

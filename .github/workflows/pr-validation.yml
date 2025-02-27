@@ -1,4 +1,4 @@
-name: PR Validation
+name: PR Validation 🛡️
 on:
   pull_request:
     branches: [main]
@@ -33,7 +33,6 @@ jobs:
           cat coverage/lcov-report/index.html | grep -A 3 "All files" > coverage-summary.txt
 
       - name: 📄 Post Test and Coverage Results
-        if: always()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

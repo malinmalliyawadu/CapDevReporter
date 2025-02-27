@@ -3,35 +3,19 @@
 import { TimeDistributionCharts } from "@/components/reports/TimeDistributionCharts";
 import { TimeReportTable } from "@/components/reports/TimeReportTable";
 import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
-import { TimeReport } from "@/types/timeReport";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { fetchTimeReportData } from "@/app/actions/reports";
-
-interface ReportData {
-  timeReports: TimeReport[];
-  timeTypes: Array<{ id: string; name: string }>;
-  generalAssignments: Array<{
-    id: string;
-    roleId: string;
-    timeTypeId: string;
-    hoursPerWeek: number;
-    timeType: {
-      id: string;
-      name: string;
-      isCapDev: boolean;
-    };
-  }>;
-}
+import { TimeReportData } from "@/lib/timeReportService";
 
 export function ReportDataDisplay({
   initialData,
 }: {
-  initialData: ReportData;
+  initialData: TimeReportData;
 }) {
-  const [data, setData] = useState<ReportData>(initialData);
+  const [data, setData] = useState<TimeReportData>(initialData);
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
 
@@ -79,13 +63,13 @@ export function ReportDataDisplay({
 
         <UtilizationIssues
           timeReports={data.timeReports}
+          timeTypes={data.timeTypes}
           generalTimeAssignments={data.generalAssignments}
         />
 
         <TimeReportTable
           timeReports={data.timeReports}
           timeTypes={data.timeTypes}
-          generalTimeAssignments={data.generalAssignments}
         />
       </div>
     </div>

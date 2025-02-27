@@ -58,7 +58,7 @@ interface MockSetupParams {
         startDate: Date;
         endDate: Date | null;
         team: Team & {
-          jiraBoards: Array<any>; // We can expand this if needed
+          jiraBoards: Array<unknown>; // We can expand this if needed
         };
       }>;
     }

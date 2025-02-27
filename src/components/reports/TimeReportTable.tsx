@@ -24,27 +24,16 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { createColumns } from "./TableColumns";
+import { TimeType } from "@prisma/client";
 
 interface TimeReportTableProps {
   timeReports: TimeReport[];
-  timeTypes: Array<{ id: string; name: string }>;
-  generalTimeAssignments: Array<{
-    id: string;
-    roleId: string;
-    timeTypeId: string;
-    hoursPerWeek: number;
-    timeType: {
-      id: string;
-      name: string;
-      isCapDev: boolean;
-    };
-  }>;
+  timeTypes: TimeType[];
 }
 
 export function TimeReportTable({
   timeReports,
   timeTypes,
-  generalTimeAssignments,
 }: TimeReportTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
@@ -64,39 +53,6 @@ export function TimeReportTable({
       expanded,
     },
   });
-
-  const getTimeTypeDeviations = (report: TimeReport) => {
-    const roleAssignments = generalTimeAssignments.filter(
-      (a) => a.roleId === report.roleId
-    );
-
-    const deviations: Array<{
-      timeTypeName: string;
-      expectedHours: number;
-      actualHours: number;
-      deviation: number;
-    }> = [];
-
-    roleAssignments.forEach((assignment) => {
-      const timeEntry = report.timeEntries.find(
-        (e) => e.timeTypeId === assignment.timeTypeId
-      );
-      const actualHours = timeEntry?.hours ?? 0;
-      const deviation = actualHours - assignment.hoursPerWeek;
-
-      if (Math.abs(deviation) > 4) {
-        // Only show significant deviations
-        deviations.push({
-          timeTypeName: assignment.timeType.name,
-          expectedHours: assignment.hoursPerWeek,
-          actualHours,
-          deviation,
-        });
-      }
-    });
-
-    return deviations;
-  };
 
   return (
     <Card>
@@ -151,7 +107,6 @@ export function TimeReportTable({
                         <TimeReportExpandedRow
                           report={row.original}
                           timeTypes={timeTypes}
-                          deviations={getTimeTypeDeviations(row.original)}
                         />
                       </TableCell>
                     </TableRow>

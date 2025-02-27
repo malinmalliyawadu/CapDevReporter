@@ -9,25 +9,19 @@ import {
 } from "@/components/ui/accordion";
 import type { TimeReport } from "@/types/timeReport";
 import { format } from "date-fns";
+import { GeneralTimeAssignment } from "@prisma/client";
+import { TimeType } from "@prisma/client";
 
 interface UtilizationIssuesProps {
   timeReports: TimeReport[];
-  generalTimeAssignments: Array<{
-    id: string;
-    roleId: string;
-    timeTypeId: string;
-    hoursPerWeek: number;
-    timeType: {
-      id: string;
-      name: string;
-      isCapDev: boolean;
-    };
-  }>;
+  generalTimeAssignments: GeneralTimeAssignment[];
+  timeTypes: TimeType[];
 }
 
 export function UtilizationIssues({
   timeReports,
   generalTimeAssignments,
+  timeTypes,
 }: UtilizationIssuesProps) {
   const getDeviationReason = (report: TimeReport) => {
     const roleAssignments = generalTimeAssignments.filter(
@@ -56,8 +50,10 @@ export function UtilizationIssues({
         (e) => e.timeTypeId === assignment.timeTypeId
       );
       const actualHours = timeEntry?.hours ?? 0;
+      const timeType = timeTypes.find((tt) => tt.id === assignment.timeTypeId);
+      const timeTypeName = timeType ? timeType.name : "Unknown";
       return {
-        timeTypeName: assignment.timeType.name,
+        timeTypeName,
         expected: assignment.hoursPerWeek,
         actual: actualHours,
         deviation: actualHours - assignment.hoursPerWeek,

@@ -1,14 +1,19 @@
 import {
   format,
   getDay,
-  startOfYear,
   eachDayOfInterval,
   startOfWeek,
   endOfWeek,
   isWeekend,
 } from "date-fns";
 import { prisma } from "@/lib/prisma";
-import { Prisma, TimeType } from "@prisma/client";
+import {
+  GeneralTimeAssignment,
+  Prisma,
+  Role,
+  Team,
+  TimeType,
+} from "@prisma/client";
 import { TimeReport, TimeReportEntry } from "@/types/timeReport";
 import Holidays from "date-holidays";
 
@@ -22,10 +27,10 @@ export interface TimeReportParams {
 
 export interface TimeReportData {
   timeReports: TimeReport[];
-  teams: any[];
-  roles: any[];
-  timeTypes: { id: string; name: string }[];
-  generalAssignments: any[];
+  teams: Team[];
+  roles: Role[];
+  timeTypes: TimeType[];
+  generalAssignments: GeneralTimeAssignment[];
 }
 
 // Map day names to day numbers (0 = Sunday, 1 = Monday, etc.)
@@ -199,7 +204,7 @@ export async function getTimeReportData(
   const timeReportsPromises = employees.map(async (employee) => {
     // Process each week
     const employeeReports = await Promise.all(
-      weeks.map(async (weekKey) => {
+      weeks.map(async (weekKey: string) => {
         const reportKey = `${employee.id}-${weekKey}`;
         const weekStart = new Date(weekKey);
         const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
@@ -214,17 +219,6 @@ export async function getTimeReportData(
           const assignmentEnd = a.endDate ? new Date(a.endDate) : new Date();
           return assignmentStart <= weekEnd && assignmentEnd >= weekStart;
         });
-
-        // Calculate working days (excluding weekends and public holidays)
-        const workingDaysInWeek = daysInWeek.filter((date) => {
-          if (isWeekend(date)) return false;
-          const holiday = holidays.isHoliday(date);
-          return !holiday;
-        }).length;
-
-        // Calculate available hours for work based on employee's hours per week setting
-        const hoursPerDay = employee.hoursPerWeek / 5; // Assuming 5-day work week
-        const availableHours = workingDaysInWeek * hoursPerDay;
 
         // Initialize time report
         const report: TimeReport = {
@@ -503,7 +497,7 @@ export async function getTimeReportData(
     timeReports,
     teams,
     roles,
-    timeTypes: timeTypes.map((tt) => ({ id: tt.id, name: tt.name })),
+    timeTypes,
     generalAssignments,
   };
 }
