@@ -36,6 +36,7 @@ model TimeType {
   name               String                  @unique
   description        String?
   isCapDev           Boolean                 @default(false)
+  weeklySchedule     String?
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
   generalAssignments GeneralTimeAssignment[]

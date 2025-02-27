@@ -28,6 +28,7 @@ export interface TimeType {
   name: string;
   description: string | null;
   isCapDev: boolean;
+  weeklySchedule?: string | null;
 }
 
 export interface Team {
@@ -58,4 +59,6 @@ export interface TimeReportEntry {
   date: string;
   teamName?: string;
   activityDate?: string;
+  isScheduled?: boolean;
+  scheduledTimeTypeName?: string;
 }
