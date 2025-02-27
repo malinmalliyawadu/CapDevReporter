@@ -27,19 +27,5 @@ jobs:
         run: npm run build
 
       - name: 🧪 Run Tests and Generate Coverage
-        id: run-tests
         run: |
-          npm test -- --coverage | tee test-results.txt
-          cat coverage/lcov-report/index.html | grep -A 3 "All files" > coverage-summary.txt
-
-      - name: 📄 Post Test and Coverage Results
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TEST_RESULTS=$(cat test-results.txt)
-          COVERAGE_RESULTS=$(cat coverage-summary.txt)
-          PR_NUMBER=$(echo ${{ github.event.pull_request.number }})
-          curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            -X POST \
-            -d "{\"body\": \"Test Results:\n\`\`\`\n$TEST_RESULTS\n\`\`\`\nCoverage Summary:\n\`\`\`\n$COVERAGE_RESULTS\n\`\`\`\"}" \
-            "https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUMBER/comments"
+          npm test
