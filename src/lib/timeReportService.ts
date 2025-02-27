@@ -35,7 +35,7 @@ const dayNameToNumber: Record<string, number> = {
  */
 function parseWeeklySchedule(
   weeklySchedule: string | null
-): { days: string[]; hours?: number } | null {
+): { days: string[] } | null {
   if (!weeklySchedule) return null;
 
   try {
@@ -253,7 +253,7 @@ export async function getTimeReportData(
           // Get the hours from the general assignment or use default (8 hours)
           const scheduledHours = generalAssignment
             ? generalAssignment.hoursPerWeek
-            : weeklySchedule.hours || 8;
+            : 8;
 
           // Create an entry for this scheduled time type
           const scheduledEntry: TimeReportEntry = {

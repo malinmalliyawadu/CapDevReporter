@@ -115,9 +115,6 @@ export function TimeReportExpandedRow({
                     ? `Project - ${entry.projectName}`
                     : timeType;
 
-                  if (entry.isScheduled) {
-                    console.log(entry);
-                  }
                   return (
                     <TableRow key={entry.id} className="hover:bg-muted/50">
                       <TableCell className="py-3">
