@@ -41,6 +41,34 @@ jest.mock("date-holidays", () => {
   });
 });
 
+// Helper function to set up common mocks
+interface MockSetupParams {
+  employees?: any[];
+  teams?: any[];
+  roles?: any[];
+  timeTypes?: any[];
+  generalAssignments?: any[];
+  leaves?: any[];
+}
+
+const setupCommonMocks = ({
+  employees = [],
+  teams = [],
+  roles = [],
+  timeTypes = [],
+  generalAssignments = [],
+  leaves = [],
+}: MockSetupParams = {}) => {
+  (prisma.employee.findMany as jest.Mock).mockResolvedValue(employees);
+  (prisma.team.findMany as jest.Mock).mockResolvedValue(teams);
+  (prisma.role.findMany as jest.Mock).mockResolvedValue(roles);
+  (prisma.timeType.findMany as jest.Mock).mockResolvedValue(timeTypes);
+  (prisma.generalTimeAssignment.findMany as jest.Mock).mockResolvedValue(
+    generalAssignments
+  );
+  (prisma.leave.findMany as jest.Mock).mockResolvedValue(leaves);
+};
+
 describe("timeReportService", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -53,19 +81,15 @@ describe("timeReportService", () => {
       const mockTimeType = createMockTimeType();
       const mockGTA = createMockGeneralTimeAssignment();
 
-      // Setup mocks
-      (prisma.employee.findMany as jest.Mock).mockResolvedValue([mockEmployee]);
-      (prisma.team.findMany as jest.Mock).mockResolvedValue([
-        mockEmployee.assignments[0].team,
-      ]);
-      (prisma.role.findMany as jest.Mock).mockResolvedValue([
-        mockEmployee.role,
-      ]);
-      (prisma.timeType.findMany as jest.Mock).mockResolvedValue([mockTimeType]);
-      (prisma.generalTimeAssignment.findMany as jest.Mock).mockResolvedValue([
-        mockGTA,
-      ]);
-      (prisma.leave.findMany as jest.Mock).mockResolvedValue([]);
+      // Setup mocks using helper
+      setupCommonMocks({
+        employees: [mockEmployee],
+        teams: [mockEmployee.assignments[0].team],
+        roles: [mockEmployee.role],
+        timeTypes: [mockTimeType],
+        generalAssignments: [mockGTA],
+        leaves: [],
+      });
 
       // Call the function
       const result = await getTimeReportData({
@@ -96,19 +120,14 @@ describe("timeReportService", () => {
         hoursPerWeek: 8,
       });
 
-      // Setup mocks
-      (prisma.employee.findMany as jest.Mock).mockResolvedValue([mockEmployee]);
-      (prisma.team.findMany as jest.Mock).mockResolvedValue([
-        mockEmployee.assignments[0].team,
-      ]);
-      (prisma.role.findMany as jest.Mock).mockResolvedValue([
-        mockEmployee.role,
-      ]);
-      (prisma.timeType.findMany as jest.Mock).mockResolvedValue([mockTimeType]);
-      (prisma.generalTimeAssignment.findMany as jest.Mock).mockResolvedValue([
-        mockGTA,
-      ]);
-      (prisma.leave.findMany as jest.Mock).mockResolvedValue([]);
+      // Setup mocks using helper
+      setupCommonMocks({
+        employees: [mockEmployee],
+        teams: [mockEmployee.assignments[0].team],
+        roles: [mockEmployee.role],
+        timeTypes: [mockTimeType],
+        generalAssignments: [mockGTA],
+      });
 
       // Test for a week containing Friday
       const result = await getTimeReportData({
@@ -140,19 +159,13 @@ describe("timeReportService", () => {
         status: "APPROVED",
       };
 
-      // Setup mocks
-      (prisma.employee.findMany as jest.Mock).mockResolvedValue([mockEmployee]);
-      (prisma.team.findMany as jest.Mock).mockResolvedValue([
-        mockEmployee.assignments[0].team,
-      ]);
-      (prisma.role.findMany as jest.Mock).mockResolvedValue([
-        mockEmployee.role,
-      ]);
-      (prisma.timeType.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.generalTimeAssignment.findMany as jest.Mock).mockResolvedValue(
-        []
-      );
-      (prisma.leave.findMany as jest.Mock).mockResolvedValue([mockLeave]);
+      // Setup mocks using helper
+      setupCommonMocks({
+        employees: [mockEmployee],
+        teams: [mockEmployee.assignments[0].team],
+        roles: [mockEmployee.role],
+        leaves: [mockLeave],
+      });
 
       // Test for the week containing the leave
       const result = await getTimeReportData({
@@ -194,19 +207,12 @@ describe("timeReportService", () => {
         payrollId: "P123",
       });
 
-      // Setup mocks with initial data
-      (prisma.employee.findMany as jest.Mock).mockResolvedValue([mockEmployee]);
-      (prisma.team.findMany as jest.Mock).mockResolvedValue([
-        mockEmployee.assignments[0].team,
-      ]);
-      (prisma.role.findMany as jest.Mock).mockResolvedValue([
-        mockEmployee.role,
-      ]);
-      (prisma.timeType.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.generalTimeAssignment.findMany as jest.Mock).mockResolvedValue(
-        []
-      );
-      (prisma.leave.findMany as jest.Mock).mockResolvedValue([]);
+      // Setup mocks using helper
+      setupCommonMocks({
+        employees: [mockEmployee],
+        teams: [mockEmployee.assignments[0].team],
+        roles: [mockEmployee.role],
+      });
 
       // Call with search parameter
       await getTimeReportData({
@@ -233,15 +239,8 @@ describe("timeReportService", () => {
     });
 
     it("should validate date range", async () => {
-      // Setup minimal mocks
-      (prisma.employee.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.team.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.role.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.timeType.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.generalTimeAssignment.findMany as jest.Mock).mockResolvedValue(
-        []
-      );
-      (prisma.leave.findMany as jest.Mock).mockResolvedValue([]);
+      // Setup minimal mocks using helper
+      setupCommonMocks();
 
       // Test invalid date range (to before from)
       const result = await getTimeReportData({
@@ -283,24 +282,16 @@ describe("timeReportService", () => {
         ],
       });
 
-      // Setup mocks
-      (prisma.employee.findMany as jest.Mock).mockResolvedValue([
-        employee1,
-        employee2,
-      ]);
-      (prisma.team.findMany as jest.Mock).mockResolvedValue([
-        employee1.assignments[0].team,
-        employee2.assignments[0].team,
-        employee2.assignments[1].team,
-      ]);
-      (prisma.role.findMany as jest.Mock).mockResolvedValue([
-        { id: "test-role-id", name: "Developer" },
-      ]);
-      (prisma.timeType.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.generalTimeAssignment.findMany as jest.Mock).mockResolvedValue(
-        []
-      );
-      (prisma.leave.findMany as jest.Mock).mockResolvedValue([]);
+      // Setup mocks using helper
+      setupCommonMocks({
+        employees: [employee1, employee2],
+        teams: [
+          employee1.assignments[0].team,
+          employee2.assignments[0].team,
+          employee2.assignments[1].team,
+        ],
+        roles: [{ id: "test-role-id", name: "Developer" }],
+      });
 
       const result = await getTimeReportData({
         from: new Date("2024-01-01"),
@@ -361,22 +352,16 @@ describe("timeReportService", () => {
         name: "Leave",
       });
 
-      // Setup mocks
-      (prisma.employee.findMany as jest.Mock).mockResolvedValue([mockEmployee]);
-      (prisma.team.findMany as jest.Mock).mockResolvedValue([
-        mockEmployee.assignments[0].team,
-      ]);
-      (prisma.role.findMany as jest.Mock).mockResolvedValue([
-        mockEmployee.role,
-      ]);
-      (prisma.timeType.findMany as jest.Mock).mockResolvedValue([
-        regularWork,
-        leaveType,
-      ]);
-      (prisma.generalTimeAssignment.findMany as jest.Mock).mockResolvedValue([
-        createMockGeneralTimeAssignment({ timeType: regularWork }),
-      ]);
-      (prisma.leave.findMany as jest.Mock).mockResolvedValue([]);
+      // Setup mocks using helper
+      setupCommonMocks({
+        employees: [mockEmployee],
+        teams: [mockEmployee.assignments[0].team],
+        roles: [mockEmployee.role],
+        timeTypes: [regularWork, leaveType],
+        generalAssignments: [
+          createMockGeneralTimeAssignment({ timeType: regularWork }),
+        ],
+      });
 
       const result = await getTimeReportData({
         from: new Date("2024-01-15"),
