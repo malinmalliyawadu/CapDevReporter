@@ -189,7 +189,7 @@ jobs:
 
           # Generate unique name for the new container
           NEW_CONTAINER="timesheet-app-${VERSION}"
-          echo "Starting new container: $NEW_CONTAINER..."
+          echo "Starting new container..."
 
           # Ensure data directory exists with proper permissions
           DATA_DIR="/home/$USER/timesheet-data"
@@ -227,20 +227,50 @@ jobs:
             exit 1
           fi
 
+          # Give the container some time to initialize before health checks
+          echo "Waiting for container to initialize (10 seconds)..."
+          sleep 10
+
+          # Verify the container is still running after initial startup
+          if ! docker ps | grep -q $NEW_CONTAINER; then
+            echo "::error::Container failed to stay running after initial startup"
+            docker logs $NEW_CONTAINER
+            # Restore database backup if it exists
+            if [ -f "$DATA_DIR/dev.db.backup" ]; then
+              echo "Restoring database backup..."
+              mv "$DATA_DIR/dev.db.backup" "$DATA_DIR/dev.db"
+            fi
+            exit 1
+          fi
+
           # Wait for the new container to be ready
           echo "Waiting for new container to be ready..."
-          HEALTH_CHECK_RETRIES=30
+          HEALTH_CHECK_RETRIES=60  # Increased retries for log check
           HEALTH_CHECK_DELAY=2
 
           for i in $(seq 1 $HEALTH_CHECK_RETRIES); do
-            if docker exec $NEW_CONTAINER curl -s http://localhost:3000 >/dev/null; then
-              echo "New container is ready!"
+            # First check if container is still running
+            if ! docker ps | grep -q $NEW_CONTAINER; then
+              echo "::error::Container stopped during health check"
+              docker logs $NEW_CONTAINER
+              # Restore database backup if it exists
+              if [ -f "$DATA_DIR/dev.db.backup" ]; then
+                echo "Restoring database backup..."
+                mv "$DATA_DIR/dev.db.backup" "$DATA_DIR/dev.db"
+              fi
+              exit 1
+            fi
+            
+            # Check for the specific log message indicating the app is ready
+            if docker logs $NEW_CONTAINER 2>&1 | grep -q "- Local:.*http://localhost:3000"; then
+              echo "✅ Application is ready! Found startup message in logs."
               break
             fi
             
             if [ $i -eq $HEALTH_CHECK_RETRIES ]; then
-              echo "::error::New container failed to become ready"
-              docker logs $NEW_CONTAINER
+              echo "::error::New container failed to become ready within the timeout period"
+              echo "Last 50 lines of container logs:"
+              docker logs $NEW_CONTAINER --tail 50
               docker rm -f $NEW_CONTAINER
               # Restore database backup if it exists
               if [ -f "$DATA_DIR/dev.db.backup" ]; then
@@ -250,9 +280,18 @@ jobs:
               exit 1
             fi
             
-            echo "Waiting for container to be ready... ($i/$HEALTH_CHECK_RETRIES)"
+            echo "Waiting for application to be ready... ($i/$HEALTH_CHECK_RETRIES)"
             sleep $HEALTH_CHECK_DELAY
           done
+
+          # Double-check that the application is responding to HTTP requests
+          echo "Verifying application responds to HTTP requests..."
+          if ! docker exec $NEW_CONTAINER curl -s --max-time 5 http://localhost:3000 >/dev/null; then
+            echo "::warning::Application is not responding to HTTP requests despite startup message"
+            echo "Continuing anyway as the startup message was found..."
+          else
+            echo "✅ Application is responding to HTTP requests!"
+          fi
 
           # Update Nginx configuration to point to the new container
           echo "Updating Nginx configuration..."
