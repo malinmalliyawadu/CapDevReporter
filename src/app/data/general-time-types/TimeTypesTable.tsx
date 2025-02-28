@@ -9,6 +9,7 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  Calendar,
 } from "lucide-react";
 import {
   Table,
@@ -29,6 +30,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
   useReactTable,
@@ -47,6 +49,7 @@ interface TimeType {
   name: string;
   description: string | null;
   isCapDev: boolean;
+  weeklySchedule: string | null;
   generalAssignments: {
     id: string;
     role: {
@@ -70,6 +73,8 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
   const [newTypeName, setNewTypeName] = useState("");
   const [newTypeDescription, setNewTypeDescription] = useState("");
   const [isCapDev, setIsCapDev] = useState(false);
+  const [isWeeklyScheduled, setIsWeeklyScheduled] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [timeTypeToDelete, setTimeTypeToDelete] = useState<TimeType | null>(
@@ -77,6 +82,16 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
   );
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+
+  const weekDays = [
+    { id: "monday", label: "Monday" },
+    { id: "tuesday", label: "Tuesday" },
+    { id: "wednesday", label: "Wednesday" },
+    { id: "thursday", label: "Thursday" },
+    { id: "friday", label: "Friday" },
+    { id: "saturday", label: "Saturday" },
+    { id: "sunday", label: "Sunday" },
+  ];
 
   const columns: ColumnDef<TimeType>[] = [
     {
@@ -110,6 +125,36 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
           {row.original.description || "-"}
         </span>
       ),
+    },
+    {
+      id: "schedule",
+      header: "Schedule",
+      cell: ({ row }) => {
+        const weeklySchedule = row.original.weeklySchedule
+          ? JSON.parse(row.original.weeklySchedule)
+          : null;
+
+        if (
+          !weeklySchedule ||
+          !weeklySchedule.days ||
+          weeklySchedule.days.length === 0
+        ) {
+          return <span className="text-muted-foreground">Every day</span>;
+        }
+
+        return (
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-blue-500" />
+            <span>
+              {weeklySchedule.days
+                .map(
+                  (day: string) => day.charAt(0).toUpperCase() + day.slice(1)
+                )
+                .join(", ")}
+            </span>
+          </div>
+        );
+      },
     },
     {
       id: "usage",
@@ -287,10 +332,16 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
       return;
     }
 
+    const weeklyScheduleData =
+      isWeeklyScheduled && selectedDays.length > 0
+        ? JSON.stringify({ days: selectedDays })
+        : null;
+
     const result = await actions.createTimeType({
       name: newTypeName.trim(),
       description: newTypeDescription.trim() || undefined,
       isCapDev,
+      weeklySchedule: weeklyScheduleData,
     });
 
     if (result.success && result.id) {
@@ -299,6 +350,7 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
         name: newTypeName.trim(),
         description: newTypeDescription.trim() || null,
         isCapDev,
+        weeklySchedule: weeklyScheduleData,
         generalAssignments: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -308,6 +360,8 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
       setNewTypeName("");
       setNewTypeDescription("");
       setIsCapDev(false);
+      setIsWeeklyScheduled(false);
+      setSelectedDays([]);
       router.refresh();
       toast({
         title: "Success",
@@ -448,6 +502,43 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
               />
               <Label htmlFor="cap-dev">Capital Development</Label>
             </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="weekly-schedule"
+                checked={isWeeklyScheduled}
+                onCheckedChange={setIsWeeklyScheduled}
+              />
+              <Label htmlFor="weekly-schedule">Specific Weekly Schedule</Label>
+            </div>
+            {isWeeklyScheduled && (
+              <div className="grid gap-2 pl-6 mt-1">
+                <Label className="text-sm text-muted-foreground mb-1">
+                  Select days when this time type applies:
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {weekDays.map((day) => (
+                    <div key={day.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={day.id}
+                        checked={selectedDays.includes(day.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedDays([...selectedDays, day.id]);
+                          } else {
+                            setSelectedDays(
+                              selectedDays.filter((d) => d !== day.id)
+                            );
+                          }
+                        }}
+                      />
+                      <Label htmlFor={day.id} className="text-sm">
+                        {day.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -457,11 +548,19 @@ export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
                 setNewTypeName("");
                 setNewTypeDescription("");
                 setIsCapDev(false);
+                setIsWeeklyScheduled(false);
+                setSelectedDays([]);
               }}
             >
               Cancel
             </Button>
-            <Button onClick={handleAddTimeType} disabled={!newTypeName.trim()}>
+            <Button
+              onClick={handleAddTimeType}
+              disabled={
+                !newTypeName.trim() ||
+                (isWeeklyScheduled && selectedDays.length === 0)
+              }
+            >
               Add Time Type
             </Button>
           </DialogFooter>

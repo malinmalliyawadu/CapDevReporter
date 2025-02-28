@@ -402,6 +402,7 @@ async function main() {
       name: "Friday Update",
       description: "Weekly team updates and reporting",
       isCapDev: false,
+      weeklySchedule: JSON.stringify({ days: ["friday"] }),
     },
   });
 

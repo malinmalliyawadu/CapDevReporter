@@ -11,8 +11,6 @@ import {
 import type { TimeReport } from "@/types/timeReport";
 import { Badge } from "@/components/ui/badge";
 import {
-  TrendingDown,
-  TrendingUp,
   Clock,
   Briefcase,
   Calendar,
@@ -22,30 +20,19 @@ import {
   ExternalLink,
   RefreshCw,
 } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { useSyncDialog } from "@/contexts/dialog-context";
+import { format, endOfWeek } from "date-fns";
 
 interface TimeReportExpandedRowProps {
   report: TimeReport;
   timeTypes: Array<{ id: string; name: string }>;
-  deviations: Array<{
-    timeTypeName: string;
-    expectedHours: number;
-    actualHours: number;
-    deviation: number;
-  }>;
 }
 
 export function TimeReportExpandedRow({
   report,
   timeTypes,
-  deviations,
 }: TimeReportExpandedRowProps) {
   const { openFromEvent: openSyncDialogFromEvent } = useSyncDialog();
 
@@ -63,7 +50,32 @@ export function TimeReportExpandedRow({
     if (entry.projectName)
       return <Briefcase className="h-4 w-4 text-violet-500" />;
     if (entry.isCapDev) return <Code className="h-4 w-4 text-green-500" />;
+    if (entry.isRolledUp) return <Clock className="h-4 w-4 text-orange-500" />;
     return <Wrench className="h-4 w-4 text-slate-500" />;
+  };
+
+  const formatActivityDate = (dateString?: string, isRolledUp?: boolean) => {
+    if (!dateString) return "-";
+    try {
+      // Parse the date string in the format "yyyy-MM-dd"
+      const [year, month, day] = dateString.split("-").map(Number);
+      const date = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+
+      // For rolled-up entries, show that it applies to the whole week
+      if (isRolledUp) {
+        const weekStart = format(date, "MMM dd");
+        const weekEnd = format(
+          endOfWeek(date, { weekStartsOn: 1 }),
+          "MMM dd, yyyy"
+        );
+        return `Week of ${weekStart} - ${weekEnd}`;
+      }
+
+      return format(date, "MMM dd, yyyy");
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return dateString;
+    }
   };
 
   return (
@@ -119,6 +131,8 @@ export function TimeReportExpandedRow({
                             >
                               Project - {entry.projectName}
                             </a>
+                          ) : entry.isRolledUp ? (
+                            `${displayType} (Weekly)`
                           ) : (
                             displayType
                           )}
@@ -145,7 +159,10 @@ export function TimeReportExpandedRow({
                       </TableCell>
                       <TableCell className="py-3">
                         <span className="text-sm text-muted-foreground">
-                          {entry.activityDate}
+                          {formatActivityDate(
+                            entry.activityDate,
+                            entry.isRolledUp
+                          )}
                         </span>
                       </TableCell>
                       <TableCell className="py-3 text-right">
@@ -180,46 +197,6 @@ export function TimeReportExpandedRow({
             </Table>
           </div>
         </div>
-
-        {deviations.length > 0 && (
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              Time Deviations
-            </h4>
-            <div className="flex gap-2 flex-wrap">
-              {deviations.map((deviation) => (
-                <Tooltip key={deviation.timeTypeName}>
-                  <TooltipTrigger>
-                    <Badge
-                      variant={
-                        deviation.deviation > 0 ? "default" : "secondary"
-                      }
-                      className="flex items-center gap-1"
-                    >
-                      {deviation.timeTypeName}
-                      {deviation.deviation > 0 ? (
-                        <TrendingUp className="h-3 w-3" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3" />
-                      )}
-                      <span className="ml-1">
-                        {deviation.deviation > 0 ? "+" : ""}
-                        {deviation.deviation.toFixed(1)}h
-                      </span>
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-sm">
-                      <p>Expected: {deviation.expectedHours.toFixed(1)}h</p>
-                      <p>Actual: {deviation.actualHours.toFixed(1)}h</p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </TooltipProvider>
   );

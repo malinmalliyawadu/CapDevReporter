@@ -3,45 +3,33 @@
 import { TimeDistributionCharts } from "@/components/reports/TimeDistributionCharts";
 import { TimeReportTable } from "@/components/reports/TimeReportTable";
 import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
-import { TimeReport } from "@/types/timeReport";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
-
-interface ReportData {
-  timeReports: TimeReport[];
-  timeTypes: Array<{ id: string; name: string }>;
-  generalAssignments: Array<{
-    id: string;
-    roleId: string;
-    timeTypeId: string;
-    hoursPerWeek: number;
-    timeType: {
-      id: string;
-      name: string;
-      isCapDev: boolean;
-    };
-  }>;
-}
+import { fetchTimeReportData } from "@/app/actions/reports";
+import { TimeReportData } from "@/lib/timeReportService";
 
 export function ReportDataDisplay({
   initialData,
 }: {
-  initialData: ReportData;
+  initialData: TimeReportData;
 }) {
-  const [data, setData] = useState<ReportData>(initialData);
+  const [data, setData] = useState<TimeReportData>(initialData);
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     startTransition(async () => {
       try {
-        const response = await fetch(`/api/reports?${searchParams.toString()}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
-        const newData = await response.json();
+        // Convert searchParams to a plain object
+        const paramsObject: Record<string, string> = {};
+        searchParams.forEach((value, key) => {
+          paramsObject[key] = value;
+        });
+
+        // Use the server action instead of fetch
+        const newData = await fetchTimeReportData(paramsObject);
         setData(newData);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -75,13 +63,13 @@ export function ReportDataDisplay({
 
         <UtilizationIssues
           timeReports={data.timeReports}
+          timeTypes={data.timeTypes}
           generalTimeAssignments={data.generalAssignments}
         />
 
         <TimeReportTable
           timeReports={data.timeReports}
           timeTypes={data.timeTypes}
-          generalTimeAssignments={data.generalAssignments}
         />
       </div>
     </div>
