@@ -76,8 +76,6 @@ export function EmployeesTable({
 }: EmployeesTableProps) {
   const { toast } = useToast();
   const [employees] = useState(initialEmployees);
-  const [lastSynced, setLastSynced] = useState<Date | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -213,32 +211,6 @@ export function EmployeesTable({
     },
   });
 
-  const handleSync = async () => {
-    try {
-      setIsSyncing(true);
-      const result = await syncEmployees();
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
-
-      setLastSynced(new Date(result.data?.timestamp ?? Date.now()));
-      toast({
-        title: "Success",
-        description: "Employees synced with iPayroll",
-      });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to sync employees",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
   const handleUpdateHours = async () => {
     if (!editingEmployee) return;
 
@@ -311,19 +283,6 @@ export function EmployeesTable({
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex items-center gap-4">
-          {lastSynced && (
-            <span className="text-sm text-muted-foreground">
-              Last synced: {lastSynced.toLocaleString("en-NZ")}
-            </span>
-          )}
-          <Button onClick={handleSync} disabled={isSyncing}>
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
-            />
-            Sync with iPayroll
-          </Button>
         </div>
       </div>
 
