@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { exchangeCodeForTokens } from "@/utils/ipayroll";
 import { validateState, saveToken } from "@/lib/session";
 
-// Handler for GET requests to /api/auth/callback
+// Handler for GET requests to /api/auth/ipayroll/callback
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  console.log("[API] Processing OAuth callback");
+  console.log("[API] Processing iPayroll OAuth callback");
   try {
     // Get the URL parameters
     const searchParams = request.nextUrl.searchParams;
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const error = searchParams.get("error");
 
     console.log(
-      `[API] Callback parameters - code: ${
+      `[API] iPayroll callback parameters - code: ${
         code ? "present" : "missing"
       }, state: ${state ? state.substring(0, 10) + "..." : "missing"}, error: ${
         error || "none"
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Check if there was an error from the OAuth server
     if (error) {
-      console.error(`[API] OAuth server returned an error: ${error}`);
+      console.error(`[API] iPayroll OAuth server returned an error: ${error}`);
       return NextResponse.redirect(
         new URL(`/?error=${encodeURIComponent(error)}`, request.url)
       );
@@ -71,27 +71,29 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     // Exchange the authorization code for tokens
-    console.log(`[API] Exchanging code for tokens: ${code.substring(0, 5)}...`);
+    console.log(
+      `[API] Exchanging code for iPayroll tokens: ${code.substring(0, 5)}...`
+    );
     const token = await exchangeCodeForTokens(code);
     console.log(
-      `[API] Received tokens, expires at: ${new Date(
+      `[API] Received iPayroll tokens, expires at: ${new Date(
         token.expiresAt
       ).toISOString()}`
     );
 
     // Save the token in server-side storage
-    console.log("[API] Saving tokens to session");
+    console.log("[API] Saving iPayroll tokens to session");
     saveToken(token);
 
     // Redirect to the callback URL
     console.log(`[API] Redirecting to: ${callbackUrl}`);
     return NextResponse.redirect(new URL(callbackUrl, request.url));
   } catch (error) {
-    console.error("[API] Failed to process OAuth callback:", error);
+    console.error("[API] Failed to process iPayroll OAuth callback:", error);
 
     // Redirect to home with error
     return NextResponse.redirect(
-      new URL("/?error=callback_failed", request.url)
+      new URL("/?error=ipayroll_callback_failed", request.url)
     );
   }
 }

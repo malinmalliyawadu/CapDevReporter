@@ -4,7 +4,7 @@ import { saveState } from "@/lib/session";
 
 // Handler for GET requests to /api/auth/ipayroll
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  console.log("[API] Initiating OAuth flow");
+  console.log("[API] Initiating iPayroll OAuth flow");
   try {
     // Get the callback URL from the query parameters or use a default
     const searchParams = request.nextUrl.searchParams;
@@ -30,11 +30,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Redirect the user to the authorization URL
     return NextResponse.redirect(authUrl);
   } catch (error) {
-    console.error("[API] Failed to initiate OAuth flow:", error);
+    console.error("[API] Failed to initiate iPayroll OAuth flow:", error);
 
     // Return error response
     return NextResponse.json(
-      { error: "Failed to initiate OAuth flow" },
+      { error: "Failed to initiate iPayroll OAuth flow" },
       { status: 500 }
     );
   }
