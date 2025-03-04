@@ -77,10 +77,15 @@ export const saveState = async (state: string): Promise<void> => {
     // Store state with expiration time (10 minutes from now)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Use Prisma's executeRaw with proper SQL parameters
-    await prisma.$executeRaw(
-      Prisma.sql`INSERT INTO "IPayrollOAuthState" ("id", "state", "expiresAt", "createdAt") VALUES (${generateUUID()}, ${state}, ${expiresAt}, ${new Date()})`
-    );
+    // Use Prisma's type-safe create method instead of raw SQL
+    await prisma.iPayrollOAuthState.create({
+      data: {
+        id: generateUUID(),
+        state,
+        expiresAt,
+        createdAt: new Date(),
+      },
+    });
 
     console.log(
       `[Session] iPayroll OAuth state saved to database, expires at: ${expiresAt.toISOString()}`
