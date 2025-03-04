@@ -29,7 +29,7 @@ export async function syncEmployees() {
       // Return auth URL if no valid token
       return {
         error: "Authentication required",
-        authUrl: "/api/auth/ipayroll?callbackUrl=/data/employees",
+        authUrl: "/api/ipayroll/auth?callbackUrl=/data/employees",
       };
     }
 

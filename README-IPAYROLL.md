@@ -29,7 +29,7 @@ Note: Replace the placeholder values with your actual credentials.
 1. **Data Sync Request**: When the application needs to sync data from iPayroll, it first checks if it has a valid token.
 2. **Token Acquisition**: If no valid token exists, the server action returns an `authUrl` that can be used to initiate the OAuth flow.
 3. **Authorization**: The user is redirected to iPayroll's authorization page where they log in and grant permissions.
-4. **Callback**: After authorization, iPayroll redirects back to the application's callback URL (`/api/auth/ipayroll/callback`) with an authorization code.
+4. **Callback**: After authorization, iPayroll redirects back to the application's callback URL (`/api/ipayroll/auth/callback`) with an authorization code.
 5. **Token Exchange**: The application exchanges the authorization code for access and refresh tokens.
 6. **Token Storage**: The tokens are securely stored in server-side memory (or a more persistent storage in production).
 7. **Redirect**: The user is redirected back to the original page that initiated the sync.
@@ -40,7 +40,7 @@ Note: Replace the placeholder values with your actual credentials.
 ### 1. Initiate OAuth Flow
 
 ```
-GET /api/auth/ipayroll?callbackUrl=/your-callback-url
+GET /api/ipayroll/auth?callbackUrl=/your-callback-url
 ```
 
 This endpoint initiates the OAuth flow and redirects the user to iPayroll's authorization page. The `callbackUrl` parameter specifies where to redirect after successful authentication.
@@ -48,7 +48,7 @@ This endpoint initiates the OAuth flow and redirects the user to iPayroll's auth
 ### 2. OAuth Callback
 
 ```
-GET /api/auth/ipayroll/callback
+GET /api/ipayroll/auth/callback
 ```
 
 This endpoint handles the callback from iPayroll after the user has authorized the application. It exchanges the authorization code for tokens, stores them, and redirects the user back to the original page.
@@ -91,7 +91,7 @@ const handleSync = async () => {
 When developing locally, make sure to:
 
 1. Set up the environment variables in your `.env.local` file.
-2. Register `http://localhost:3000/api/auth/ipayroll/callback` as a redirect URI in your iPayroll developer account.
+2. Register `http://localhost:3000/api/ipayroll/auth/callback` as a redirect URI in your iPayroll developer account.
 3. Use HTTPS in production for secure token transmission.
 
 ## Production Considerations

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthorizationUrl, generateRandomState } from "@/utils/ipayroll";
 import { saveState } from "@/lib/session";
 
-// Handler for GET requests to /api/auth/ipayroll
+// Handler for GET requests to /api/ipayroll/auth
 export async function GET(request: NextRequest): Promise<NextResponse> {
   console.log("[API] Initiating iPayroll OAuth flow");
   try {

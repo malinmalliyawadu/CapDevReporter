@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { exchangeCodeForTokens } from "@/utils/ipayroll";
 import { validateState, saveToken } from "@/lib/session";
 
-// Handler for GET requests to /api/auth/ipayroll/callback
+// Handler for GET requests to /api/ipayroll/auth/callback
 export async function GET(request: NextRequest): Promise<NextResponse> {
   console.log("[API] Processing iPayroll OAuth callback");
   try {

@@ -34,7 +34,7 @@ export async function syncLeaveRecords() {
       // Return auth URL if no valid token
       return {
         error: "Authentication required",
-        authUrl: "/api/auth/ipayroll?callbackUrl=/data/leave",
+        authUrl: "/api/ipayroll/auth?callbackUrl=/data/leave",
       };
     }
 
