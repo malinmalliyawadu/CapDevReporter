@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from "axios";
+import { Prisma } from "@prisma/client";
 
 // OAuth 2.0 configuration
 interface OAuthConfig {
@@ -27,35 +28,50 @@ export interface StoredToken {
   tokenType: string;
 }
 
-// Validate required environment variables
+// Validate iPayroll configuration
 const validateIPayrollConfig = (): OAuthConfig => {
-  const requiredVars = [
-    "IPAYROLL_CLIENT_ID",
-    "IPAYROLL_CLIENT_SECRET",
-    "IPAYROLL_REDIRECT_URI",
-    "IPAYROLL_AUTH_ENDPOINT",
-    "IPAYROLL_TOKEN_ENDPOINT",
-    "IPAYROLL_API_URL",
-    "IPAYROLL_SCOPE",
-  ];
+  console.log("[iPayroll] Validating OAuth configuration");
 
-  for (const varName of requiredVars) {
-    if (!process.env[varName]) {
-      throw new Error(`Missing required iPayroll configuration: ${varName}`);
-    }
+  // Get configuration from environment variables
+  const clientId = process.env.IPAYROLL_CLIENT_ID;
+  const clientSecret = process.env.IPAYROLL_CLIENT_SECRET;
+  const redirectUri = process.env.IPAYROLL_REDIRECT_URI;
+  const authorizationEndpoint = process.env.IPAYROLL_AUTH_ENDPOINT;
+  const tokenEndpoint = process.env.IPAYROLL_TOKEN_ENDPOINT;
+  const scope = process.env.IPAYROLL_SCOPE;
+
+  // Validate required configuration
+  if (!clientId) {
+    throw new Error("IPAYROLL_CLIENT_ID is required");
+  }
+  if (!clientSecret) {
+    throw new Error("IPAYROLL_CLIENT_SECRET is required");
+  }
+  if (!redirectUri) {
+    throw new Error("IPAYROLL_REDIRECT_URI is required");
+  }
+  if (!authorizationEndpoint) {
+    throw new Error("IPAYROLL_AUTH_ENDPOINT is required");
+  }
+  if (!tokenEndpoint) {
+    throw new Error("IPAYROLL_TOKEN_ENDPOINT is required");
+  }
+  if (!scope) {
+    throw new Error("IPAYROLL_SCOPE is required");
   }
 
+  console.log("[iPayroll] OAuth configuration is valid");
   return {
-    clientId: process.env.IPAYROLL_CLIENT_ID as string,
-    clientSecret: process.env.IPAYROLL_CLIENT_SECRET as string,
-    redirectUri: process.env.IPAYROLL_REDIRECT_URI as string,
-    authorizationEndpoint: process.env.IPAYROLL_AUTH_ENDPOINT as string,
-    tokenEndpoint: process.env.IPAYROLL_TOKEN_ENDPOINT as string,
-    scope: process.env.IPAYROLL_SCOPE as string,
+    clientId,
+    clientSecret,
+    redirectUri,
+    authorizationEndpoint,
+    tokenEndpoint,
+    scope,
   };
 };
 
-// Generate authorization URL for redirect
+// Generate authorization URL
 export const getAuthorizationUrl = (state?: string): string => {
   console.log("[iPayroll] Generating authorization URL");
   try {
@@ -67,7 +83,7 @@ export const getAuthorizationUrl = (state?: string): string => {
       `[iPayroll] Using state: ${generatedState.substring(0, 10)}...`
     );
 
-    // Create the URL parameters
+    // Create the URL parameters according to iPayroll documentation
     const params = new URLSearchParams({
       response_type: "code",
       client_id: config.clientId,
@@ -117,7 +133,7 @@ export const exchangeCodeForTokens = async (
         redirect_uri: config.redirectUri,
         client_id: config.clientId,
         client_secret: config.clientSecret,
-      }),
+      }).toString(),
       {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -125,54 +141,35 @@ export const exchangeCodeForTokens = async (
       }
     );
 
-    console.log("[iPayroll] Token response received:", {
-      status: response.status,
-      hasAccessToken: !!response.data.access_token,
-      hasRefreshToken: !!response.data.refresh_token,
-      expiresIn: response.data.expires_in,
-      tokenType: response.data.token_type,
-    });
+    console.log("[iPayroll] Token exchange successful");
+    console.log(`[iPayroll] Token type: ${response.data.token_type}`);
+    console.log(`[iPayroll] Expires in: ${response.data.expires_in} seconds`);
 
-    const { access_token, refresh_token, expires_in, token_type } =
-      response.data;
+    // Calculate expiration time
+    const expiresAt = Date.now() + response.data.expires_in * 1000;
 
-    // Calculate expiration time (current time + expires_in seconds)
-    const expiresAt = Date.now() + expires_in * 1000;
-    console.log(
-      `[iPayroll] Token will expire at: ${new Date(expiresAt).toISOString()}`
-    );
-
+    // Return the stored token
     return {
-      accessToken: access_token,
-      refreshToken: refresh_token,
+      accessToken: response.data.access_token,
+      refreshToken: response.data.refresh_token,
       expiresAt,
-      tokenType: token_type,
+      tokenType: response.data.token_type,
     };
   } catch (error) {
     console.error("[iPayroll] Failed to exchange code for tokens:", error);
     if (axios.isAxiosError(error)) {
       console.error("[iPayroll] Response status:", error.response?.status);
       console.error("[iPayroll] Response data:", error.response?.data);
-      console.error("[iPayroll] Request config:", {
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: error.config?.headers,
-      });
     }
-    throw new Error("Failed to exchange authorization code for tokens");
+    throw error;
   }
 };
 
-// Refresh access token using refresh token
+// Refresh access token
 export const refreshAccessToken = async (
   refreshToken: string
 ): Promise<StoredToken> => {
-  console.log(
-    `[iPayroll] Refreshing access token using refresh token: ${refreshToken.substring(
-      0,
-      5
-    )}...`
-  );
+  console.log("[iPayroll] Refreshing access token");
   const config = validateIPayrollConfig();
 
   try {
@@ -187,7 +184,7 @@ export const refreshAccessToken = async (
         refresh_token: refreshToken,
         client_id: config.clientId,
         client_secret: config.clientSecret,
-      }),
+      }).toString(),
       {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -195,103 +192,147 @@ export const refreshAccessToken = async (
       }
     );
 
-    console.log("[iPayroll] Refresh token response received:", {
-      status: response.status,
-      hasAccessToken: !!response.data.access_token,
-      hasRefreshToken: !!response.data.refresh_token,
-      expiresIn: response.data.expires_in,
-      tokenType: response.data.token_type,
-    });
+    console.log("[iPayroll] Token refresh successful");
+    console.log(`[iPayroll] Token type: ${response.data.token_type}`);
+    console.log(`[iPayroll] Expires in: ${response.data.expires_in} seconds`);
 
-    const { access_token, refresh_token, expires_in, token_type } =
-      response.data;
+    // Calculate expiration time
+    const expiresAt = Date.now() + response.data.expires_in * 1000;
 
-    // Calculate expiration time (current time + expires_in seconds)
-    const expiresAt = Date.now() + expires_in * 1000;
-    console.log(
-      `[iPayroll] Refreshed token will expire at: ${new Date(
-        expiresAt
-      ).toISOString()}`
-    );
-
+    // Return the stored token
     return {
-      accessToken: access_token,
-      refreshToken: refresh_token || refreshToken, // Some OAuth servers don't return a new refresh token
+      accessToken: response.data.access_token,
+      refreshToken: response.data.refresh_token,
       expiresAt,
-      tokenType: token_type,
+      tokenType: response.data.token_type,
     };
   } catch (error) {
     console.error("[iPayroll] Failed to refresh access token:", error);
     if (axios.isAxiosError(error)) {
       console.error("[iPayroll] Response status:", error.response?.status);
       console.error("[iPayroll] Response data:", error.response?.data);
-      console.error("[iPayroll] Request config:", {
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: error.config?.headers,
-      });
     }
-    throw new Error("Failed to refresh access token");
+    throw error;
   }
 };
 
-// Create an authenticated API client
+// Get iPayroll API client
 export const getIPayrollClient = async (
   storedToken?: StoredToken
 ): Promise<AxiosInstance> => {
-  console.log("[iPayroll] Getting iPayroll API client");
+  console.log("[iPayroll] Creating API client");
 
-  // If no token is provided, throw an error
-  if (!storedToken) {
-    console.error("[iPayroll] No authentication token available");
-    throw new Error("No authentication token available");
+  // Get API URL from environment variable
+  const apiUrl = process.env.IPAYROLL_API_URL;
+  if (!apiUrl) {
+    throw new Error("IPAYROLL_API_URL is required");
   }
 
-  // Check if token is expired or about to expire (within 5 minutes)
-  const isExpired = storedToken.expiresAt <= Date.now() + 5 * 60 * 1000;
-  console.log(`[iPayroll] Token expired or about to expire: ${isExpired}`);
-  console.log(
-    `[iPayroll] Token expires at: ${new Date(
-      storedToken.expiresAt
-    ).toISOString()}`
-  );
-  console.log(`[iPayroll] Current time: ${new Date().toISOString()}`);
-
-  // If token is expired, refresh it
-  const token = isExpired
-    ? await refreshAccessToken(storedToken.refreshToken)
-    : storedToken;
-
-  console.log("[iPayroll] Creating API client with token");
-
-  // Create and return Axios instance with authentication header
-  return axios.create({
-    baseURL: process.env.IPAYROLL_API_URL as string,
+  // Create a new Axios instance
+  const client = axios.create({
+    baseURL: apiUrl,
     headers: {
-      Authorization: `${token.tokenType} ${token.accessToken}`,
       "Content-Type": "application/json",
     },
   });
+
+  // If a token is provided, add it to the request headers
+  if (storedToken) {
+    console.log("[iPayroll] Adding token to API client");
+
+    // Check if token is expired
+    if (storedToken.expiresAt <= Date.now()) {
+      console.log("[iPayroll] Token is expired, refreshing");
+
+      // Refresh the token
+      const newToken = await refreshAccessToken(storedToken.refreshToken);
+
+      // Update the token in the client
+      client.defaults.headers.common[
+        "Authorization"
+      ] = `${newToken.tokenType} ${newToken.accessToken}`;
+
+      console.log("[iPayroll] Token refreshed and added to API client");
+
+      // Return the client with the new token
+      return client;
+    }
+
+    // Add the token to the client
+    client.defaults.headers.common[
+      "Authorization"
+    ] = `${storedToken.tokenType} ${storedToken.accessToken}`;
+
+    console.log("[iPayroll] Token added to API client");
+  }
+
+  return client;
 };
 
-// Interface for employee data from iPayroll
-export interface IPayrollEmployee {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  position: string;
-  department: string;
-  status: string;
+// iPayroll API response interfaces
+interface IPayrollPaginatedResponse<T> {
+  links: Array<{
+    rel: string;
+    href: string;
+  }>;
+  content: T[];
+  page: {
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    number: number;
+  };
 }
 
-// Interface for leave data from iPayroll
-export interface IPayrollLeave {
+// iPayroll raw data interfaces (matching the API response)
+interface IPayrollRawEmployee {
+  id: string;
   employeeId: string;
-  date: string;
+  surname: string;
+  firstNames: string;
+  status: string;
+  fullTimeHoursWeek: number;
+  userDefinedGroup?: string;
+  organisation?: number;
+  payFrequency?: string;
+  lastModifiedDate?: string;
+  title?: string; // Employee's title/role
+  // Add other fields as needed
+}
+
+interface IPayrollRawLeave {
+  id: string;
+  employeeId: string;
+  startDate: string;
+  endDate: string;
+  leaveType: string;
+  status: string;
+  hours: number;
+  // Add other fields as needed
+}
+
+// Our application's employee interface
+export interface IPayrollEmployee {
+  id: string;
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  status: string;
+  fullTimeHoursWeek: number;
+  department: string;
+  organisation?: number;
+  title?: string; // Employee's title/role
+}
+
+// Our application's leave interface
+export interface IPayrollLeave {
+  id: string;
+  employeeId: string;
+  startDate: string;
+  endDate: string;
   type: string;
   status: string;
-  duration: number;
+  hours: number;
 }
 
 // Fetch employees from iPayroll API
@@ -301,23 +342,33 @@ export async function fetchEmployees(
   console.log("[iPayroll] Fetching employees");
   try {
     const client = await getIPayrollClient(token);
-    console.log("[iPayroll] Making request to /employees endpoint");
+    console.log("[iPayroll] Making request to /api/v1/employees endpoint");
 
-    console.log(client.defaults.baseURL);
-    const response = await client.get("/api/v1/employees");
-    console.log(response.data);
-    console.log(`[iPayroll] Received ${response.data.length} employees`);
+    const response = await client.get<
+      IPayrollPaginatedResponse<IPayrollRawEmployee>
+    >("/api/v1/employees");
 
-    return response.data.map((employee: any) => {
+    console.log(
+      `[iPayroll] Received ${
+        response.data.content.length
+      } employees from page ${response.data.page.number + 1} of ${
+        response.data.page.totalPages
+      }`
+    );
+
+    // Map the response data to our internal format
+    return response.data.content.map((employee): IPayrollEmployee => {
       console.log(`[iPayroll] Processing employee: ${employee.id}`);
       return {
         id: employee.id,
-        firstName: employee.firstName,
-        lastName: employee.lastName,
-        email: employee.email,
-        position: employee.position,
-        department: employee.department,
-        status: employee.status,
+        employeeId: employee.employeeId || "",
+        firstName: employee.firstNames || "",
+        lastName: employee.surname || "",
+        status: employee.status || "Active",
+        fullTimeHoursWeek: employee.fullTimeHoursWeek || 40,
+        department: employee.userDefinedGroup || "",
+        organisation: employee.organisation,
+        title: employee.title || "", // Include the title
       };
     });
   } catch (error) {
@@ -342,21 +393,31 @@ export async function fetchLeaveRecords(
   console.log("[iPayroll] Fetching leave records");
   try {
     const client = await getIPayrollClient(token);
-    console.log("[iPayroll] Making request to /leave endpoint");
+    console.log("[iPayroll] Making request to /api/v1/leave endpoint");
 
-    const response = await client.get("/leave");
-    console.log(`[iPayroll] Received ${response.data.length} leave records`);
+    const response = await client.get<
+      IPayrollPaginatedResponse<IPayrollRawLeave>
+    >("/api/v1/leave");
 
-    return response.data.map((record: any) => {
-      console.log(
-        `[iPayroll] Processing leave record for employee: ${record.employeeId}`
-      );
+    console.log(
+      `[iPayroll] Received ${
+        response.data.content.length
+      } leave records from page ${response.data.page.number + 1} of ${
+        response.data.page.totalPages
+      }`
+    );
+
+    // Map the response data to our internal format
+    return response.data.content.map((leave): IPayrollLeave => {
+      console.log(`[iPayroll] Processing leave record: ${leave.id}`);
       return {
-        employeeId: record.employeeId,
-        date: record.date,
-        type: record.leaveType,
-        status: record.status.toUpperCase(),
-        duration: record.durationDays,
+        id: leave.id,
+        employeeId: leave.employeeId || "",
+        startDate: leave.startDate || "",
+        endDate: leave.endDate || "",
+        type: leave.leaveType || "",
+        status: leave.status || "",
+        hours: leave.hours || 0,
       };
     });
   } catch (error) {

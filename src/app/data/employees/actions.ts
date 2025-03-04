@@ -43,20 +43,81 @@ export async function syncEmployees() {
 
     // Process and save employees to the database
     console.log("[Employees] Processing and saving employees to database");
-    // This is where you would implement the logic to save the data to your database
 
-    // For each employee, you might do something like:
+    const results = [];
+    const roleCache = new Map<string, string>(); // Cache for role id by name
+
+    // For each employee, create or update in the database
     for (const employee of employees) {
       console.log(
         `[Employees] Processing employee: ${employee.id} - ${employee.firstName} ${employee.lastName}`
       );
-      // Implement database operations here
+
+      try {
+        // Determine the role based on the employee's title
+        let roleId = "";
+
+        if (employee.title) {
+          const roleName = employee.title.trim();
+
+          // Check if we've already processed this role
+          if (roleCache.has(roleName)) {
+            roleId = roleCache.get(roleName)!;
+          } else {
+            // Try to find or create the role
+            console.log(`[Employees] Upserting role: ${roleName}`);
+            const role = await prisma.role.upsert({
+              where: { name: roleName },
+              update: {}, // No updates needed
+              create: {
+                name: roleName,
+                description: `Role imported from iPayroll: ${roleName}`,
+              },
+            });
+
+            roleId = role.id;
+            roleCache.set(roleName, roleId);
+            console.log(`[Employees] Role upserted: ${roleName} (${roleId})`);
+          }
+        } else {
+          console.log(
+            `[Employees] No title found for employee, using default role: Employee`
+          );
+        }
+
+        // Use upsert to create or update the employee
+        const result = await prisma.employee.upsert({
+          where: { payrollId: employee.employeeId },
+          update: {
+            name: `${employee.firstName} ${employee.lastName}`.trim(),
+            hoursPerWeek: employee.fullTimeHoursWeek,
+            roleId: roleId, // Use the determined role
+            updatedAt: new Date(),
+          },
+          create: {
+            name: `${employee.firstName} ${employee.lastName}`.trim(),
+            payrollId: employee.employeeId,
+            hoursPerWeek: employee.fullTimeHoursWeek,
+            roleId: roleId, // Use the determined role
+          },
+        });
+
+        console.log(`[Employees] Saved employee: ${result.id}`);
+        results.push(result);
+      } catch (error) {
+        console.error(
+          `[Employees] Error saving employee ${employee.employeeId}:`,
+          error
+        );
+      }
     }
 
     const timestamp = new Date().toISOString();
-    console.log(`[Employees] Sync completed at ${timestamp}`);
+    console.log(
+      `[Employees] Sync completed at ${timestamp}. Saved ${results.length} employees.`
+    );
     revalidatePath("/data/employees");
-    return { data: { timestamp, employees } };
+    return { data: { timestamp, count: results.length } };
   } catch (error) {
     console.error("[Employees] Failed to sync employees:", error);
     return { error: "Failed to sync employees" };

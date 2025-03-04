@@ -46,46 +46,80 @@ export async function syncLeaveRecords() {
       `[Leave] Fetched ${ipayrollRecords.length} leave records from iPayroll`
     );
 
+    // Get all employees to map payrollId to internal id
+    console.log("[Leave] Fetching employees to map payrollId to internal id");
+    const employees = await prisma.employee.findMany({
+      select: {
+        id: true,
+        payrollId: true,
+      },
+    });
+
+    // Create a map of payrollId to internal id
+    const employeeMap = new Map(
+      employees.map((emp) => [emp.payrollId, emp.id])
+    );
+
     // Update or create leave records from iPayroll
     console.log("[Leave] Processing and saving leave records to database");
+    const results = [];
+
     for (const record of ipayrollRecords) {
       console.log(
-        `[Leave] Processing leave record for employee: ${record.employeeId}, date: ${record.date}`
+        `[Leave] Processing leave record for employee: ${record.employeeId}, from ${record.startDate} to ${record.endDate}`
       );
+
+      // Find the internal employee id
+      const internalEmployeeId = employeeMap.get(record.employeeId);
+      if (!internalEmployeeId) {
+        console.warn(
+          `[Leave] Employee with payrollId ${record.employeeId} not found in database, skipping leave record`
+        );
+        continue;
+      }
+
       try {
-        await prisma.leave.upsert({
+        // Create a unique ID for the leave record
+        const leaveId = `${record.id}`;
+
+        // Create or update the leave record
+        const result = await prisma.leave.upsert({
           where: {
-            id: `${record.employeeId}-${record.date}`, // Composite unique identifier
+            id: leaveId,
           },
           update: {
             type: record.type,
             status: record.status,
-            duration: record.duration,
+            duration: record.hours,
+            date: new Date(record.startDate), // Using startDate as the primary date
+            updatedAt: new Date(),
           },
           create: {
-            id: `${record.employeeId}-${record.date}`,
-            date: new Date(record.date),
+            id: leaveId,
+            date: new Date(record.startDate),
             type: record.type,
             status: record.status,
-            duration: record.duration,
-            employeeId: record.employeeId,
+            duration: record.hours,
+            employeeId: internalEmployeeId,
           },
         });
-        console.log(
-          `[Leave] Successfully saved leave record: ${record.employeeId}-${record.date}`
-        );
+
+        console.log(`[Leave] Successfully saved leave record: ${leaveId}`);
+        results.push(result);
       } catch (error) {
         console.error(
-          `[Leave] Error saving leave record ${record.employeeId}-${record.date}:`,
+          `[Leave] Error saving leave record for employee ${record.employeeId}:`,
           error
         );
         // Continue processing other records even if one fails
       }
     }
 
-    console.log("[Leave] Sync completed successfully");
+    console.log(
+      `[Leave] Sync completed successfully. Saved ${results.length} leave records.`
+    );
     revalidatePath("/data/leave");
-    return { success: true };
+    return { success: true, count: results.length };
   } catch (error) {
     console.error("[Leave] Failed to sync leave records:", error);
     return { success: false, error: "Failed to sync leave records" };
