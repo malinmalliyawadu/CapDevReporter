@@ -128,3 +128,10 @@ model ProjectActivity {
 
   @@index([jiraIssueId])
 }
+
+model IPayrollOAuthState {
+  id        String   @id @default(cuid())
+  state     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
