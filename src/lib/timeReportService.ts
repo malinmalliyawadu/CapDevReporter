@@ -5,6 +5,7 @@ import {
   startOfWeek,
   endOfWeek,
   isWeekend,
+  addDays,
 } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import {
@@ -152,7 +153,7 @@ export async function getTimeReportData(
   const leaveRecords = await prisma.leave.findMany({
     where: {
       status: {
-        in: ["TAKEN", "APPROVED"],
+        in: ["Pending", "Approved"],
       },
       date: {
         gte: from,
@@ -273,17 +274,48 @@ export async function getTimeReportData(
           }
           // Add leave entry
           else if (leaveRecord) {
-            report.timeEntries.push({
-              id: `${employee.id}-${dateKey}-leave`,
-              hours: 8,
-              timeTypeId: timeTypes.find((t) => t.name === "Leave")?.id ?? "",
-              isCapDev: false,
-              isLeave: true,
-              leaveType: leaveRecord.type,
-              date: dateKey,
-              activityDate: dateKey,
-            });
-            report.fullHours += 8;
+            // Calculate how many days this leave record should span based on duration
+            const leaveDuration = leaveRecord.duration;
+            const leaveDays = Math.ceil(leaveDuration / 8);
+
+            // For the first day, use the actual date
+            let currentDate = new Date(date);
+            let hoursRemaining = leaveDuration;
+
+            // Create entries for each day of leave
+            for (let i = 0; i < leaveDays; i++) {
+              // Skip weekends when creating additional days
+              while (i > 0 && isWeekend(currentDate)) {
+                currentDate = addDays(currentDate, 1);
+              }
+
+              // Calculate hours for this day (up to 8 hours per day)
+              const hoursForDay = Math.min(hoursRemaining, 8);
+
+              // Format the date for this entry
+              const entryDateKey = format(currentDate, "yyyy-MM-dd");
+
+              // Create the leave entry for this day
+              report.timeEntries.push({
+                id: `${employee.id}-${entryDateKey}-leave-${i}`,
+                hours: hoursForDay,
+                timeTypeId: timeTypes.find((t) => t.name === "Leave")?.id ?? "",
+                isCapDev: false,
+                isLeave: true,
+                leaveType: leaveRecord.type,
+                date: entryDateKey,
+                activityDate: entryDateKey,
+              });
+
+              // Update remaining hours and move to next day
+              hoursRemaining -= hoursForDay;
+              report.fullHours += hoursForDay;
+
+              // Move to the next day for additional entries if needed
+              if (i < leaveDays - 1) {
+                currentDate = addDays(currentDate, 1);
+              }
+            }
           }
         });
 
