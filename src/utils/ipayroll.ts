@@ -38,7 +38,7 @@ const validateIPayrollConfig = (): OAuthConfig => {
   const redirectUri = process.env.IPAYROLL_REDIRECT_URI;
   const authorizationEndpoint = process.env.IPAYROLL_AUTH_ENDPOINT;
   const tokenEndpoint = process.env.IPAYROLL_TOKEN_ENDPOINT;
-  const scope = process.env.IPAYROLL_SCOPE;
+  const scope = "customfields employees leaverequests parentalleaves";
 
   // Validate required configuration
   if (!clientId) {

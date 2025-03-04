@@ -20,14 +20,9 @@ The following environment variables need to be set in your `.env` file:
 # iPayroll OAuth Configuration
 IPAYROLL_CLIENT_ID="your-client-id"
 IPAYROLL_CLIENT_SECRET="your-client-secret"
-IPAYROLL_REDIRECT_URI="http://localhost:3000/api/auth/callback"
-IPAYROLL_AUTH_ENDPOINT="https://auth.ipayroll.co.nz/oauth2/authorize"
-IPAYROLL_TOKEN_ENDPOINT="https://auth.ipayroll.co.nz/oauth2/token"
-IPAYROLL_API_URL="https://api.ipayroll.co.nz"
-IPAYROLL_SCOPE="read:employees read:leave"
 ```
 
-Note: Replace the placeholder values with your actual credentials and endpoints.
+Note: Replace the placeholder values with your actual credentials.
 
 ## OAuth Flow
 
