@@ -39,11 +39,11 @@ export async function syncLeaveRecords() {
     }
 
     // Get the token and fetch leave records directly
-    console.log("[Leave] Token valid, fetching leave records");
+    console.log("[Leave] Token valid, fetching leave requests");
     const token = getToken()!;
     const ipayrollRecords = await fetchLeaveRecords(token);
     console.log(
-      `[Leave] Fetched ${ipayrollRecords.length} leave records from iPayroll`
+      `[Leave] Fetched ${ipayrollRecords.length} leave requests from iPayroll`
     );
 
     // Get all employees to map payrollId to internal id
@@ -61,19 +61,19 @@ export async function syncLeaveRecords() {
     );
 
     // Update or create leave records from iPayroll
-    console.log("[Leave] Processing and saving leave records to database");
+    console.log("[Leave] Processing and saving leave requests to database");
     const results = [];
 
     for (const record of ipayrollRecords) {
       console.log(
-        `[Leave] Processing leave record for employee: ${record.employeeId}, from ${record.startDate} to ${record.endDate}`
+        `[Leave] Processing leave request for employee: ${record.employeeId}, from ${record.startDate} to ${record.endDate}`
       );
 
       // Find the internal employee id
       const internalEmployeeId = employeeMap.get(record.employeeId);
       if (!internalEmployeeId) {
         console.warn(
-          `[Leave] Employee with payrollId ${record.employeeId} not found in database, skipping leave record`
+          `[Leave] Employee with payrollId ${record.employeeId} not found in database, skipping leave request`
         );
         continue;
       }
@@ -104,11 +104,11 @@ export async function syncLeaveRecords() {
           },
         });
 
-        console.log(`[Leave] Successfully saved leave record: ${leaveId}`);
+        console.log(`[Leave] Successfully saved leave request: ${leaveId}`);
         results.push(result);
       } catch (error) {
         console.error(
-          `[Leave] Error saving leave record for employee ${record.employeeId}:`,
+          `[Leave] Error saving leave request for employee ${record.employeeId}:`,
           error
         );
         // Continue processing other records even if one fails
@@ -116,12 +116,12 @@ export async function syncLeaveRecords() {
     }
 
     console.log(
-      `[Leave] Sync completed successfully. Saved ${results.length} leave records.`
+      `[Leave] Sync completed successfully. Saved ${results.length} leave requests.`
     );
     revalidatePath("/data/leave");
     return { success: true, count: results.length };
   } catch (error) {
-    console.error("[Leave] Failed to sync leave records:", error);
-    return { success: false, error: "Failed to sync leave records" };
+    console.error("[Leave] Failed to sync leave requests:", error);
+    return { success: false, error: "Failed to sync leave requests" };
   }
 }

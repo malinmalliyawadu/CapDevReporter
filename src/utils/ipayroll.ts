@@ -335,6 +335,58 @@ export interface IPayrollLeave {
   hours: number;
 }
 
+// Define interface for the leave balances response
+interface IPayrollLeaveBalance {
+  id: string;
+  employeeId: string;
+  entitled: number;
+  accrued: number;
+  taken: number;
+  balance: number;
+  committedEntitled: number;
+  committedAccrued: number;
+  committedTaken: number;
+  committedBalance: number;
+  leaveBalanceType: {
+    leaveType: string;
+    name: string;
+    unit: string;
+    organisationSpecific: boolean;
+  };
+  nextAnniversaryDate?: string;
+  lastAnniversaryDate?: string;
+  approvedQuantity?: number;
+}
+
+// Define interface for the leave requests response
+interface IPayrollLeaveRequest {
+  id: number;
+  employeeId: string;
+  surname?: string;
+  firstNames?: string;
+  preferredName?: string;
+  hours: number;
+  leaveFromDate: string;
+  leaveToDate: string;
+  reason?: string;
+  status: string;
+  payElement?: string;
+  leaveBalanceType: {
+    leaveType: string;
+    name: string;
+    unit: string;
+    organisationSpecific: boolean;
+  };
+  payElementId?: number;
+  daysConsumed?: number;
+  daysCurrent?: number;
+  daysRemaining?: number;
+  quantityConsumed?: number;
+  quantityCurrent?: number;
+  quantityRemaining?: number;
+  leaveInDays?: boolean;
+}
+
 // Fetch employees from iPayroll API
 export async function fetchEmployees(
   token: StoredToken
@@ -393,47 +445,76 @@ export async function fetchLeaveRecords(
   console.log("[iPayroll] Fetching leave records");
   try {
     const client = await getIPayrollClient(token);
-    console.log("[iPayroll] Making request to /api/v1/leave endpoint");
+
+    // Get current date and date 1 year ago for a reasonable date range
+    const today = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(today.getFullYear() - 1);
+
+    // Format dates as DD/MM/YYYY for iPayroll API
+    const formatDate = (date: Date) => {
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    };
+
+    const dateFrom = formatDate(oneYearAgo);
+    const dateTo = formatDate(today);
+
+    console.log(
+      `[iPayroll] Making request to /api/v1/leaves/requests endpoint with dateFrom=${dateFrom} and dateTo=${dateTo}`
+    );
 
     const response = await client.get<
-      IPayrollPaginatedResponse<IPayrollRawLeave>
-    >("/api/v1/leave");
+      IPayrollPaginatedResponse<IPayrollLeaveRequest>
+    >(`/api/v1/leaves/requests?dateFrom=${dateFrom}&dateTo=${dateTo}`);
 
     console.log(
       `[iPayroll] Received ${
         response.data.content.length
-      } leave records from page ${response.data.page.number + 1} of ${
+      } leave requests from page ${response.data.page.number + 1} of ${
         response.data.page.totalPages
       }`
     );
 
+    // Helper function to normalize leave duration to hours
+    const normalizeDurationToHours = (record: IPayrollLeaveRequest): number => {
+      // If the leave is recorded in days in iPayroll but we store as hours,
+      // we need to convert (assuming standard 8-hour workday)
+      if (record.leaveInDays === true) {
+        console.log(
+          `[iPayroll] Leave record ${record.id} is in days, converting to hours (8 hours per day)`
+        );
+        return record.hours * 8; // Convert days to hours assuming 8-hour workday
+      }
+
+      // Already in hours, return as is
+      return record.hours;
+    };
+
     // Map the response data to our internal format
     return response.data.content.map((leave): IPayrollLeave => {
-      console.log(`[iPayroll] Processing leave record: ${leave.id}`);
+      console.log(`[iPayroll] Processing leave request record: ${leave.id}`);
+
+      // Get normalized duration in hours
+      const durationInHours = normalizeDurationToHours(leave);
+      console.log(
+        `[iPayroll] Leave duration for record ${leave.id}: ${durationInHours} hours`
+      );
+
       return {
-        id: leave.id,
-        employeeId: leave.employeeId || "",
-        startDate: leave.startDate || "",
-        endDate: leave.endDate || "",
-        type: leave.leaveType || "",
-        status: leave.status || "",
-        hours: leave.hours || 0,
+        id: leave.id.toString(),
+        employeeId: leave.employeeId,
+        startDate: leave.leaveFromDate,
+        endDate: leave.leaveToDate,
+        type: leave.leaveBalanceType.name,
+        status: leave.status,
+        hours: durationInHours,
       };
     });
   } catch (error) {
-    console.error(
-      "[iPayroll] Failed to fetch leave records from iPayroll:",
-      error
-    );
-    if (axios.isAxiosError(error)) {
-      console.error("[iPayroll] Response status:", error.response?.status);
-      console.error("[iPayroll] Response data:", error.response?.data);
-      console.error("[iPayroll] Request config:", {
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: error.config?.headers,
-      });
-    }
+    console.error("[iPayroll] Error fetching leave records:", error);
     throw error;
   }
 }
