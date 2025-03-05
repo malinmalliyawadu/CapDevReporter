@@ -128,10 +128,6 @@ jobs:
           echo "::group::🐳 Docker Build Process"
           echo "📦 Building Docker image..."
 
-          # Check available disk space before build
-          echo "Available disk space before build:"
-          df -h
-
           # Enable BuildKit with improved layer caching and better space efficiency
           DOCKER_BUILDKIT=1 docker build \
                 --progress=plain \
@@ -149,10 +145,6 @@ jobs:
               docker system df
               exit 1
             }
-
-          # Show available disk space after build
-          echo "Available disk space after build:"
-          df -h
 
           # Show image details after successful build
           echo "📋 Image details:"
