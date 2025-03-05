@@ -23,7 +23,11 @@ jobs:
 
       - name: 🏗️ Build Project
         run: |
+          # create dummy .env file required for building
+          mv .env.example .env
+          # generate prisma client so we get types for prisma entities
           npx prisma generate
+          # build project
           npm run build
 
       - name: 🧪 Run Tests and Generate Coverage
