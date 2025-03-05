@@ -8,10 +8,13 @@ terraform {
 }
 
 provider "aws" {
-  profile = "dev"
+  profile = "***REMOVED***-dev-sso"
   region  = "ap-southeast-2"
   default_tags {
     tags = {
+      Account     = "***REMOVED***-dev"
+      Description = "Timesheet App"
+      Terraform   = "true"
       Owner = "Malin Malliya Wadu"
     }
   }
@@ -162,11 +165,11 @@ resource "aws_security_group" "rds" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    from_port       = 5432
-    to_port         = 5432
+    from_port       = 3306
+    to_port         = 3306
     protocol        = "tcp"
     security_groups = [aws_security_group.ecs.id]
-    description     = "PostgreSQL access from ECS tasks"
+    description     = "MySQL access from ECS tasks"
   }
 
   egress {
@@ -191,11 +194,11 @@ resource "aws_db_subnet_group" "main" {
   }
 }
 
-# RDS PostgreSQL Instance
+# RDS MySQL Instance
 resource "aws_db_instance" "main" {
   identifier             = "timesheet-db"
-  engine                 = "postgres"
-  engine_version         = "14.7"
+  engine                 = "mysql"
+  engine_version         = "8.0"
   instance_class         = "db.t4g.micro"
   allocated_storage      = 20
   storage_type           = "gp3"
@@ -296,12 +299,32 @@ resource "aws_ecs_task_definition" "app" {
       
       environment = [
         {
-          name  = "DATABASE_URL",
-          value = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/timesheet"
+          name  = "DEPLOY_TIMESTAMP",
+          value = timestamp()
         },
         {
-          name  = "NODE_ENV",
-          value = "production"
+          name  = "DATABASE_URL",
+          value = "mysql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/timesheet"
+        },
+        {
+          name  = "JIRA_API_TOKEN",
+          value = var.jira_api_token
+        },
+        {
+          name  = "JIRA_USER_EMAIL",
+          value = var.jira_user_email
+        },
+        {
+          name  = "IPAYROLL_CLIENT_ID",
+          value = var.ipayroll_client_id
+        },
+        {
+          name  = "IPAYROLL_CLIENT_SECRET",
+          value = var.ipayroll_client_secret
+        },
+        {
+          name  = "IPAYROLL_REDIRECT_URI",
+          value = "http://${aws_lb.app.dns_name}/api/ipayroll/auth/callback"
         }
       ]
       
