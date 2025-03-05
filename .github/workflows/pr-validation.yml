@@ -22,8 +22,6 @@ jobs:
         run: npm run lint
 
       - name: 🏗️ Build Project
-        env:
-          DATABASE_URL: file:./dev.db
         run: |
           npx prisma generate
           npm run build
