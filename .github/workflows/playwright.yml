@@ -7,6 +7,20 @@ on:
   workflow_dispatch:
 jobs:
   playwright-tests:
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: timesheet
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
     timeout-minutes: 60
     runs-on: ubuntu-latest
     strategy:
@@ -28,8 +42,6 @@ jobs:
           npm ci
 
       - name: 🗃️ Initialize database
-        env:
-          DATABASE_URL: file:./dev.db
         run: |
           npx prisma generate
           npx prisma migrate reset --force
@@ -40,7 +52,6 @@ jobs:
 
       - name: 🧪 Run Playwright tests
         env:
-          DATABASE_URL: file:./dev.db
           IPAYROLL_API_KEY: hehe
           IPAYROLL_COMPANY_ID: 1234567890
           IPAYROLL_API_URL: https://api.ipayroll.com
