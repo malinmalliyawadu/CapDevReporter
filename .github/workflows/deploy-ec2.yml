@@ -16,6 +16,25 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_JIRA_URL: https://***REMOVED***.atlassian.net
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: timesheet
+      DB_HOST: localhost
+      DB_PORT: 3306
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: timesheet
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
       - name: 📥 Checkout code
@@ -91,6 +110,7 @@ jobs:
           ECR_REPOSITORY: ***REMOVED***/timesheet
           VERSION: ${{ steps.package_version.outputs.version }}
           RELEASE_TAG: ${{ steps.package_version.outputs.release_tag }}
+          DATABASE_URL: mysql://${{ env.DB_USER }}:${{ env.DB_PASSWORD }}@${{ env.DB_HOST }}:${{ env.DB_PORT }}/${{ env.DB_NAME }}
         run: |
           echo "::group::🐳 Docker Build Process"
           echo "📦 Building Docker image..."
@@ -103,7 +123,7 @@ jobs:
           DOCKER_BUILDKIT=1 docker build \
                 --progress=plain \
                 --no-cache \
-                --build-arg DATABASE_URL="file:./dev.db" \
+                --build-arg DATABASE_URL="${DATABASE_URL}" \
                 --build-arg NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
                 --build-arg NEXT_TELEMETRY_DISABLED=1 \
                 --build-arg NODE_ENV=production \
