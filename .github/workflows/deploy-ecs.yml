@@ -18,6 +18,9 @@ jobs:
       NEXT_PUBLIC_JIRA_URL: https://***REMOVED***.atlassian.net
       # Build-time database config for MySQL service container
       DATABASE_URL: mysql://root:root@localhost:3306/timesheet
+      # ECS deployment config
+      ECS_CLUSTER: timesheet-cluster
+      ECS_SERVICE: timesheet-service
 
     services:
       mysql:
@@ -171,10 +174,10 @@ jobs:
       - name: 🚀 Force new ECS deployment
         run: |
           echo "Forcing new deployment of ECS service..."
-          aws ecs update-service --cluster ${{ vars.ECS_CLUSTER }} --service ${{ vars.ECS_SERVICE }} --force-new-deployment
+          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment
 
           echo "Waiting for service to stabilize..."
-          aws ecs wait services-stable --cluster ${{ vars.ECS_CLUSTER }} --services ${{ vars.ECS_SERVICE }}
+          aws ecs wait services-stable --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }}
 
           echo "✅ Deployment completed successfully!"
 
@@ -195,8 +198,8 @@ jobs:
           ## Additional Notes
           * Docker image tag: \`${RELEASE_TAG}\`
           * Environment: Production
-          * Deployed to ECS Service: \`${{ vars.ECS_SERVICE }}\`
-          * ECS Cluster: \`${{ vars.ECS_CLUSTER }}\`"
+          * Deployed to ECS Service: \`${{ env.ECS_SERVICE }}\`
+          * ECS Cluster: \`${{ env.ECS_CLUSTER }}\`"
 
           # Create GitHub Release using GitHub CLI
           echo "$CHANGELOG" | gh release create "${RELEASE_TAG}" --title "${RELEASE_TAG}" --notes-file - || {
