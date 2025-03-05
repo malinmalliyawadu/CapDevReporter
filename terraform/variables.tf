@@ -24,4 +24,16 @@ variable "ssh_public_key_path" {
 variable "your_ip_address" {
   description = "Your IP address for SSH access (CIDR format)"
   type        = string
+}
+
+variable "db_username" {
+  description = "Username for the RDS PostgreSQL instance"
+  type        = string
+  sensitive   = true
+}
+
+variable "db_password" {
+  description = "Password for the RDS PostgreSQL instance"
+  type        = string
+  sensitive   = true
 } 
