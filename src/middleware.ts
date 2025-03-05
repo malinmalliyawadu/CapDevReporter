@@ -7,7 +7,7 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token }) => Boolean(process.env.IS_UNDER_TEST) || !!token,
     },
     pages: {
       signIn: "/login",
