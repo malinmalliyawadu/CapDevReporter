@@ -1,6 +1,5 @@
 import { StoredToken } from "@/utils/ipayroll";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 
 // Function to generate a random UUID
 function generateUUID(): string {
@@ -38,13 +37,6 @@ export const getToken = (): StoredToken | null => {
     ).toISOString()}`
   );
   return tokenStore;
-};
-
-// Delete the token (clear)
-export const deleteToken = (): void => {
-  console.log("[Session] Deleting token from storage");
-  tokenStore = null;
-  console.log("[Session] Token deleted successfully");
 };
 
 // Check if we have a valid token
@@ -109,19 +101,21 @@ export const validateState = async (state: string): Promise<boolean> => {
   );
 
   try {
-    // Find the state in the database using a raw query
-    const storedStates = await prisma.$queryRaw<
-      Array<{ id: string; expiresAt: Date }>
-    >(
-      Prisma.sql`SELECT "id", "expiresAt" FROM "IPayrollOAuthState" WHERE "state" = ${state}`
-    );
+    // Find the state in the database using Prisma's type-safe query
+    const storedState = await prisma.iPayrollOAuthState.findFirst({
+      where: {
+        state: state,
+      },
+      select: {
+        id: true,
+        expiresAt: true,
+      },
+    });
 
-    if (!storedStates || storedStates.length === 0) {
+    if (!storedState) {
       console.log("[Session] iPayroll OAuth state not found in database");
       return false;
     }
-
-    const storedState = storedStates[0];
 
     // Check if state is expired
     const now = new Date();
@@ -135,10 +129,13 @@ export const validateState = async (state: string): Promise<boolean> => {
       `[Session] iPayroll OAuth state is ${isValid ? "valid" : "expired"}`
     );
 
-    // Delete the state after validation
-    await prisma.$executeRaw(
-      Prisma.sql`DELETE FROM "IPayrollOAuthState" WHERE "id" = ${storedState.id}`
-    );
+    // Delete the state after validation using Prisma's type-safe delete
+    await prisma.iPayrollOAuthState.delete({
+      where: {
+        id: storedState.id,
+      },
+    });
+
     console.log(
       "[Session] iPayroll OAuth state deleted from database after validation"
     );
@@ -157,18 +154,21 @@ const cleanupExpiredStates = async (): Promise<void> => {
   try {
     const now = new Date();
 
-    // Delete all expired states
-    await prisma.$executeRaw(
-      Prisma.sql`DELETE FROM "IPayrollOAuthState" WHERE "expiresAt" < ${now}`
+    // Delete all expired states using Prisma's type-safe deleteMany
+    const deleteResult = await prisma.iPayrollOAuthState.deleteMany({
+      where: {
+        expiresAt: {
+          lt: now,
+        },
+      },
+    });
+
+    console.log(
+      `[Session] Cleaned up ${deleteResult.count} expired iPayroll OAuth states`
     );
 
-    console.log(`[Session] Cleaned up expired iPayroll OAuth states`);
-
-    // Count remaining states
-    const remainingResult = await prisma.$queryRaw<Array<{ count: number }>>(
-      Prisma.sql`SELECT COUNT(*) as count FROM "IPayrollOAuthState"`
-    );
-    const remainingCount = remainingResult[0]?.count || 0;
+    // Count remaining states using Prisma's type-safe count
+    const remainingCount = await prisma.iPayrollOAuthState.count();
 
     console.log(
       `[Session] ${remainingCount} iPayroll OAuth states remaining in database`
