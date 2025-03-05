@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -16,6 +16,7 @@ import {
   Clock,
   Drama,
   LayoutGrid,
+  LogOut,
   Palmtree,
   PartyPopper,
   RefreshCw,
@@ -27,6 +28,13 @@ import {
 import { ModeToggle } from "./ModeToggle";
 import { Button } from "./ui/button";
 import { useSyncDialog } from "@/contexts/dialog-context";
+import { signOut, useSession } from "next-auth/react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 const data: { title: React.ReactNode; href: string; description: string }[] = [
   {
@@ -130,6 +138,18 @@ const assignments: {
 
 export function Navigation() {
   const { open: openSyncDialog } = useSyncDialog();
+  const { data: session } = useSession();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await signOut({ callbackUrl: "/login" });
+    } catch (error) {
+      console.error("Logout failed:", error);
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <header className="bg-gradient-to-r from-white via-zinc-50 to-white dark:from-blue-800 dark:via-blue-950 dark:to-blue-900 border-b border-zinc-200 dark:border-zinc-800 dark:text-white backdrop-blur-sm sticky top-0 z-50 transition-all duration-200 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/0 dark:before:from-white/5 dark:before:to-white/0 before:pointer-events-none after:absolute after:inset-0 after:bg-gradient-to-t after:from-zinc-50/50 after:via-zinc-50/25 after:to-zinc-50/0 dark:after:from-blue-900/20 dark:after:via-blue-900/5 dark:after:to-blue-900/0 after:pointer-events-none">
@@ -219,6 +239,37 @@ export function Navigation() {
             Sync Projects
           </Button>
           <ModeToggle />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-transparent hover:bg-zinc-100 dark:hover:bg-blue-800/50 text-zinc-700 dark:text-zinc-200 hover:text-cyan-700 dark:hover:text-cyan-400 border-zinc-200 dark:border-blue-600 transition-all duration-200"
+              >
+                <User className="h-4 w-4 mr-2" />
+                {session?.user?.name || "Account"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-red-600 dark:text-red-400 cursor-pointer"
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <span>Logging out...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </>
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

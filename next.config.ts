@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default process.env.DISABLE_MILLION
+export default process.env.IS_UNDER_TEST
   ? nextConfig
   : MillionLint.next({
       enabled: true,

@@ -22,8 +22,6 @@ out
 *.pem
 
 # Keep Prisma files
-!prisma/dev.db
-!prisma/timesheet.db
 !prisma/schema.prisma
 !prisma/migrations
 !prisma/seed.ts

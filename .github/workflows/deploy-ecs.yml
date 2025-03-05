@@ -17,7 +17,7 @@ jobs:
     env:
       NEXT_PUBLIC_JIRA_URL: https://***REMOVED***.atlassian.net
       # Build-time database config for MySQL service container
-      DATABASE_URL: mysql://root:root@localhost:3306/timesheet
+      DATABASE_URL: mysql://root:password@localhost:3306/timesheet
       # ECS deployment config
       ECS_CLUSTER: timesheet-cluster
       ECS_SERVICE: timesheet-service
@@ -26,7 +26,7 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: root
+          MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: timesheet
         ports:
           - 3306:3306
@@ -128,10 +128,6 @@ jobs:
           echo "::group::🐳 Docker Build Process"
           echo "📦 Building Docker image..."
 
-          # Check available disk space before build
-          echo "Available disk space before build:"
-          df -h
-
           # Enable BuildKit with improved layer caching and better space efficiency
           DOCKER_BUILDKIT=1 docker build \
                 --progress=plain \
@@ -149,10 +145,6 @@ jobs:
               docker system df
               exit 1
             }
-
-          # Show available disk space after build
-          echo "Available disk space after build:"
-          df -h
 
           # Show image details after successful build
           echo "📋 Image details:"

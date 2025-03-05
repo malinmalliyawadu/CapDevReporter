@@ -12,7 +12,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test": "jest",
     "test:watch": "jest --watch",
-    "db:reset": "rm -f prisma/dev.db && prisma db push --force-reset && prisma generate && prisma db seed"
+    "db:reset": "prisma db push --force-reset && prisma generate && prisma db seed"
   },
   "dependencies": {
     "@million/lint": "^1.0.14",
@@ -45,6 +45,7 @@
     "jira-client": "^8.2.2",
     "lucide-react": "^0.475.0",
     "next": "15.1.7",
+    "next-auth": "^4.24.11",
     "next-themes": "^0.4.4",
     "react": "^19.0.0",
     "react-day-picker": "^9.5.1",
