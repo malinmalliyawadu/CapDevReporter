@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useState } from "react";
 import {
-  RefreshCw,
   AlertCircle,
   Pencil,
   ArrowUpDown,
@@ -48,7 +47,7 @@ import {
   ColumnFiltersState,
   flexRender,
 } from "@tanstack/react-table";
-import { syncEmployees, updateEmployeeHours } from "./actions";
+import { updateEmployeeHours } from "./actions";
 
 interface Employee {
   id: string;

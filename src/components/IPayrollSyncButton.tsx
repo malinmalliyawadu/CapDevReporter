@@ -274,7 +274,7 @@ export function IPayrollSyncButton({
       onClick={handleButtonClick}
       disabled={syncState === "syncing" || syncState === "checking_auth"}
       className={className}
-      variant={getButtonVariant() as any}
+      variant={getButtonVariant()}
     >
       {getButtonContent()}
     </Button>
