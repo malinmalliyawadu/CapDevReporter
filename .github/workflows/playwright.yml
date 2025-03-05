@@ -43,6 +43,7 @@ jobs:
 
       - name: 🗃️ Initialize database
         run: |
+          mv .env.example .env
           npx prisma generate
           npx prisma migrate reset --force
 
@@ -54,7 +55,6 @@ jobs:
         env:
           NODE_V8_COVERAGE: ./coverage-tmp
         run: |
-          mv .env.example .env
           npx playwright test --shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
           npx c8 report --reporter=json --temp-directory ./coverage-tmp -o ./coverage-json --include="src/app/**" --exclude="src/app/**/*.test.*,src/app/**/__tests__/**"
 
