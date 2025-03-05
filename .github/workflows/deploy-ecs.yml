@@ -1,4 +1,4 @@
-name: Deploy to EC2 🚀
+name: Deploy to ECS 🚀
 
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install dependencies
         run: npm ci
@@ -168,70 +168,43 @@ jobs:
           docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} --format 'Repository: {{.RepoTags}}\nSize: {{.Size}} bytes\nLayers: {{len .RootFS.Layers}}'
           echo "::endgroup::"
 
-      - name: 📝 Create and update deployment status
-        uses: actions/github-script@v7
+      - name: 🚀 Force new ECS deployment
+        run: |
+          echo "Forcing new deployment of ECS service..."
+          aws ecs update-service --cluster ${{ vars.ECS_CLUSTER }} --service ${{ vars.ECS_SERVICE }} --force-new-deployment
+
+          echo "Waiting for service to stabilize..."
+          aws ecs wait services-stable --cluster ${{ vars.ECS_CLUSTER }} --services ${{ vars.ECS_SERVICE }}
+
+          echo "✅ Deployment completed successfully!"
+
+      - name: 📝 Create GitHub Release
         env:
           VERSION: ${{ steps.package_version.outputs.version }}
           RELEASE_TAG: ${{ steps.package_version.outputs.release_tag }}
-        with:
-          script: |
-            const version = '${{ steps.package_version.outputs.version }}';
-            const releaseTag = '${{ steps.package_version.outputs.release_tag }}';
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CHANGELOG="## What's Changed
+          * Automated deployment of version ${VERSION}
+          * Deployment timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          * Commit: ${GITHUB_SHA}
 
-            // Create deployment
-            const deployment = await github.rest.repos.createDeployment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: context.sha,
-              environment: 'production',
-              auto_merge: false,
-              required_contexts: [],
-              production_environment: true,
-              description: `Deploying version ${version}`
-            });
+          ## Installation
+          This release has been automatically deployed to production.
 
-            // Update deployment status
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: deployment.data.id,
-              state: 'success',
-              environment_url: 'https://${{ vars.EC2_HOST }}',
-              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              description: `Successfully deployed version ${version}!`
-            });
+          ## Additional Notes
+          * Docker image tag: \`${RELEASE_TAG}\`
+          * Environment: Production
+          * Deployed to ECS Service: \`${{ vars.ECS_SERVICE }}\`
+          * ECS Cluster: \`${{ vars.ECS_CLUSTER }}\`"
 
-            // Create GitHub Release
-            const changelog = `
-            ## What's Changed
-            * Automated deployment of version ${version}
-            * Deployment timestamp: ${new Date().toISOString()}
-            * Commit: ${context.sha}
-
-            ## Installation
-            This release has been automatically deployed to production.
-
-            ## Additional Notes
-            * Docker image tag: \`${releaseTag}\`
-            * Environment: Production
-            `;
-
-            try {
-              await github.rest.repos.createRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag_name: releaseTag,
-                name: `${releaseTag}`,
-                body: changelog,
-                draft: false,
-                prerelease: false,
-                generate_release_notes: true
-              });
-              console.log(`Successfully created release ${releaseTag}`);
-            } catch (error) {
-              if (error.status === 422) {
-                console.log(`Release ${releaseTag} already exists, skipping creation`);
-              } else {
-                throw error;
-              }
-            }
+          # Create GitHub Release using GitHub CLI
+          echo "$CHANGELOG" | gh release create "${RELEASE_TAG}" --title "${RELEASE_TAG}" --notes-file - || {
+            echo "Release ${RELEASE_TAG} may already exist, checking..."
+            if ! gh release view "${RELEASE_TAG}" &>/dev/null; then
+              echo "::error::Failed to create or find release ${RELEASE_TAG}"
+              exit 1
+            else
+              echo "Release ${RELEASE_TAG} already exists, skipping creation"
+            fi
+          }
