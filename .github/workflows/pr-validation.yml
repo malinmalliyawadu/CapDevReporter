@@ -24,7 +24,9 @@ jobs:
       - name: 🏗️ Build Project
         env:
           DATABASE_URL: file:./dev.db
-        run: npm run build
+        run: |
+          npx prisma generate
+          npm run build
 
       - name: 🧪 Run Tests and Generate Coverage
         run: |
