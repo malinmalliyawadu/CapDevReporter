@@ -119,6 +119,7 @@ jobs:
           DOCKER_BUILDKIT=1 docker build \
                 --progress=plain \
                 --no-cache \
+                --network=host \
                 --build-arg DATABASE_URL="${{ env.DATABASE_URL }}" \
                 --build-arg NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
                 --build-arg NEXT_TELEMETRY_DISABLED=1 \
