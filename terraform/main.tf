@@ -327,12 +327,6 @@ resource "aws_ecs_task_definition" "app" {
           value = "http://${aws_lb.app.dns_name}/api/ipayroll/auth/callback"
         }
       ]
-
-      command = [
-        "sh",
-        "-c",
-        "npx prisma migrate deploy && npx prisma db seed && npm start"
-      ]
       
       logConfiguration = {
         logDriver = "awslogs"
