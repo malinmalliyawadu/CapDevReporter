@@ -360,14 +360,21 @@ resource "aws_lb_target_group" "app" {
   
   health_check {
     enabled             = true
-    interval            = 30
+    interval            = 5
     path                = "/"
     port                = "traffic-port"
-    healthy_threshold   = 3
-    unhealthy_threshold = 3
-    timeout             = 5
-    protocol            = "HTTP"
-    matcher             = "200-399"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 2
+    protocol           = "HTTP"
+    matcher            = "200-399"
+  }
+
+  deregistration_delay = 0
+
+  stickiness {
+    enabled = false
+    type    = "lb_cookie"
   }
 }
 
@@ -389,6 +396,11 @@ resource "aws_ecs_service" "app" {
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
   launch_type     = "FARGATE"
+  force_new_deployment = true
+  wait_for_steady_state = false
+  
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent = 200
   
   network_configuration {
     subnets          = [aws_subnet.main.id, aws_subnet.secondary.id]
@@ -400,6 +412,11 @@ resource "aws_ecs_service" "app" {
     target_group_arn = aws_lb_target_group.app.arn
     container_name   = "timesheet-app"
     container_port   = 3000
+  }
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
   }
   
   lifecycle {
