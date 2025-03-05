@@ -80,20 +80,30 @@ test.describe("Employees Page", () => {
   });
 
   test("edit hours functionality", async ({ page }) => {
+    // Get the initial hours value from the first row
+    const firstRow = page.locator("tbody tr").first();
+    const initialHours = await firstRow.locator("td").nth(3).textContent();
+
     // Click edit button on first row
-    await page.locator("tbody tr").first().getByRole("button").click();
+    await firstRow.getByRole("button").click();
 
     // Wait for dialog to appear
     await expect(page.getByRole("dialog")).toBeVisible();
 
-    // Enter new hours value
-    await page.getByLabel("Hours per Week").fill("40");
+    // Enter new hours value (different from initial)
+    const newHours = initialHours === "40" ? "35" : "40";
+    await page.getByLabel("Hours per Week").fill(newHours);
 
     // Save changes
     await page.getByRole("button", { name: "Save Changes" }).click();
 
-    // Verify success toast appears
-    await expect(page.getByTestId("toast")).toBeVisible();
+    // Wait for the table to update
+    await page.waitForTimeout(500);
+
+    // Verify the hours value has been updated in the table
+    const updatedHours = await firstRow.locator("td").nth(3).textContent();
+    expect(updatedHours).toBe(newHours);
+    expect(updatedHours).not.toBe(initialHours);
   });
 });
 

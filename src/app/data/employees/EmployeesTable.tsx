@@ -74,7 +74,7 @@ export function EmployeesTable({
   roles,
 }: EmployeesTableProps) {
   const { toast } = useToast();
-  const [employees] = useState(initialEmployees);
+  const [employees, setEmployees] = useState(initialEmployees);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -229,6 +229,14 @@ export function EmployeesTable({
       if (result.error) {
         throw new Error(result.error);
       }
+
+      setEmployees((currentEmployees) =>
+        currentEmployees.map((employee) =>
+          employee.id === editingEmployee.id
+            ? { ...employee, hoursPerWeek: hours }
+            : employee
+        )
+      );
 
       setEditingEmployee(null);
       toast({
