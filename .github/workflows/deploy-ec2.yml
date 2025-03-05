@@ -40,6 +40,20 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Prisma Migrations
+        run: |
+          echo "Running Prisma migrations..."
+          npx prisma migrate deploy
+          echo "Database is ready with schema!"
+
       - name: 🔄 Update version
         id: update_version
         run: |
@@ -152,144 +166,6 @@ jobs:
           # Show push summary
           echo "📊 Push summary:"
           docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} --format 'Repository: {{.RepoTags}}\nSize: {{.Size}} bytes\nLayers: {{len .RootFS.Layers}}'
-          echo "::endgroup::"
-
-      - name: 🚀 Deploy to EC2
-        env:
-          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          EC2_HOST: ${{ vars.EC2_HOST }}
-          EC2_USERNAME: ubuntu
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ***REMOVED***/timesheet
-          VERSION: ${{ steps.package_version.outputs.version }}
-          RELEASE_TAG: ${{ steps.package_version.outputs.release_tag }}
-        run: |
-          echo "::group::🔑 SSH Setup"
-          echo "Setting up SSH keys..."
-          echo "$PRIVATE_KEY" > private_key.pem
-          chmod 600 private_key.pem
-          echo "::endgroup::"
-
-          echo "::group::📝 Deployment Script Creation"
-          echo "Creating deployment script..."
-          echo '#!/bin/bash
-          echo "::group::🛑 Container Management"
-          echo "Stopping existing container..."
-          if ! docker stop timesheet-app 2>/dev/null; then
-            echo "::warning::No existing container to stop"
-          fi
-          docker rm timesheet-app 2>/dev/null || true
-          echo "::endgroup::"
-
-          echo "::group::🔑 ECR Authentication"
-          echo "Logging into ECR..."
-          if ! aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}; then
-            echo "::error::Failed to authenticate with ECR"
-            exit 1
-          fi
-          echo "::endgroup::"
-
-          echo "::group::⬇️ Image Pull"
-          echo "Pulling new container image..."
-          if ! docker pull ${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest; then
-            echo "::error::Failed to pull latest image"
-            exit 1
-          fi
-          echo "::endgroup::"
-
-          echo "::group::🚀 Container Launch"
-          echo "Starting new container..."
-          if ! docker run -d \
-            --name=timesheet-app \
-            --restart=always \
-            -p 3000:3000 \
-            -e NODE_ENV=production \
-            -e NEXT_PUBLIC_JIRA_URL='${{ env.NEXT_PUBLIC_JIRA_URL }}' \
-            -e APP_VERSION='${VERSION}' \
-            -e JIRA_API_TOKEN='${{ secrets.JIRA_API_TOKEN }}' \
-            -e JIRA_USER_EMAIL='malin.malliyawadu@***REMOVED***.com' \
-            -e JIRA_HOST='***REMOVED***.atlassian.net' \
-            -e IPAYROLL_API_URL='https://api.ipayroll.com' \
-            -e IPAYROLL_API_KEY='${{ secrets.IPAYROLL_API_KEY }}' \
-            -e IPAYROLL_COMPANY_ID='${{ secrets.IPAYROLL_COMPANY_ID }}' \
-            -e DATABASE_URL='mysql://${{ env.PROD_DB_USER }}:${{ env.PROD_DB_PASSWORD }}@${{ secrets.RDS_ENDPOINT }}/${{ env.PROD_DB_NAME }}' \
-            '${{ steps.login-ecr.outputs.registry }}/***REMOVED***/timesheet:latest'; then
-            echo "::error::Failed to start container"
-            exit 1
-          fi
-
-          echo "Verifying container status..."
-          if ! docker ps | grep -q timesheet-app; then
-            echo "::error::Container failed to start"
-            docker logs timesheet-app
-            exit 1
-          fi
-          echo "::endgroup::"
-
-          echo "::group::📊 System Status"
-          echo "Initial disk usage:"
-          docker system df
-          echo "::endgroup::"
-
-          echo "::group::🧹 Cleanup Process"
-          echo "Starting cleanup process..."
-
-          echo "Performing comprehensive Docker system cleanup..."
-          docker system prune -af --volumes || echo "::warning::Failed to perform complete Docker system prune"
-
-          echo "Removing unused images older than 24 hours..."
-          docker image prune -af --filter "until=24h" || echo "::warning::Failed to prune images"
-
-          echo "Removing unused containers..."
-          docker container prune -f || echo "::warning::Failed to prune containers"
-
-          echo "Removing unused networks..."
-          docker network prune -f || echo "::warning::Failed to prune networks"
-
-          echo "Removing unused volumes..."
-          docker volume prune -f --filter "label!=preserve=true" || echo "::warning::Failed to prune volumes"
-
-          # Clean up system temporary files
-          echo "Cleaning up temporary files..."
-          sudo find /tmp -type f -mtime +7 -delete || echo "::warning::Failed to clean up /tmp"
-          sudo find /var/tmp -type f -mtime +7 -delete || echo "::warning::Failed to clean up /var/tmp"
-
-          # Clean up log files
-          echo "Cleaning up old log files..."
-          sudo find /var/log -type f -name "*.gz" -delete || echo "::warning::Failed to clean up compressed logs"
-          sudo find /var/log -type f -name "*.1" -delete || echo "::warning::Failed to clean up rotated logs"
-
-          # Empty trash if available
-          sudo rm -rf /root/.local/share/Trash/* || echo "::warning::No trash to empty"
-
-          # Clear package manager cache
-          echo "Cleaning package cache..."
-          sudo apt-get clean || echo "::warning::Failed to clean apt cache"
-
-          echo "Final disk usage after cleanup:"
-          docker system df
-
-          echo "Available disk space:"
-          df -h
-          echo "::endgroup::"' > deploy.sh
-
-          echo "::group::📤 Script Deployment"
-          echo "Copying deployment script to EC2..."
-          if ! scp -i private_key.pem -o StrictHostKeyChecking=no deploy.sh $EC2_USERNAME@$EC2_HOST:~/deploy.sh; then
-            echo "::error::Failed to copy deployment script to EC2"
-            exit 1
-          fi
-
-          echo "Executing deployment script..."
-          if ! ssh -i private_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST "chmod +x ~/deploy.sh && ~/deploy.sh"; then
-            echo "::error::Deployment script execution failed"
-            exit 1
-          fi
-          echo "::endgroup::"
-
-          echo "::group::🧹 Cleanup"
-          echo "Cleaning up local files..."
-          rm private_key.pem deploy.sh
           echo "::endgroup::"
 
       - name: 📝 Create and update deployment status
