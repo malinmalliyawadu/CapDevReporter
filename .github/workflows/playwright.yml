@@ -52,15 +52,9 @@ jobs:
 
       - name: 🧪 Run Playwright tests
         env:
-          IPAYROLL_API_KEY: hehe
-          IPAYROLL_COMPANY_ID: 1234567890
-          IPAYROLL_API_URL: https://api.ipayroll.com
-          NEXT_PUBLIC_JIRA_URL: https://***REMOVED***.atlassian.net
-          JIRA_HOST: ***REMOVED***.atlassian.net
-          JIRA_API_TOKEN: hehe
-          JIRA_USER_EMAIL: hahaha@gmail.com
           NODE_V8_COVERAGE: ./coverage-tmp
         run: |
+          mv .env.example .env
           npx playwright test --shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
           npx c8 report --reporter=json --temp-directory ./coverage-tmp -o ./coverage-json --include="src/app/**" --exclude="src/app/**/*.test.*,src/app/**/__tests__/**"
 
