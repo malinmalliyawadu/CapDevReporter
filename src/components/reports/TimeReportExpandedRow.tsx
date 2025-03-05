@@ -106,7 +106,9 @@ export function TimeReportExpandedRow({
                     (t) => t.id === entry.timeTypeId
                   )?.name;
                   const displayType = entry.isLeave
-                    ? `${timeType} (${entry.leaveType})`
+                    ? timeType
+                      ? `${timeType} (${entry.leaveType})`
+                      : entry.leaveType
                     : entry.isPublicHoliday
                     ? `Public Holiday (${entry.publicHolidayName})`
                     : entry.projectName
@@ -121,7 +123,11 @@ export function TimeReportExpandedRow({
                       <TableCell className="py-3">
                         <span className="text-sm">
                           {entry.isLeave ? (
-                            `${timeType} (${entry.leaveType})`
+                            timeType ? (
+                              `${timeType} (${entry.leaveType})`
+                            ) : (
+                              entry.leaveType
+                            )
                           ) : entry.isPublicHoliday ? (
                             `Public Holiday (${entry.publicHolidayName})`
                           ) : entry.projectName && entry.jiraId ? (

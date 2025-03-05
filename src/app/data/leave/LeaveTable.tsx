@@ -2,13 +2,7 @@
 
 import * as React from "react";
 import { useState } from "react";
-import {
-  RefreshCw,
-  Search,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
+import { Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
 import {
   useReactTable,
   getCoreRowModel,
@@ -40,7 +33,6 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { syncLeaveRecords } from "./actions";
 
 interface LeaveRecord {
   id: string;
@@ -57,8 +49,6 @@ interface LeaveTableProps {
 
 export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
   const [leaveRecords] = useState(initialLeaveRecords);
-  const [lastSynced, setLastSynced] = useState<Date | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -214,7 +204,7 @@ export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
       },
       cell: ({ row }) => (
         <span className="font-medium">
-          {row.original.duration} day{row.original.duration !== 1 ? "s" : ""}
+          {row.original.duration} hour{row.original.duration !== 1 ? "s" : ""}
         </span>
       ),
     },
@@ -234,26 +224,6 @@ export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
-
-  const handleSync = async () => {
-    try {
-      setIsSyncing(true);
-      const result = await syncLeaveRecords();
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      // The page will automatically revalidate and refresh the data
-      setLastSynced(new Date());
-      toast.success("Leave data synced successfully");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to sync leave data");
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   const uniqueStatuses = Array.from(
     new Set(leaveRecords.map((record) => record.status))
@@ -315,19 +285,6 @@ export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex items-center gap-4">
-          {lastSynced && (
-            <span className="text-sm text-muted-foreground">
-              Last synced: {lastSynced.toLocaleString("en-NZ")}
-            </span>
-          )}
-          <Button onClick={handleSync} disabled={isSyncing}>
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
-            />
-            Sync with iPayroll
-          </Button>
         </div>
       </div>
 

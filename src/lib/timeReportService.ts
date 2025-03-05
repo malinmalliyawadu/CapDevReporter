@@ -5,6 +5,7 @@ import {
   startOfWeek,
   endOfWeek,
   isWeekend,
+  addDays,
 } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import {
@@ -152,7 +153,7 @@ export async function getTimeReportData(
   const leaveRecords = await prisma.leave.findMany({
     where: {
       status: {
-        in: ["TAKEN", "APPROVED"],
+        in: ["Pending", "Approved"],
       },
       date: {
         gte: from,
@@ -184,12 +185,41 @@ export async function getTimeReportData(
 
   // Create a map of date -> employee -> leave record
   const leaveMap = new Map<string, Map<string, (typeof leaveRecords)[0]>>();
+
+  // Process each leave record and create entries for all days covered by the leave
   leaveRecords.forEach((leave) => {
-    const dateKey = format(leave.date, "yyyy-MM-dd");
-    if (!leaveMap.has(dateKey)) {
-      leaveMap.set(dateKey, new Map());
+    const leaveDate = new Date(leave.date);
+    const leaveDuration = leave.duration;
+    const leaveDays = Math.ceil(leaveDuration / 8);
+
+    // Add entry for the original leave date
+    const originalDateKey = format(leaveDate, "yyyy-MM-dd");
+    if (!leaveMap.has(originalDateKey)) {
+      leaveMap.set(originalDateKey, new Map());
     }
-    leaveMap.get(dateKey)?.set(leave.employeeId, leave);
+    leaveMap.get(originalDateKey)?.set(leave.employeeId, leave);
+
+    // Add entries for additional days if duration > 8 hours
+    if (leaveDays > 1) {
+      let currentDate = new Date(leaveDate);
+
+      for (let i = 1; i < leaveDays; i++) {
+        // Move to the next day
+        currentDate = addDays(currentDate, 1);
+
+        // Skip weekends
+        while (isWeekend(currentDate)) {
+          currentDate = addDays(currentDate, 1);
+        }
+
+        // Add to leave map
+        const dateKey = format(currentDate, "yyyy-MM-dd");
+        if (!leaveMap.has(dateKey)) {
+          leaveMap.set(dateKey, new Map());
+        }
+        leaveMap.get(dateKey)?.set(leave.employeeId, leave);
+      }
+    }
   });
 
   // Get unique weeks in the date range
@@ -273,9 +303,11 @@ export async function getTimeReportData(
           }
           // Add leave entry
           else if (leaveRecord) {
+            // Only create a leave entry for this specific day
+            // (additional days for multi-day leave are handled by the leaveMap)
             report.timeEntries.push({
               id: `${employee.id}-${dateKey}-leave`,
-              hours: 8,
+              hours: Math.min(leaveRecord.duration, 8), // Cap at 8 hours per day
               timeTypeId: timeTypes.find((t) => t.name === "Leave")?.id ?? "",
               isCapDev: false,
               isLeave: true,
@@ -283,7 +315,7 @@ export async function getTimeReportData(
               date: dateKey,
               activityDate: dateKey,
             });
-            report.fullHours += 8;
+            report.fullHours += Math.min(leaveRecord.duration, 8);
           }
         });
 
@@ -296,6 +328,15 @@ export async function getTimeReportData(
           // For each date in the range
           daysInWeek.forEach((date) => {
             const formattedDate = format(date, "yyyy-MM-dd");
+
+            // Skip if this is a weekend, holiday, or the employee is on leave
+            if (
+              isWeekend(date) ||
+              holidays.isHoliday(date) ||
+              leaveMap.get(formattedDate)?.get(employee.id)
+            ) {
+              return;
+            }
 
             // Check if this date matches the weekly schedule
             if (isDateOnScheduledDay(date, weeklySchedule)) {
@@ -336,11 +377,18 @@ export async function getTimeReportData(
           (timeType) => !timeType.weeklySchedule
         );
 
-        // Get the working days in the week (excluding weekends and holidays)
+        // Get the working days in the week (excluding weekends, holidays, and leave days)
         const regularWorkingDays = daysInWeek.filter((date) => {
           if (isWeekend(date)) return false;
           const holiday = holidays.isHoliday(date);
-          return !holiday;
+          if (holiday) return false;
+
+          // Check if employee is on leave for this day
+          const dateKey = format(date, "yyyy-MM-dd");
+          const onLeave = leaveMap.get(dateKey)?.get(employee.id);
+          if (onLeave) return false;
+
+          return true;
         });
 
         // Process each regular time type
@@ -414,11 +462,15 @@ export async function getTimeReportData(
 
                 // Only include activities that fall within the current week
                 // and are on working days (not weekends or holidays)
+                // and the employee is not on leave for that day
+                const isOnLeave = !!leaveMap.get(dateKey)?.get(employee.id);
+
                 if (
                   activityDate >= weekStart &&
                   activityDate <= weekEnd &&
                   !isWeekend(activityDate) &&
-                  !holidays.isHoliday(activityDate)
+                  !holidays.isHoliday(activityDate) &&
+                  !isOnLeave
                 ) {
                   // Create a unique key for project-date combination
                   const projectDateKey = `${project.id}-${dateKey}`;
@@ -447,6 +499,12 @@ export async function getTimeReportData(
             totalRemainingHours / weekProjectActivities.length;
 
           weekProjectActivities.forEach((activity) => {
+            // Double-check that this day is not a leave day before adding the activity
+            const isOnLeave = !!leaveMap.get(activity.date)?.get(employee.id);
+            if (isOnLeave) {
+              return; // Skip this activity
+            }
+
             report.timeEntries.push({
               id: `${employee.id}-${activity.date}-${activity.projectId}`,
               hours: hoursPerActivity,

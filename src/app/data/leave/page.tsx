@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { LeaveTable } from "./LeaveTable";
 import { LeaveTableSkeleton } from "./loading";
 import { getLeaveRecords } from "./actions";
+import { Toaster } from "@/components/ui/toaster";
+import { LeaveSyncClient } from "./LeaveSyncClient";
 
 export default async function LeavePage() {
   const leaveRecords = await getLeaveRecords();
@@ -24,6 +26,7 @@ export default async function LeavePage() {
           }
           description="View and manage employee leave records"
         />
+        <LeaveSyncClient />
       </div>
 
       <Card className="shadow-lg">
@@ -36,6 +39,7 @@ export default async function LeavePage() {
           </Suspense>
         </CardContent>
       </Card>
+      <Toaster />
     </div>
   );
 }

@@ -19,15 +19,15 @@ model Team {
 }
 
 model Project {
-  id          String      @id @default(cuid())
+  id          String            @id @default(cuid())
   name        String
   description String?
-  jiraId      String      @unique
-  isCapDev    Boolean     @default(false)
+  jiraId      String            @unique
+  isCapDev    Boolean           @default(false)
   boardId     String
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  board       JiraBoard   @relation(fields: [boardId], references: [id])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  board       JiraBoard         @relation(fields: [boardId], references: [id])
   activities  ProjectActivity[]
 }
 
@@ -36,9 +36,9 @@ model TimeType {
   name               String                  @unique
   description        String?
   isCapDev           Boolean                 @default(false)
-  weeklySchedule     String?
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
+  weeklySchedule     String?
   generalAssignments GeneralTimeAssignment[]
 }
 
@@ -127,4 +127,11 @@ model ProjectActivity {
   project      Project  @relation(fields: [jiraIssueId], references: [jiraId])
 
   @@index([jiraIssueId])
+}
+
+model IPayrollOAuthState {
+  id        String   @id @default(cuid())
+  state     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }

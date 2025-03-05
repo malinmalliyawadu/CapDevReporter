@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { EmployeesTable } from "./EmployeesTable";
 import { EmployeesTableSkeleton } from "./loading";
 import { getEmployees } from "./actions";
+import { Toaster } from "@/components/ui/toaster";
+import { EmployeeSyncClient } from "./EmployeeSyncClient";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,7 @@ export default async function EmployeesPage() {
           }
           description="View and manage employees."
         />
+        <EmployeeSyncClient />
       </div>
 
       <Card>
@@ -47,6 +50,7 @@ export default async function EmployeesPage() {
           </Suspense>
         </CardContent>
       </Card>
+      <Toaster />
     </div>
   );
 }
