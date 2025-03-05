@@ -4,30 +4,46 @@ import { addDays, subDays, subWeeks } from "date-fns";
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create roles
-  const developerRole = await prisma.role.create({
-    data: {
+  // Create roles with upsert to handle existing data
+  const developerRole = await prisma.role.upsert({
+    where: { name: "Software Developer" },
+    update: {
+      description: "Develops and maintains software applications",
+    },
+    create: {
       name: "Software Developer",
       description: "Develops and maintains software applications",
     },
   });
 
-  const seniorDevRole = await prisma.role.create({
-    data: {
+  const seniorDevRole = await prisma.role.upsert({
+    where: { name: "Senior Developer" },
+    update: {
+      description: "Leads development efforts and mentors other developers",
+    },
+    create: {
       name: "Senior Developer",
       description: "Leads development efforts and mentors other developers",
     },
   });
 
-  const designerRole = await prisma.role.create({
-    data: {
+  const designerRole = await prisma.role.upsert({
+    where: { name: "UI/UX Designer" },
+    update: {
+      description: "Designs user interfaces and experiences",
+    },
+    create: {
       name: "UI/UX Designer",
       description: "Designs user interfaces and experiences",
     },
   });
 
-  const managerRole = await prisma.role.create({
-    data: {
+  const managerRole = await prisma.role.upsert({
+    where: { name: "Project Manager" },
+    update: {
+      description: "Manages project timelines and resources",
+    },
+    create: {
       name: "Project Manager",
       description: "Manages project timelines and resources",
     },

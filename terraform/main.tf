@@ -327,6 +327,12 @@ resource "aws_ecs_task_definition" "app" {
           value = "http://${aws_lb.app.dns_name}/api/ipayroll/auth/callback"
         }
       ]
+
+      command = [
+        "sh",
+        "-c",
+        "npx prisma migrate deploy && npx prisma db seed && npm start"
+      ]
       
       logConfiguration = {
         logDriver = "awslogs"
@@ -360,12 +366,12 @@ resource "aws_lb_target_group" "app" {
   
   health_check {
     enabled             = true
-    interval            = 5
-    path                = "/"
+    interval            = 30
+    path                = "/api/health"
     port                = "traffic-port"
     healthy_threshold   = 2
-    unhealthy_threshold = 2
-    timeout             = 2
+    unhealthy_threshold = 5
+    timeout             = 5
     protocol           = "HTTP"
     matcher            = "200-399"
   }
