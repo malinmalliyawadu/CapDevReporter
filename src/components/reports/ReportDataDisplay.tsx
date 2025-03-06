@@ -44,7 +44,7 @@ export function ReportDataDisplay({
         setIsFirstLoad(false);
       }
     });
-  }, []); // Empty dependency array to run only once on mount
+  }, [searchParams]);
 
   // Fetch data when search params change
   useEffect(() => {
