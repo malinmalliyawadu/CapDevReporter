@@ -508,7 +508,7 @@ resource "aws_lb_target_group" "app" {
     healthy_threshold   = 2
     unhealthy_threshold = 3
     timeout             = 10
-    protocol            = "HTTPS"
+    protocol            = "HTTP"
     matcher             = "200-399"
   }
 
