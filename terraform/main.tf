@@ -275,10 +275,11 @@ resource "aws_cloudwatch_log_group" "app" {
 
 # Create AWS Secrets Manager secret
 resource "aws_secretsmanager_secret" "timesheet_secrets" {
-  name = "timesheet/app/secrets"
+  name = "timesheet-app"
   
   tags = {
     Name = "timesheet-app-secrets"
+    Description = "Secrets for Timesheet App"
   }
 }
 
