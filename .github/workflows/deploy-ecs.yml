@@ -166,12 +166,69 @@ jobs:
       - name: 🚀 Force new ECS deployment
         run: |
           echo "Forcing new deployment of ECS service..."
-          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment
+          DEPLOYMENT_ID=$(aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment --query 'service.deployments[?status==`PRIMARY`].id' --output text)
+          echo "Started deployment with ID: $DEPLOYMENT_ID"
 
-          echo "Waiting for service to stabilize..."
-          aws ecs wait services-stable --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }}
+          echo "Monitoring deployment status..."
+
+          # Initialize variables
+          STABLE=false
+          TIMEOUT=1800  # 30 minutes timeout
+          START_TIME=$(date +%s)
+          CHECK_INTERVAL=15  # Check every 15 seconds
+
+          while [ "$STABLE" != "true" ]; do
+            # Get current time and calculate elapsed time
+            CURRENT_TIME=$(date +%s)
+            ELAPSED=$((CURRENT_TIME - START_TIME))
+            
+            # Check if we've exceeded the timeout
+            if [ $ELAPSED -gt $TIMEOUT ]; then
+              echo "::error::Deployment timed out after $(($TIMEOUT / 60)) minutes"
+              exit 1
+            fi
+            
+            # Get deployment status
+            DEPLOYMENT_INFO=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].deployments')
+            
+            # Extract primary deployment details
+            PRIMARY_DEPLOYMENT=$(echo "$DEPLOYMENT_INFO" | jq '.[] | select(.status == "PRIMARY")')
+            DESIRED_COUNT=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.desiredCount')
+            RUNNING_COUNT=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.runningCount')
+            PENDING_COUNT=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.pendingCount')
+            FAILED_TASKS=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.failedTasks')
+            
+            # Get deployment status from events (last 5 events)
+            RECENT_EVENTS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].events[0:5]')
+            LATEST_EVENT=$(echo "$RECENT_EVENTS" | jq -r '.[0].message')
+            
+            # Print status update
+            echo "⏱️ Deployment status after $((ELAPSED / 60))m $((ELAPSED % 60))s:"
+            echo "🔄 Tasks: $RUNNING_COUNT running, $PENDING_COUNT pending, $FAILED_TASKS failed (of $DESIRED_COUNT desired)"
+            echo "📝 Latest event: $LATEST_EVENT"
+            
+            # Check if deployment is stable (all desired tasks are running and no pending tasks)
+            if [ "$RUNNING_COUNT" -eq "$DESIRED_COUNT" ] && [ "$PENDING_COUNT" -eq 0 ]; then
+              # Double check with AWS CLI's built-in waiter logic
+              if aws ecs wait services-stable --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --max-attempts 1; then
+                STABLE=true
+                echo "✅ Deployment stabilized successfully!"
+              else
+                echo "⚠️ Service appears stable but AWS disagrees. Continuing to monitor..."
+              fi
+            else
+              echo "⏳ Waiting for deployment to stabilize... (checking again in ${CHECK_INTERVAL}s)"
+              sleep $CHECK_INTERVAL
+            fi
+          done
 
           echo "✅ Deployment completed successfully!"
+
+          # Show final deployment details
+          echo "📊 Final deployment summary:"
+          aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].{Status:status,TaskDefinition:taskDefinition,DesiredCount:desiredCount,RunningCount:runningCount,PendingCount:pendingCount,ServiceName:serviceName}' \
+            --output table
 
       - name: 📝 Create GitHub Release
         env:
