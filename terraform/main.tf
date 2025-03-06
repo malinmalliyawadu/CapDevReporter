@@ -253,7 +253,7 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets_policy" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = [
-          aws_secretsmanager_secret.timesheet_secrets.arn
+          "${aws_secretsmanager_secret.timesheet_secrets.arn}*"
         ]
       }
     ]

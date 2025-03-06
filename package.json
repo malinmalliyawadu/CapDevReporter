@@ -12,7 +12,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test": "jest",
     "test:watch": "jest --watch",
-    "db:reset": "prisma db push --force-reset && prisma generate && prisma db seed"
+    "db:reset": "echo 'DROP DATABASE IF EXISTS timesheet_dev;' | prisma db execute --stdin && prisma migrate dev"
   },
   "dependencies": {
     "@million/lint": "^1.0.14",
