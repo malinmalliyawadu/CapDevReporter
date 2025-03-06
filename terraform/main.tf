@@ -502,12 +502,12 @@ resource "aws_lb_target_group" "app" {
   
   health_check {
     enabled             = true
-    interval            = 60
+    interval            = 30
     path                = "/api/health"
     port                = "traffic-port"
     healthy_threshold   = 2
-    unhealthy_threshold = 5
-    timeout             = 30
+    unhealthy_threshold = 3
+    timeout             = 10
     protocol            = "HTTP"
     matcher             = "200-399"
   }
