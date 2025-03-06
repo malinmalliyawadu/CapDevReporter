@@ -203,7 +203,7 @@ resource "aws_db_instance" "main" {
   allocated_storage      = 20
   storage_type           = "gp3"
   db_name                = "timesheet"
-  username               = var.db_username
+  username               = "timesheet_admin"
   password               = var.db_password
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.rds.id]
@@ -273,7 +273,52 @@ resource "aws_cloudwatch_log_group" "app" {
   retention_in_days = 30
 }
 
-# ECS Task Definition
+# Create AWS Secrets Manager secret
+resource "aws_secretsmanager_secret" "timesheet_secrets" {
+  name = "timesheet/app/secrets"
+  
+  tags = {
+    Name = "timesheet-app-secrets"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "timesheet_secrets" {
+  secret_id = aws_secretsmanager_secret.timesheet_secrets.id
+  secret_string = jsonencode({
+    DATABASE_URL           = var.database_url
+    JIRA_API_TOKEN         = var.jira_api_token
+    JIRA_USER_EMAIL        = var.jira_user_email
+    IPAYROLL_CLIENT_ID     = var.ipayroll_client_id
+    IPAYROLL_CLIENT_SECRET = var.ipayroll_client_secret
+    AZURE_AD_CLIENT_ID     = var.azure_ad_client_id
+    AZURE_AD_CLIENT_SECRET = var.azure_ad_client_secret
+    AZURE_AD_TENANT_ID     = var.azure_ad_tenant_id
+    NEXTAUTH_SECRET        = var.nextauth_secret
+  })
+}
+
+# Add Secrets Manager access to ECS Task Role
+resource "aws_iam_role_policy" "ecs_task_secrets_policy" {
+  name = "timesheet-ecs-task-secrets-policy"
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.timesheet_secrets.arn
+        ]
+      }
+    ]
+  })
+}
+
+# Update ECS Task Definition to include all secrets
 resource "aws_ecs_task_definition" "app" {
   family                   = "timesheet-app"
   network_mode             = "awsvpc"
@@ -303,28 +348,47 @@ resource "aws_ecs_task_definition" "app" {
           value = timestamp()
         },
         {
-          name  = "DATABASE_URL",
-          value = "mysql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/timesheet"
-        },
-        {
-          name  = "JIRA_API_TOKEN",
-          value = var.jira_api_token
-        },
-        {
-          name  = "JIRA_USER_EMAIL",
-          value = var.jira_user_email
-        },
-        {
-          name  = "IPAYROLL_CLIENT_ID",
-          value = var.ipayroll_client_id
-        },
-        {
-          name  = "IPAYROLL_CLIENT_SECRET",
-          value = var.ipayroll_client_secret
-        },
-        {
           name  = "IPAYROLL_REDIRECT_URI",
           value = "http://${aws_lb.app.dns_name}/api/ipayroll/auth/callback"
+        }
+      ]
+      
+      secrets = [
+        {
+          name      = "DATABASE_URL"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
+        },
+        {
+          name      = "JIRA_API_TOKEN"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
+        },
+        {
+          name      = "JIRA_USER_EMAIL"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
+        },
+        {
+          name      = "IPAYROLL_CLIENT_ID"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
+        },
+        {
+          name      = "IPAYROLL_CLIENT_SECRET"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
+        },
+        {
+          name      = "AZURE_AD_CLIENT_ID"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
+        },
+        {
+          name      = "AZURE_AD_CLIENT_SECRET"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
+        },
+        {
+          name      = "AZURE_AD_TENANT_ID"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
+        },
+        {
+          name      = "NEXTAUTH_SECRET"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
         }
       ]
       

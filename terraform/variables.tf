@@ -26,12 +26,6 @@ variable "your_ip_address" {
   type        = string
 }
 
-variable "db_username" {
-  description = "Username for the RDS instance"
-  type        = string
-  sensitive   = true
-}
-
 variable "db_password" {
   description = "Password for the RDS instance"
   type        = string
@@ -59,4 +53,34 @@ variable "jira_api_token" {
 variable "jira_user_email" {
   description = "Jira user email"
   type        = string
+}
+
+variable "azure_ad_client_id" {
+  description = "Azure AD client ID for authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "azure_ad_client_secret" {
+  description = "Azure AD client secret for authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "azure_ad_tenant_id" {
+  description = "Azure AD tenant ID for authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "nextauth_secret" {
+  description = "Secret key for NextAuth.js"
+  type        = string
+  sensitive   = true
+} 
+
+variable "database_url" {
+  description = "Database URL"
+  type        = string
+  sensitive   = true
 } 
