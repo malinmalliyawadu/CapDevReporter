@@ -479,7 +479,6 @@ resource "aws_lb_target_group" "app" {
     timeout             = 10
     protocol            = "HTTP"
     matcher             = "200-399"
-    startup_grace_period = 300
   }
 
   deregistration_delay = 0
