@@ -43,26 +43,27 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node.js
+      - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: npm ci
 
-      - name: Run Prisma Migrations
+      - name: 🗃️ Run Prisma Migrations
         run: |
-          echo "Running Prisma migrations..."
+          echo "🔄 Running Prisma migrations..."
           npx prisma migrate deploy
-          echo "Database is ready with schema!"
+          echo "✅ Database is ready with schema!"
 
       - name: 🔄 Update version
         id: update_version
         run: |
+          echo "::group::🔄 Version Update Process"
           # Read current version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          echo "Current version: $CURRENT_VERSION"
+          echo "📋 Current version: $CURRENT_VERSION"
 
           # Split version into parts
           IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
@@ -73,7 +74,7 @@ jobs:
           # Increment patch version
           NEW_PATCH=$((PATCH + 1))
           NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
-          echo "New version: $NEW_VERSION"
+          echo "🆕 New version: $NEW_VERSION"
 
           # Update package.json
           node -e "
@@ -96,6 +97,7 @@ jobs:
           echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
           echo "release_tag=v${NEW_VERSION}" >> $GITHUB_OUTPUT
           echo "release_name=Release v${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
 
       - name: 🏷️ Get version from package.json
         id: package_version
@@ -105,7 +107,7 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
           echo "release_name=Release ${RELEASE_TAG}" >> $GITHUB_OUTPUT
-          echo "Using version: ${VERSION}"
+          echo "📋 Using version: ${VERSION}"
 
       - name: 🌍 Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -141,7 +143,7 @@ jobs:
                 -t $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} \
                 -t $ECR_REGISTRY/$ECR_REPOSITORY:latest . || {
               echo "::error::Docker build failed"
-              echo "Checking disk space after failure:"
+              echo "🔍 Checking disk space after failure:"
               df -h
               docker system df
               exit 1
@@ -166,14 +168,14 @@ jobs:
 
       - name: 🚀 Force new ECS deployment
         run: |
-          echo "Forcing new deployment of ECS service..."
+          echo "🔄 Forcing new deployment of ECS service..."
           aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment
-          echo "Deployment triggered, waiting for it to start..."
+          echo "✅ Deployment triggered, waiting for it to start..."
 
           # Wait a moment for the deployment to register in AWS
           sleep 30
 
-          echo "Monitoring deployment status..."
+          echo "👀 Monitoring deployment status..."
 
           # Initialize variables
           STABLE=false
@@ -182,8 +184,10 @@ jobs:
           CHECK_INTERVAL=5
           CONSECUTIVE_STABLE_CHECKS=0
           REQUIRED_STABLE_CHECKS=3
+          ATTEMPT=1
 
           while [ "$STABLE" != "true" ]; do
+            echo "::group::🔍 Deployment Check Attempt #$ATTEMPT"
             # Get current time and calculate elapsed time
             CURRENT_TIME=$(date +%s)
             ELAPSED=$((CURRENT_TIME - START_TIME))
@@ -191,6 +195,7 @@ jobs:
             # Check if we've exceeded the timeout
             if [ $ELAPSED -gt $TIMEOUT ]; then
               echo "::error::Deployment timed out after $(($TIMEOUT / 60)) minutes"
+              echo "::endgroup::"
               exit 1
             fi
             
@@ -199,7 +204,7 @@ jobs:
             
             # Count number of deployments
             DEPLOYMENT_COUNT=$(echo "$DEPLOYMENT_INFO" | jq 'length')
-            echo "Current deployment count: $DEPLOYMENT_COUNT"
+            echo "📊 Current deployment count: $DEPLOYMENT_COUNT"
             
             # Extract primary deployment details
             PRIMARY_DEPLOYMENT=$(echo "$DEPLOYMENT_INFO" | jq '.[] | select(.status == "PRIMARY")')
@@ -216,12 +221,12 @@ jobs:
             # Print status update
             echo "⏱️ Deployment status after $((ELAPSED / 60))m $((ELAPSED % 60))s:"
             echo "🔄 Deployment ID: $DEPLOYMENT_ID"
-            echo "🔄 Tasks: $RUNNING_COUNT running, $PENDING_COUNT pending, $FAILED_TASKS failed (of $DESIRED_COUNT desired)"
+            echo "🔢 Tasks: $RUNNING_COUNT running, $PENDING_COUNT pending, $FAILED_TASKS failed (of $DESIRED_COUNT desired)"
             echo "📝 Latest event: $LATEST_EVENT"
             
             # Check if there are any active previous deployments
             PREVIOUS_DEPLOYMENTS=$(echo "$DEPLOYMENT_INFO" | jq '[.[] | select(.status != "PRIMARY")] | length')
-            echo "Previous deployments still active: $PREVIOUS_DEPLOYMENTS"
+            echo "🔍 Previous deployments still active: $PREVIOUS_DEPLOYMENTS"
             
             # Check if deployment is stable (all desired tasks are running, no pending tasks, and no previous deployments)
             if [ "$RUNNING_COUNT" -eq "$DESIRED_COUNT" ] && [ "$PENDING_COUNT" -eq 0 ] && [ "$PREVIOUS_DEPLOYMENTS" -eq 0 ]; then
@@ -237,18 +242,24 @@ jobs:
                   echo "✅ Deployment stabilized successfully after $REQUIRED_STABLE_CHECKS consecutive stable checks!"
                 else
                   echo "⏳ Waiting for additional confirmation... (checking again in ${CHECK_INTERVAL}s)"
+                  echo "::endgroup::"
                   sleep $CHECK_INTERVAL
                 fi
               else
                 CONSECUTIVE_STABLE_CHECKS=0
                 echo "⚠️ Service appears stable but status is $SERVICE_STATUS. Continuing to monitor..."
+                echo "::endgroup::"
                 sleep $CHECK_INTERVAL
               fi
             else
               CONSECUTIVE_STABLE_CHECKS=0
               echo "⏳ Waiting for deployment to stabilize... (checking again in ${CHECK_INTERVAL}s)"
+              echo "::endgroup::"
               sleep $CHECK_INTERVAL
             fi
+            
+            # Increment attempt counter for the next iteration
+            ATTEMPT=$((ATTEMPT + 1))
           done
 
           echo "✅ Deployment completed successfully!"
@@ -265,6 +276,7 @@ jobs:
           RELEASE_TAG: ${{ steps.package_version.outputs.release_tag }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "::group::📝 GitHub Release Creation"
           CHANGELOG="## What's Changed
           * Automated deployment of version ${VERSION}
           * Deployment timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -279,13 +291,16 @@ jobs:
           * Deployed to ECS Service: \`${{ env.ECS_SERVICE }}\`
           * ECS Cluster: \`${{ env.ECS_CLUSTER }}\`"
 
+          echo "📋 Creating GitHub release for ${RELEASE_TAG}..."
           # Create GitHub Release using GitHub CLI
           echo "$CHANGELOG" | gh release create "${RELEASE_TAG}" --title "${RELEASE_TAG}" --notes-file - || {
-            echo "Release ${RELEASE_TAG} may already exist, checking..."
+            echo "🔍 Release ${RELEASE_TAG} may already exist, checking..."
             if ! gh release view "${RELEASE_TAG}" &>/dev/null; then
               echo "::error::Failed to create or find release ${RELEASE_TAG}"
               exit 1
             else
-              echo "Release ${RELEASE_TAG} already exists, skipping creation"
+              echo "ℹ️ Release ${RELEASE_TAG} already exists, skipping creation"
             fi
           }
+          echo "✅ Release process completed!"
+          echo "::endgroup::"
