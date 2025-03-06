@@ -112,6 +112,14 @@ resource "aws_security_group" "ecs" {
   description = "Security group for Timesheet ECS service"
   vpc_id      = aws_vpc.main.id
 
+  ingress {
+    from_port       = 3000
+    to_port         = 3000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+    description     = "Allow inbound traffic from ALB"
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -356,6 +364,14 @@ resource "aws_ecs_task_definition" "app" {
       image     = "1234.dkr.ecr.${var.aws_region}.amazonaws.com/***REMOVED***/timesheet:latest"
       essential = true
       
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
+      }
+
       portMappings = [
         {
           containerPort = 3000
@@ -454,6 +470,7 @@ resource "aws_lb_target_group" "app" {
     timeout             = 5
     protocol           = "HTTP"
     matcher            = "200-399"
+    startup_grace_period = 120
   }
 
   deregistration_delay = 0
