@@ -78,3 +78,9 @@ variable "nextauth_secret" {
   type        = string
   sensitive   = true
 } 
+
+variable "database_url" {
+  description = "Database URL"
+  type        = string
+  sensitive   = true
+} 
