@@ -273,7 +273,49 @@ resource "aws_cloudwatch_log_group" "app" {
   retention_in_days = 30
 }
 
-# ECS Task Definition
+# Create AWS Secrets Manager secret
+resource "aws_secretsmanager_secret" "timesheet_secrets" {
+  name = "timesheet/app/secrets"
+  
+  tags = {
+    Name = "timesheet-app-secrets"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "timesheet_secrets" {
+  secret_id = aws_secretsmanager_secret.timesheet_secrets.id
+  secret_string = jsonencode({
+    DB_USERNAME           = var.db_username
+    DB_PASSWORD          = var.db_password
+    JIRA_API_TOKEN       = var.jira_api_token
+    JIRA_USER_EMAIL      = var.jira_user_email
+    IPAYROLL_CLIENT_ID   = var.ipayroll_client_id
+    IPAYROLL_CLIENT_SECRET = var.ipayroll_client_secret
+  })
+}
+
+# Add Secrets Manager access to ECS Task Role
+resource "aws_iam_role_policy" "ecs_task_secrets_policy" {
+  name = "timesheet-ecs-task-secrets-policy"
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.timesheet_secrets.arn
+        ]
+      }
+    ]
+  })
+}
+
+# Update ECS Task Definition to use secrets
 resource "aws_ecs_task_definition" "app" {
   family                   = "timesheet-app"
   network_mode             = "awsvpc"
@@ -303,28 +345,31 @@ resource "aws_ecs_task_definition" "app" {
           value = timestamp()
         },
         {
-          name  = "DATABASE_URL",
-          value = "mysql://${var.db_username}:${var.db_password}@${aws_db_instance.main.endpoint}/timesheet"
-        },
-        {
-          name  = "JIRA_API_TOKEN",
-          value = var.jira_api_token
-        },
-        {
-          name  = "JIRA_USER_EMAIL",
-          value = var.jira_user_email
-        },
-        {
-          name  = "IPAYROLL_CLIENT_ID",
-          value = var.ipayroll_client_id
-        },
-        {
-          name  = "IPAYROLL_CLIENT_SECRET",
-          value = var.ipayroll_client_secret
-        },
-        {
           name  = "IPAYROLL_REDIRECT_URI",
           value = "http://${aws_lb.app.dns_name}/api/ipayroll/auth/callback"
+        }
+      ]
+      
+      secrets = [
+        {
+          name      = "DATABASE_URL"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:DB_USERNAME,DB_PASSWORD::${aws_db_instance.main.endpoint}/timesheet"
+        },
+        {
+          name      = "JIRA_API_TOKEN"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:JIRA_API_TOKEN::"
+        },
+        {
+          name      = "JIRA_USER_EMAIL"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:JIRA_USER_EMAIL::"
+        },
+        {
+          name      = "IPAYROLL_CLIENT_ID"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:IPAYROLL_CLIENT_ID::"
+        },
+        {
+          name      = "IPAYROLL_CLIENT_SECRET"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:IPAYROLL_CLIENT_SECRET::"
         }
       ]
       
