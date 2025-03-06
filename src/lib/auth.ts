@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/auth.config";
+import { getAuthOptions } from "@/app/api/auth/[...nextauth]/auth.config";
 
 export async function getSession() {
   if (process.env.IS_UNDER_TEST) {
@@ -10,7 +10,7 @@ export async function getSession() {
     };
   }
 
-  return await getServerSession(authOptions);
+  return await getServerSession(getAuthOptions());
 }
 
 // Server Action for handling auth state
