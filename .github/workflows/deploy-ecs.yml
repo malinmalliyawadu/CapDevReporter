@@ -167,8 +167,11 @@ jobs:
       - name: 🚀 Force new ECS deployment
         run: |
           echo "Forcing new deployment of ECS service..."
-          DEPLOYMENT_ID=$(aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment --query 'service.deployments[?status==`PRIMARY`].id' --output text)
-          echo "Started deployment with ID: $DEPLOYMENT_ID"
+          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment
+          echo "Deployment triggered, waiting for it to start..."
+
+          # Wait a moment for the deployment to register in AWS
+          sleep 30
 
           echo "Monitoring deployment status..."
 
@@ -176,7 +179,9 @@ jobs:
           STABLE=false
           TIMEOUT=1800  # 30 minutes timeout
           START_TIME=$(date +%s)
-          CHECK_INTERVAL=15  # Check every 15 seconds
+          CHECK_INTERVAL=30  # Check every 30 seconds (increased from 15)
+          CONSECUTIVE_STABLE_CHECKS=0
+          REQUIRED_STABLE_CHECKS=3  # Require 3 consecutive stable checks
 
           while [ "$STABLE" != "true" ]; do
             # Get current time and calculate elapsed time
@@ -192,12 +197,17 @@ jobs:
             # Get deployment status
             DEPLOYMENT_INFO=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].deployments')
             
+            # Count number of deployments
+            DEPLOYMENT_COUNT=$(echo "$DEPLOYMENT_INFO" | jq 'length')
+            echo "Current deployment count: $DEPLOYMENT_COUNT"
+            
             # Extract primary deployment details
             PRIMARY_DEPLOYMENT=$(echo "$DEPLOYMENT_INFO" | jq '.[] | select(.status == "PRIMARY")')
             DESIRED_COUNT=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.desiredCount')
             RUNNING_COUNT=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.runningCount')
             PENDING_COUNT=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.pendingCount')
             FAILED_TASKS=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.failedTasks')
+            DEPLOYMENT_ID=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.id')
             
             # Get deployment status from events (last 5 events)
             RECENT_EVENTS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].events[0:5]')
@@ -205,21 +215,37 @@ jobs:
             
             # Print status update
             echo "⏱️ Deployment status after $((ELAPSED / 60))m $((ELAPSED % 60))s:"
+            echo "🔄 Deployment ID: $DEPLOYMENT_ID"
             echo "🔄 Tasks: $RUNNING_COUNT running, $PENDING_COUNT pending, $FAILED_TASKS failed (of $DESIRED_COUNT desired)"
             echo "📝 Latest event: $LATEST_EVENT"
             
-            # Check if deployment is stable (all desired tasks are running and no pending tasks)
-            if [ "$RUNNING_COUNT" -eq "$DESIRED_COUNT" ] && [ "$PENDING_COUNT" -eq 0 ]; then
+            # Check if there are any active previous deployments
+            PREVIOUS_DEPLOYMENTS=$(echo "$DEPLOYMENT_INFO" | jq '[.[] | select(.status != "PRIMARY")] | length')
+            echo "Previous deployments still active: $PREVIOUS_DEPLOYMENTS"
+            
+            # Check if deployment is stable (all desired tasks are running, no pending tasks, and no previous deployments)
+            if [ "$RUNNING_COUNT" -eq "$DESIRED_COUNT" ] && [ "$PENDING_COUNT" -eq 0 ] && [ "$PREVIOUS_DEPLOYMENTS" -eq 0 ]; then
               # Check if service is stable by checking the deployment status
               SERVICE_STATUS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].status' --output text)
               
               if [ "$SERVICE_STATUS" = "ACTIVE" ]; then
-                STABLE=true
-                echo "✅ Deployment stabilized successfully!"
+                CONSECUTIVE_STABLE_CHECKS=$((CONSECUTIVE_STABLE_CHECKS + 1))
+                echo "✅ Service appears stable ($CONSECUTIVE_STABLE_CHECKS/$REQUIRED_STABLE_CHECKS consecutive checks)"
+                
+                if [ $CONSECUTIVE_STABLE_CHECKS -ge $REQUIRED_STABLE_CHECKS ]; then
+                  STABLE=true
+                  echo "✅ Deployment stabilized successfully after $REQUIRED_STABLE_CHECKS consecutive stable checks!"
+                else
+                  echo "⏳ Waiting for additional confirmation... (checking again in ${CHECK_INTERVAL}s)"
+                  sleep $CHECK_INTERVAL
+                fi
               else
+                CONSECUTIVE_STABLE_CHECKS=0
                 echo "⚠️ Service appears stable but status is $SERVICE_STATUS. Continuing to monitor..."
+                sleep $CHECK_INTERVAL
               fi
             else
+              CONSECUTIVE_STABLE_CHECKS=0
               echo "⏳ Waiting for deployment to stabilize... (checking again in ${CHECK_INTERVAL}s)"
               sleep $CHECK_INTERVAL
             fi
