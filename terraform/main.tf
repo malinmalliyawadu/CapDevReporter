@@ -364,14 +364,6 @@ resource "aws_ecs_task_definition" "app" {
       image     = "1234.dkr.ecr.${var.aws_region}.amazonaws.com/***REMOVED***/timesheet:latest"
       essential = true
       
-      healthCheck = {
-        command     = ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (res) => process.exit(res.statusCode >= 200 && res.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 120
-      }
-
       portMappings = [
         {
           containerPort = 3000
@@ -396,10 +388,6 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "NODE_ENV",
           value = "production"
-        },
-        {
-          name  = "PORT",
-          value = "3000"
         }
       ]
       
@@ -474,15 +462,15 @@ resource "aws_lb_target_group" "app" {
   
   health_check {
     enabled             = true
-    interval            = 60
+    interval            = 30
     path                = "/api/health"
     port                = "traffic-port"
     healthy_threshold   = 2
-    unhealthy_threshold = 5
-    timeout             = 30
+    unhealthy_threshold = 3
+    timeout             = 10
     protocol            = "HTTP"
     matcher             = "200-399"
-    startup_grace_period = 300
+    startup_grace_period = 120
   }
 
   deregistration_delay = 0

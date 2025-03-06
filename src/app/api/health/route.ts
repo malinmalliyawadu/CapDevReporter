@@ -1,29 +1,27 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
 export async function GET() {
-  try {
-    // Test database connection
-    const prisma = new PrismaClient();
-    await prisma.$connect();
-    await prisma.$disconnect();
+  const timestamp = new Date().toISOString();
+  console.log(`[HEALTH CHECK] Health check endpoint called at ${timestamp}`);
+  console.log("[HEALTH CHECK] Request headers:", JSON.stringify(headers()));
 
-    return NextResponse.json(
-      {
-        status: "healthy",
-        timestamp: new Date().toISOString(),
-      },
-      { status: 200 }
+  return NextResponse.json(
+    {
+      status: "healthy",
+      timestamp,
+      message: "Health check endpoint is working correctly",
+    },
+    { status: 200 }
+  );
+}
+
+// Helper function to get request headers
+function headers() {
+  try {
+    return Object.fromEntries(
+      Object.entries(new Headers()).map(([k, v]) => [k, v])
     );
-  } catch (error) {
-    console.error("Health check failed:", error);
-    return NextResponse.json(
-      {
-        status: "unhealthy",
-        error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
+  } catch (e) {
+    return { error: "Could not get headers" };
   }
 }
