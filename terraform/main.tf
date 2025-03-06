@@ -365,11 +365,11 @@ resource "aws_ecs_task_definition" "app" {
       essential = true
       
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+        command     = ["CMD-SHELL", "nc -z localhost 3000 || exit 1"]
         interval    = 30
         timeout     = 5
         retries     = 3
-        startPeriod = 60
+        startPeriod = 120
       }
 
       portMappings = [
@@ -388,6 +388,10 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "IPAYROLL_REDIRECT_URI",
           value = "http://${aws_lb.app.dns_name}/api/ipayroll/auth/callback"
+        },
+        {
+          name  = "NEXTAUTH_URL",
+          value = "http://${aws_lb.app.dns_name}"
         }
       ]
       
