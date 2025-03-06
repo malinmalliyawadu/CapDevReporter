@@ -119,6 +119,15 @@ resource "aws_security_group" "ecs" {
     security_groups = [aws_security_group.alb.id]
     description     = "Allow inbound traffic from ALB"
   }
+  
+  # Allow health check traffic from anywhere within the VPC
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]
+    description = "Allow health check traffic from within VPC"
+  }
 
   egress {
     from_port   = 0
@@ -470,7 +479,7 @@ resource "aws_lb_target_group" "app" {
     timeout             = 10
     protocol            = "HTTP"
     matcher             = "200-399"
-    startup_grace_period = 120
+    startup_grace_period = 300
   }
 
   deregistration_delay = 0
@@ -500,7 +509,7 @@ resource "aws_ecs_service" "app" {
   desired_count   = 1
   launch_type     = "FARGATE"
   force_new_deployment = true
-  wait_for_steady_state = false
+  wait_for_steady_state = true
   
   deployment_minimum_healthy_percent = 0
   deployment_maximum_percent = 200
