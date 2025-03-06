@@ -1,8 +1,18 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, Page } from "@playwright/test";
+
+// Helper function to wait for loading spinner to disappear
+async function waitForLoadingSpinner(page: Page) {
+  // Wait for the initial loading spinner to disappear
+  await page.waitForSelector(".animate-spin", { state: "attached" });
+  await page.waitForSelector("[data-testid=report-data-display]", {
+    state: "attached",
+  });
+}
 
 test.describe("Reports Page", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/reports");
+    await waitForLoadingSpinner(page);
   });
 
   test("should load reports page with filters and sections", async ({
@@ -38,6 +48,7 @@ test.describe("Reports Page", () => {
 
     // Enter search term
     await searchInput.fill("test");
+    await waitForLoadingSpinner(page);
 
     // Wait for table to update (table should remain visible)
     await expect(page.getByRole("table")).toBeVisible();
@@ -47,10 +58,12 @@ test.describe("Reports Page", () => {
     // Open team dropdown and select first team
     await page.getByRole("combobox", { name: "Team" }).click();
     await page.getByRole("option").first().click();
+    await waitForLoadingSpinner(page);
 
     // Open role dropdown and select first role
     await page.getByRole("combobox", { name: "Role" }).click();
     await page.getByRole("option").first().click();
+    await waitForLoadingSpinner(page);
 
     // Verify table updates
     await expect(page.getByRole("table")).toBeVisible();
@@ -62,6 +75,7 @@ test.describe("Reports Page", () => {
 
     // Select a preset date range (This Week)
     await page.getByRole("button", { name: "This Week" }).click();
+    await waitForLoadingSpinner(page);
 
     // Verify table updates
     await expect(page.getByRole("table")).toBeVisible();
@@ -71,6 +85,7 @@ test.describe("Reports Page", () => {
 test.describe("Time Reports Table", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/reports");
+    await waitForLoadingSpinner(page);
     await page.waitForSelector("table");
   });
 
@@ -87,10 +102,12 @@ test.describe("Time Reports Table", () => {
 
     // Click to sort ascending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
 
     // Click again to sort descending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
   });
 
@@ -107,10 +124,12 @@ test.describe("Time Reports Table", () => {
 
     // Click to sort ascending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
 
     // Click again to sort descending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
   });
 
@@ -127,10 +146,12 @@ test.describe("Time Reports Table", () => {
 
     // Click to sort ascending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
 
     // Click again to sort descending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
   });
 
@@ -147,10 +168,12 @@ test.describe("Time Reports Table", () => {
 
     // Click to sort ascending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
 
     // Click again to sort descending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
   });
 
@@ -167,10 +190,12 @@ test.describe("Time Reports Table", () => {
 
     // Click to sort ascending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
 
     // Click again to sort descending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
   });
 
@@ -187,10 +212,12 @@ test.describe("Time Reports Table", () => {
 
     // Click to sort ascending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-up/);
 
     // Click again to sort descending
     await sortButton.click();
+    await waitForLoadingSpinner(page);
     await expect(sortIcon).toHaveClass(/lucide-arrow-down/);
   });
 });

@@ -48,7 +48,7 @@ export function ReportDataDisplay({
   }
 
   return (
-    <div className="space-y-8 relative">
+    <div className="space-y-8 relative" data-testid="report-data-display">
       <div
         className={cn(
           "absolute inset-0 bg-background/50 flex items-center justify-center z-40",
