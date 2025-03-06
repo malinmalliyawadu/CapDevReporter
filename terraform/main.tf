@@ -318,7 +318,7 @@ resource "aws_iam_role_policy" "ecs_task_secrets_policy" {
   })
 }
 
-# Update ECS Task Definition to use secrets
+# Update ECS Task Definition to include all secrets
 resource "aws_ecs_task_definition" "app" {
   family                   = "timesheet-app"
   network_mode             = "awsvpc"
