@@ -17,60 +17,29 @@ export function ReportDataDisplay({
 }) {
   const [data, setData] = useState<TimeReportData>(initialData);
   const [isPending, startTransition] = useTransition();
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const searchParams = useSearchParams();
   const initialFetchDone = useRef(false);
 
-  // Fetch data on mount to ensure we have the full date range
+  // Fetch data on mount and when search params change
   useEffect(() => {
-    // Only run this effect once on mount
-    if (initialFetchDone.current) return;
-    initialFetchDone.current = true;
-
     // Convert searchParams to a plain object
     const paramsObject: Record<string, string> = {};
     searchParams.forEach((value, key) => {
       paramsObject[key] = value;
     });
 
-    // Force a fresh fetch to ensure we have the complete data for the date range
     startTransition(async () => {
       try {
         const newData = await fetchTimeReportData(paramsObject);
         setData(newData);
-        setIsFirstLoad(false);
+        initialFetchDone.current = true;
       } catch (error) {
         console.error("Error fetching data:", error);
-        setIsFirstLoad(false);
       }
     });
   }, [searchParams]);
 
-  // Fetch data when search params change
-  useEffect(() => {
-    // Skip the initial render since we already fetched data in the mount effect
-    if (!initialFetchDone.current) return;
-
-    startTransition(async () => {
-      try {
-        // Convert searchParams to a plain object
-        const paramsObject: Record<string, string> = {};
-        searchParams.forEach((value, key) => {
-          paramsObject[key] = value;
-        });
-
-        const newData = await fetchTimeReportData(paramsObject);
-        setData(newData);
-        setIsFirstLoad(false);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setIsFirstLoad(false);
-      }
-    });
-  }, [searchParams]);
-
-  // Show a loading state for the first load
-  if (isFirstLoad) {
+  if (!initialFetchDone.current) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -84,7 +53,7 @@ export function ReportDataDisplay({
         className={cn(
           "absolute inset-0 bg-background/50 flex items-center justify-center z-40",
           "transition-all duration-200 ease-in-out",
-          isPending && !isFirstLoad
+          isPending
             ? "opacity-100 backdrop-blur-[1px]"
             : "opacity-0 backdrop-blur-0 pointer-events-none"
         )}
@@ -94,9 +63,7 @@ export function ReportDataDisplay({
       <div
         className={cn(
           "transition-opacity duration-200 ease-in-out",
-          isPending && !isFirstLoad
-            ? "opacity-50 pointer-events-none"
-            : "opacity-100"
+          isPending ? "opacity-50 pointer-events-none" : "opacity-100"
         )}
       >
         <TimeDistributionCharts
