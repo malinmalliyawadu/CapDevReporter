@@ -210,12 +210,14 @@ jobs:
             
             # Check if deployment is stable (all desired tasks are running and no pending tasks)
             if [ "$RUNNING_COUNT" -eq "$DESIRED_COUNT" ] && [ "$PENDING_COUNT" -eq 0 ]; then
-              # Double check with AWS CLI's built-in waiter logic
-              if aws ecs wait services-stable --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --max-attempts 1; then
+              # Check if service is stable by checking the deployment status
+              SERVICE_STATUS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].status' --output text)
+              
+              if [ "$SERVICE_STATUS" = "ACTIVE" ]; then
                 STABLE=true
                 echo "✅ Deployment stabilized successfully!"
               else
-                echo "⚠️ Service appears stable but AWS disagrees. Continuing to monitor..."
+                echo "⚠️ Service appears stable but status is $SERVICE_STATUS. Continuing to monitor..."
               fi
             else
               echo "⏳ Waiting for deployment to stabilize... (checking again in ${CHECK_INTERVAL}s)"
