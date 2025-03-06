@@ -177,11 +177,11 @@ jobs:
 
           # Initialize variables
           STABLE=false
-          TIMEOUT=1800  # 30 minutes timeout
+          TIMEOUT=180  # 3 minutes
           START_TIME=$(date +%s)
-          CHECK_INTERVAL=30  # Check every 30 seconds (increased from 15)
+          CHECK_INTERVAL=5
           CONSECUTIVE_STABLE_CHECKS=0
-          REQUIRED_STABLE_CHECKS=3  # Require 3 consecutive stable checks
+          REQUIRED_STABLE_CHECKS=3
 
           while [ "$STABLE" != "true" ]; do
             # Get current time and calculate elapsed time
