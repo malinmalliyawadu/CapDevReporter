@@ -396,7 +396,7 @@ resource "aws_ecs_task_definition" "app" {
         },
         {
           name  = "NEXTAUTH_URL",
-          value = "http://${aws_lb.app.dns_name}"
+          value = "https://${aws_lb.app.dns_name}"
         },
         {
           name  = "NODE_ENV",
