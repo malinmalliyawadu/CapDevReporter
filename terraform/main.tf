@@ -392,7 +392,7 @@ resource "aws_ecs_task_definition" "app" {
         },
         {
           name  = "IPAYROLL_REDIRECT_URI",
-          value = "http://${aws_lb.app.dns_name}/api/ipayroll/auth/callback"
+          value = "https://${aws_lb.app.dns_name}/api/ipayroll/auth/callback"
         },
         {
           name  = "NEXTAUTH_URL",
