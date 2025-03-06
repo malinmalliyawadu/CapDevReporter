@@ -285,7 +285,7 @@ resource "aws_secretsmanager_secret" "timesheet_secrets" {
 resource "aws_secretsmanager_secret_version" "timesheet_secrets" {
   secret_id = aws_secretsmanager_secret.timesheet_secrets.id
   secret_string = jsonencode({
-    DATABASE_URL           = "mysql://timesheet_admin:${var.db_password}@${aws_db_instance.main.endpoint}/timesheet"
+    DATABASE_URL           = var.database_url
     JIRA_API_TOKEN         = var.jira_api_token
     JIRA_USER_EMAIL        = var.jira_user_email
     IPAYROLL_CLIENT_ID     = var.ipayroll_client_id
