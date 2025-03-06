@@ -9,8 +9,9 @@ export const validateIPayrollConfig = (): OAuthConfig => {
   const clientId = process.env.IPAYROLL_CLIENT_ID;
   const clientSecret = process.env.IPAYROLL_CLIENT_SECRET;
   const redirectUri = process.env.IPAYROLL_REDIRECT_URI;
-  const authorizationEndpoint = process.env.IPAYROLL_AUTH_ENDPOINT;
-  const tokenEndpoint = process.env.IPAYROLL_TOKEN_ENDPOINT;
+  const apiUrl = process.env.IPAYROLL_API_URL;
+  const authorizationEndpoint = `${apiUrl}/oauth/authorize`;
+  const tokenEndpoint = `${apiUrl}/oauth/token`;
   const scope = "customfields employees leaverequests parentalleaves";
 
   // Validate required configuration
@@ -23,11 +24,8 @@ export const validateIPayrollConfig = (): OAuthConfig => {
   if (!redirectUri) {
     throw new Error("IPAYROLL_REDIRECT_URI is required");
   }
-  if (!authorizationEndpoint) {
-    throw new Error("IPAYROLL_AUTH_ENDPOINT is required");
-  }
-  if (!tokenEndpoint) {
-    throw new Error("IPAYROLL_TOKEN_ENDPOINT is required");
+  if (!apiUrl) {
+    throw new Error("IPAYROLL_API_URL is required");
   }
   if (!scope) {
     throw new Error("IPAYROLL_SCOPE is required");

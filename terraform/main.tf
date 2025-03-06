@@ -401,6 +401,14 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "NODE_ENV",
           value = "production"
+        },
+        {
+          name  = "JIRA_HOST",
+          value = "***REMOVED***.atlassian.net"
+        },
+        {
+          name  = "IPAYROLL_API_URL",
+          value = "https://demo.ipayroll.co.nz"
         }
       ]
       
