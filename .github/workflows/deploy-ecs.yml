@@ -131,7 +131,8 @@ jobs:
           # Enable BuildKit with improved layer caching and better space efficiency
           DOCKER_BUILDKIT=1 docker build \
                 --progress=plain \
-                --no-cache \
+                --cache-from $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+                --build-arg BUILDKIT_INLINE_CACHE=1 \
                 --network=host \
                 --build-arg DATABASE_URL="${{ env.DATABASE_URL }}" \
                 --build-arg NEXT_PUBLIC_JIRA_URL=${{ env.NEXT_PUBLIC_JIRA_URL }} \
