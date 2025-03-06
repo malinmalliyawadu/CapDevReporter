@@ -356,39 +356,39 @@ resource "aws_ecs_task_definition" "app" {
       secrets = [
         {
           name      = "DATABASE_URL"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:DATABASE_URL::"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
         },
         {
           name      = "JIRA_API_TOKEN"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:JIRA_API_TOKEN::"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
         },
         {
           name      = "JIRA_USER_EMAIL"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:JIRA_USER_EMAIL::"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
         },
         {
           name      = "IPAYROLL_CLIENT_ID"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:IPAYROLL_CLIENT_ID::"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
         },
         {
           name      = "IPAYROLL_CLIENT_SECRET"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:IPAYROLL_CLIENT_SECRET::"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
         },
         {
           name      = "AZURE_AD_CLIENT_ID"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:AZURE_AD_CLIENT_ID::"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
         },
         {
           name      = "AZURE_AD_CLIENT_SECRET"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:AZURE_AD_CLIENT_SECRET::"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
         },
         {
           name      = "AZURE_AD_TENANT_ID"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:AZURE_AD_TENANT_ID::"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
         },
         {
           name      = "NEXTAUTH_SECRET"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:NEXTAUTH_SECRET::"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}"
         }
       ]
       
