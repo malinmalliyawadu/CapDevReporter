@@ -203,7 +203,7 @@ resource "aws_db_instance" "main" {
   allocated_storage      = 20
   storage_type           = "gp3"
   db_name                = "timesheet"
-  username               = var.db_username
+  username               = "timesheet_admin"
   password               = var.db_password
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.rds.id]
@@ -285,12 +285,15 @@ resource "aws_secretsmanager_secret" "timesheet_secrets" {
 resource "aws_secretsmanager_secret_version" "timesheet_secrets" {
   secret_id = aws_secretsmanager_secret.timesheet_secrets.id
   secret_string = jsonencode({
-    DB_USERNAME           = var.db_username
-    DB_PASSWORD          = var.db_password
-    JIRA_API_TOKEN       = var.jira_api_token
-    JIRA_USER_EMAIL      = var.jira_user_email
-    IPAYROLL_CLIENT_ID   = var.ipayroll_client_id
+    DATABASE_URL           = "mysql://timesheet_admin:${var.db_password}@${aws_db_instance.main.endpoint}/timesheet"
+    JIRA_API_TOKEN         = var.jira_api_token
+    JIRA_USER_EMAIL        = var.jira_user_email
+    IPAYROLL_CLIENT_ID     = var.ipayroll_client_id
     IPAYROLL_CLIENT_SECRET = var.ipayroll_client_secret
+    AZURE_AD_CLIENT_ID     = var.azure_ad_client_id
+    AZURE_AD_CLIENT_SECRET = var.azure_ad_client_secret
+    AZURE_AD_TENANT_ID     = var.azure_ad_tenant_id
+    NEXTAUTH_SECRET        = var.nextauth_secret
   })
 }
 
@@ -353,7 +356,7 @@ resource "aws_ecs_task_definition" "app" {
       secrets = [
         {
           name      = "DATABASE_URL"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:DB_USERNAME,DB_PASSWORD::${aws_db_instance.main.endpoint}/timesheet"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:DATABASE_URL::"
         },
         {
           name      = "JIRA_API_TOKEN"
@@ -370,6 +373,22 @@ resource "aws_ecs_task_definition" "app" {
         {
           name      = "IPAYROLL_CLIENT_SECRET"
           valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:IPAYROLL_CLIENT_SECRET::"
+        },
+        {
+          name      = "AZURE_AD_CLIENT_ID"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:AZURE_AD_CLIENT_ID::"
+        },
+        {
+          name      = "AZURE_AD_CLIENT_SECRET"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:AZURE_AD_CLIENT_SECRET::"
+        },
+        {
+          name      = "AZURE_AD_TENANT_ID"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:AZURE_AD_TENANT_ID::"
+        },
+        {
+          name      = "NEXTAUTH_SECRET"
+          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:NEXTAUTH_SECRET::"
         }
       ]
       
