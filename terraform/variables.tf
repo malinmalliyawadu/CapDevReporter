@@ -53,4 +53,28 @@ variable "jira_api_token" {
 variable "jira_user_email" {
   description = "Jira user email"
   type        = string
+}
+
+variable "azure_ad_client_id" {
+  description = "Azure AD client ID for authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "azure_ad_client_secret" {
+  description = "Azure AD client secret for authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "azure_ad_tenant_id" {
+  description = "Azure AD tenant ID for authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "nextauth_secret" {
+  description = "Secret key for NextAuth.js"
+  type        = string
+  sensitive   = true
 } 
