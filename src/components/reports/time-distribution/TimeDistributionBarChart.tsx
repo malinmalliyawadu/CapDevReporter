@@ -33,7 +33,11 @@ export function TimeDistributionBarChart({
       </CardHeader>
       <CardContent className="pt-0">
         <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+            key={`bar-chart-${data.length}`}
+          >
             <BarChart
               data={data}
               layout="vertical"

@@ -24,7 +24,11 @@ export function TimeDistributionPieChart({
       </CardHeader>
       <CardContent className="pt-0">
         <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+            key={`pie-chart-${data.length}`}
+          >
             <PieChart>
               <defs>
                 {data.map((entry, index) => {

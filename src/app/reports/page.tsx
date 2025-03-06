@@ -48,6 +48,19 @@ export default async function ReportsPage({
     search: search,
   });
 
+  // Log the date range and data size for debugging
+  console.log(
+    `Initial data fetch with date range: ${fromDate.toISOString()} to ${toDate.toISOString()}`
+  );
+  console.log(`Fetched ${data.timeReports.length} time reports`);
+
+  // Log the weeks in the data
+  if (data.timeReports.length > 0) {
+    const weeks = data.timeReports.map((report) => report.week);
+    const uniqueWeeks = [...new Set(weeks)].sort();
+    console.log(`Initial data spans weeks: ${uniqueWeeks.join(", ")}`);
+  }
+
   return (
     <div className="space-y-8">
       <PageHeader

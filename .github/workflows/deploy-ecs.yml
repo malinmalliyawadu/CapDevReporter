@@ -168,8 +168,9 @@ jobs:
 
       - name: 🚀 Force new ECS deployment
         run: |
-          echo "🔄 Forcing new deployment of ECS service..."
+          echo "::group::🔄 Forcing new deployment of ECS service..."
           aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment
+          echo "::endgroup::"
           echo "✅ Deployment triggered, waiting for it to start..."
 
           # Wait a moment for the deployment to register in AWS
@@ -240,6 +241,7 @@ jobs:
                 if [ $CONSECUTIVE_STABLE_CHECKS -ge $REQUIRED_STABLE_CHECKS ]; then
                   STABLE=true
                   echo "✅ Deployment stabilized successfully after $REQUIRED_STABLE_CHECKS consecutive stable checks!"
+                  echo "::endgroup::"
                 else
                   echo "⏳ Waiting for additional confirmation... (checking again in ${CHECK_INTERVAL}s)"
                   echo "::endgroup::"

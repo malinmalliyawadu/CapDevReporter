@@ -3,16 +3,31 @@
 import type { TimeReport, TimeReportEntry } from "@/types/timeReport";
 import { TimeDistributionPieChart } from "./TimeDistributionPieChart";
 import { TimeDistributionBarChart } from "./TimeDistributionBarChart";
+import { memo } from "react";
 
 interface TimeDistributionChartsProps {
   timeReport: TimeReport[];
   timeTypes: Array<{ id: string; name: string }>;
 }
 
-export function TimeDistributionCharts({
+export const TimeDistributionCharts = memo(function TimeDistributionCharts({
   timeReport,
   timeTypes,
 }: TimeDistributionChartsProps) {
+  // Early return if no data
+  if (!timeReport || timeReport.length === 0) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 mb-4">
+        <div className="h-[300px] flex items-center justify-center border rounded-lg">
+          <p className="text-muted-foreground">No data available</p>
+        </div>
+        <div className="h-[300px] flex items-center justify-center border rounded-lg">
+          <p className="text-muted-foreground">No data available</p>
+        </div>
+      </div>
+    );
+  }
+
   // Calculate detailed time type data including leave
   const timeTypeHours = new Map<
     string,
@@ -170,4 +185,4 @@ export function TimeDistributionCharts({
       <TimeDistributionBarChart data={detailedChartData} total={totalHours} />
     </div>
   );
-}
+});
