@@ -16,15 +16,9 @@ RUN if [ -n "$***REMOVED***ROOTCACERT" ]; then \
 
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
-
+# Install dependencies using npm
+COPY package.json package-lock.json* ./
+RUN npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -56,39 +50,15 @@ RUN npx prisma generate
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN \
-  if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+RUN npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
 ARG ***REMOVED***ROOTCACERT
-# Add runtime environment variables
-ENV DATABASE_URL="file:/app/data/timesheet.db"
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+
 ENV NODE_ENV=production
-ARG NEXT_PUBLIC_JIRA_URL
-ARG JIRA_API_TOKEN
-ARG JIRA_USER_EMAIL
-ARG IPAYROLL_API_URL
-ARG IPAYROLL_API_KEY
-ARG IPAYROLL_COMPANY_ID
-ARG JIRA_HOST
-ENV NEXT_PUBLIC_JIRA_URL=${NEXT_PUBLIC_JIRA_URL}
-ENV JIRA_API_TOKEN=${JIRA_API_TOKEN}
-ENV JIRA_USER_EMAIL=${JIRA_USER_EMAIL}
-ENV IPAYROLL_API_URL=${IPAYROLL_API_URL}
-ENV IPAYROLL_API_KEY=${IPAYROLL_API_KEY}
-ENV IPAYROLL_COMPANY_ID=${IPAYROLL_COMPANY_ID}
-ENV JIRA_HOST=${JIRA_HOST}
 
-# Install required packages
-RUN apk add --no-cache dos2unix
-
+# Setup certificates for local development proxy
 RUN if [ -n "$***REMOVED***ROOTCACERT" ]; then \
     echo "$***REMOVED***ROOTCACERT" > /root/wlgca.crt; \
     cat /root/wlgca.crt >> /etc/ssl/certs/ca-certificates.crt; \
@@ -97,64 +67,21 @@ RUN if [ -n "$***REMOVED***ROOTCACERT" ]; then \
     cp /root/wlgca.crt /usr/local/share/ca-certificates/wlgca.crt; \
     update-ca-certificates; \
     fi
+
+# Setup non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
 WORKDIR /app
 
-# Create prisma directory and set permissions
-RUN mkdir -p prisma && chown -R 1001:1001 prisma
-
-# Copy Prisma files and generate client
-COPY --from=builder /app/prisma/schema.prisma ./prisma/
-COPY --from=builder /app/prisma/migrations ./prisma/migrations/
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-
-ENV NODE_ENV=production
-# Uncomment the following line in case you want to disable telemetry during runtime.
-# ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Create data directory for SQLite database
-RUN mkdir -p /app/data && \
-    chown -R nextjs:nodejs /app/data && \
-    chmod 755 /app/data
-
-# Ensure the database directory is writable by the nextjs user
-RUN mkdir -p /app/prisma && \
-    chown -R nextjs:nodejs /app/prisma && \
-    chmod 755 /app/prisma
-
-COPY --from=builder /app/public ./public
-
-# Copy the entire .next directory instead of just static files
+# Copy only what's needed to run the application
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-
-# Copy package.json and install production dependencies
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/node_modules ./node_modules
-
-# Install ts-node for seeding
-RUN npm install -g ts-node typescript @types/node
-
-# Ensure Prisma files have correct permissions
-RUN chown -R nextjs:nodejs ./prisma
-RUN chown -R nextjs:nodejs ./node_modules/.prisma
-RUN chown -R nextjs:nodejs ./node_modules/@prisma
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 
 EXPOSE 3000
 
-# Copy database initialization script
-COPY --chown=nextjs:nodejs prisma/schema.prisma ./prisma/
-COPY --chown=nextjs:nodejs prisma/migrations ./prisma/migrations/
-COPY --chown=nextjs:nodejs prisma/seed.ts ./prisma/
-COPY --chown=nextjs:nodejs scripts/init-db.sh ./scripts/
-
-# Ensure script has correct permissions and line endings
-RUN chmod +x ./scripts/init-db.sh && \
-    dos2unix ./scripts/init-db.sh 2>/dev/null || true
-
-# Use next start instead of node server.js since we're not using standalone output
-CMD ["/bin/sh", "-c", "./scripts/init-db.sh && npm run start"]
+CMD ["npm", "run", "start"]
