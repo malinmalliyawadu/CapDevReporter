@@ -365,7 +365,7 @@ resource "aws_ecs_task_definition" "app" {
       essential = true
       
       healthCheck = {
-        command     = ["CMD-SHELL", "nc -z localhost 3000 || exit 1"]
+        command     = ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (res) => process.exit(res.statusCode >= 200 && res.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"]
         interval    = 30
         timeout     = 5
         retries     = 3
@@ -392,6 +392,14 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "NEXTAUTH_URL",
           value = "http://${aws_lb.app.dns_name}"
+        },
+        {
+          name  = "NODE_ENV",
+          value = "production"
+        },
+        {
+          name  = "PORT",
+          value = "3000"
         }
       ]
       
@@ -466,15 +474,15 @@ resource "aws_lb_target_group" "app" {
   
   health_check {
     enabled             = true
-    interval            = 30
+    interval            = 60
     path                = "/api/health"
     port                = "traffic-port"
     healthy_threshold   = 2
     unhealthy_threshold = 5
-    timeout             = 5
-    protocol           = "HTTP"
-    matcher            = "200-399"
-    startup_grace_period = 120
+    timeout             = 30
+    protocol            = "HTTP"
+    matcher             = "200-399"
+    startup_grace_period = 300
   }
 
   deregistration_delay = 0
