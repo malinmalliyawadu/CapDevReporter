@@ -37,16 +37,9 @@ export default async function RolesPage() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Role List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Suspense fallback={<RolesTableSkeleton />}>
-            <RolesTable initialRoles={roles} />
-          </Suspense>
-        </CardContent>
-      </Card>
+      <Suspense fallback={<RolesTableSkeleton />}>
+        <RolesTable initialRoles={roles} />
+      </Suspense>
     </div>
   );
 }
