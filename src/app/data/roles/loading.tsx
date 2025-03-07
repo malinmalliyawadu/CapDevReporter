@@ -28,14 +28,7 @@ export default function Loading() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Role List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RolesTableSkeleton />
-        </CardContent>
-      </Card>
+      <RolesTableSkeleton />
     </div>
   );
 }

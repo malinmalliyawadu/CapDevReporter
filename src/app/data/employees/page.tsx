@@ -39,16 +39,9 @@ export default async function EmployeesPage() {
         <EmployeeSyncClient />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Employee List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Suspense fallback={<EmployeesTableSkeleton />}>
-            <EmployeesTable initialEmployees={employees} roles={roles} />
-          </Suspense>
-        </CardContent>
-      </Card>
+      <Suspense fallback={<EmployeesTableSkeleton />}>
+        <EmployeesTable initialEmployees={employees} roles={roles} />
+      </Suspense>
     </div>
   );
 }

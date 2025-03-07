@@ -28,14 +28,7 @@ export default function Loading() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Time Types</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <TimeTypesTableSkeleton />
-        </CardContent>
-      </Card>
+      <TimeTypesTableSkeleton />
     </div>
   );
 }

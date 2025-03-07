@@ -28,14 +28,7 @@ export default function Loading() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Employee List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <EmployeesTableSkeleton />
-        </CardContent>
-      </Card>
+      <EmployeesTableSkeleton />
     </div>
   );
 }

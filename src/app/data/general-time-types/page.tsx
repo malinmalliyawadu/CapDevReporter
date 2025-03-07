@@ -45,16 +45,9 @@ export default async function GeneralTimeTypesPage() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Time Categories</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Suspense fallback={<TimeTypesTableSkeleton />}>
-            <TimeTypesTable initialTimeTypes={timeTypes} />
-          </Suspense>
-        </CardContent>
-      </Card>
+      <Suspense fallback={<TimeTypesTableSkeleton />}>
+        <TimeTypesTable initialTimeTypes={timeTypes} />
+      </Suspense>
     </div>
   );
 }

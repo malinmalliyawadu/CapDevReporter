@@ -59,14 +59,7 @@ export default function Loading() {
         description="View and manage public holidays."
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Public Holidays</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <HolidaysTableSkeleton />
-        </CardContent>
-      </Card>
+      <HolidaysTableSkeleton />
     </div>
   );
 }

@@ -217,7 +217,7 @@ export function HolidaysTable({ initialHolidays }: HolidaysTableProps) {
         />
       </div>
 
-      <div className="rounded-lg border shadow-sm">
+      <div className="rounded-lg border shadow-sm mt-4">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

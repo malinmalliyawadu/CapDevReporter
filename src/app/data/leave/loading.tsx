@@ -28,14 +28,7 @@ export default function Loading() {
         />
       </div>
 
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>Leave Records</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <LeaveTableSkeleton />
-        </CardContent>
-      </Card>
+      <LeaveTableSkeleton />
     </div>
   );
 }

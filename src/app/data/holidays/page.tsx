@@ -74,32 +74,9 @@ export default async function HolidaysPage() {
         description="View and manage public holidays for Wellington, New Zealand."
       />
 
-      <div className="grid gap-6">
-        <Card className="overflow-hidden bg-gradient-to-b from-pink-50/50 to-violet-50/50 dark:from-pink-950/10 dark:to-violet-950/10">
-          <CardHeader className="space-y-1 pb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-2xl">Holiday Calendar</CardTitle>
-                <CardDescription className="mt-2">
-                  Showing holidays from{" "}
-                  {format(twelveMonthsAgo, "MMMM d, yyyy")} to{" "}
-                  {format(currentDate, "MMMM d, yyyy")}
-                </CardDescription>
-              </div>
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-100 to-violet-100 dark:from-pink-900/30 dark:to-violet-900/30">
-                <Calendar className="h-8 w-8 text-pink-500" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="px-0 pb-6">
-            <div className="rounded-lg bg-white/50 px-6 dark:bg-black/20">
-              <Suspense fallback={<HolidaysTableSkeleton />}>
-                <HolidaysTable initialHolidays={holidays} />
-              </Suspense>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Suspense fallback={<HolidaysTableSkeleton />}>
+        <HolidaysTable initialHolidays={holidays} />
+      </Suspense>
     </div>
   );
 }

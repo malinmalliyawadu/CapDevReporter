@@ -334,7 +334,7 @@ export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between p-4 border-t">
+      <div className="flex items-center justify-between pt-4">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"

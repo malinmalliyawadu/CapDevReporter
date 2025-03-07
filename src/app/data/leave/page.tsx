@@ -28,16 +28,9 @@ export default async function LeavePage() {
         <LeaveSyncClient />
       </div>
 
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>Leave Records</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Suspense fallback={<LeaveTableSkeleton />}>
-            <LeaveTable initialLeaveRecords={leaveRecords} />
-          </Suspense>
-        </CardContent>
-      </Card>
+      <Suspense fallback={<LeaveTableSkeleton />}>
+        <LeaveTable initialLeaveRecords={leaveRecords} />
+      </Suspense>
     </div>
   );
 }
