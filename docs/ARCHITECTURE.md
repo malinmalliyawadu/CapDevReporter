@@ -10,11 +10,12 @@ The ***REMOVED*** Timesheet application is a Next.js-based web application that 
 graph TD
     User[User/Employee] -->|Accesses| WebApp[Web Application]
     WebApp -->|Authenticates| Auth[Azure AD]
-    WebApp -->|Manages Time| TimeEntry[Time Entry Service]
-    WebApp -->|Views Reports| Reports[Reporting Service]
+    WebApp -->|Manage Time| TimeEntry[Time Entry Service]
+    WebApp -->|View Reports| Reports[lib/timeReportService.ts]
     TimeEntry -->|Stores Data| DB[(MySQL Database)]
-    TimeEntry -->|Syncs With| iPayroll[iPayroll API]
-    TimeEntry -->|Fetches Projects| Jira[Jira API]
+    TimeEntry -->|Syncs Time Entries| iPayroll[iPayroll API]
+    iPayroll -->|Provides Employee & Leave Data| TimeEntry
+    TimeEntry -->|Fetches Project Data| Jira[Jira API]
     Reports -->|Reads Data| DB
 ```
 
