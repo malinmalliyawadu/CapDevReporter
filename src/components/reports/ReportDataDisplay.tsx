@@ -24,7 +24,6 @@ export function ReportDataDisplay({
         router.replace(`${pathname}?${params.toString()}`, {
           scroll: false,
         });
-        router.refresh();
       });
     },
     [pathname, router]
