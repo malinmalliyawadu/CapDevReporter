@@ -70,17 +70,6 @@ The authentication flow leverages [NextAuth.js](https://next-auth.js.org/) to ha
 - **Seamless UX**: Users remain authenticated between page refreshes
 - **Stateless Backend**: No need to store session data in the database
 
-## 🚀 Deployment Architecture
-
-```mermaid
-graph TD
-    LB[Load Balancer] --> ECS[ECS Cluster]
-    ECS --> DB[(MySQL Database)]
-    ECS --> iPayroll[iPayroll API]
-    ECS --> Jira[Jira API]
-    ECS --> AzureAD[Azure AD]
-```
-
 ## ☁️ AWS Infrastructure
 
 The application is deployed on AWS using the following resources:
@@ -214,3 +203,5 @@ graph TD
   - Office IP only access to the application
 - **API Security**:
   - iPayroll and Jira API logging
+  - Secrets stored in AWS Secrets Manager
+  - Access and refresh tokens not stored
