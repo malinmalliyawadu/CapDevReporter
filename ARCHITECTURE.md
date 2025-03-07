@@ -9,7 +9,7 @@ The ***REMOVED*** Timesheet application is a Next.js-based web application that 
 ```mermaid
 graph TD
     User[User/Employee] -->|Accesses| WebApp[Web Application]
-    WebApp -->|Authenticates| Auth[Authentication Service]
+    WebApp -->|Authenticates| Auth[Azure AD]
     WebApp -->|Manages Time| TimeEntry[Time Entry Service]
     WebApp -->|Views Reports| Reports[Reporting Service]
     TimeEntry -->|Stores Data| DB[(MySQL Database)]
@@ -102,23 +102,48 @@ Key entities:
 
 ## 🔄 Authentication Flow
 
-The application uses Azure AD for authentication:
+The application uses Azure AD for authentication with JWT tokens:
 
 ```mermaid
 sequenceDiagram
     participant User
     participant App
     participant AzureAD
-    participant Database
 
     User->>App: Access application
     App->>User: Redirect to login
     User->>AzureAD: Login with credentials
-    AzureAD->>App: Return authentication token
-    App->>Database: Verify/create user
-    App->>User: Create session
-    User->>App: Access protected resources
+    AzureAD->>App: Return JWT token
+    App->>User: Create session with JWT
+    User->>App: Access protected resources with JWT
 ```
+
+## 🔄 Authentication Flow
+
+The application uses NextAuth.js with Azure AD for cookie-based authentication:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant App
+    participant NextAuth
+    participant AzureAD
+
+    User->>App: Access application
+    App->>NextAuth: Check session cookie
+    NextAuth->>User: Redirect to login (if no valid cookie)
+    User->>AzureAD: Login with credentials
+    AzureAD->>NextAuth: Return JWT token
+    NextAuth->>User: Set HTTP-only session cookie
+    User->>App: Access protected resources with cookie
+    App->>NextAuth: Validate session cookie
+```
+
+The authentication flow leverages NextAuth.js to handle the OAuth flow with Azure AD and manage secure, HTTP-only cookies for session persistence. This approach provides:
+
+- **Security**: HTTP-only cookies protect against XSS attacks
+- **Seamless UX**: Users remain authenticated between page refreshes
+- **Stateless Backend**: No need to store session data in the database
 
 ## 🚀 Deployment Architecture
 
@@ -160,9 +185,15 @@ graph TD
 
 ## 🔐 Security Considerations
 
-- Authentication via Azure AD (including MFA)
-- Sensitive environment variables stored in Secrets Manager
-- HTTPS for all communications
-- Database access restricted to application
-- Data encryption at rest via RDS
-- iPayroll and Jira API logging
+- **Authentication**: Azure AD integration with MFA support
+- **Session Management**: HTTP-only cookies via NextAuth.js
+- **CSRF Protection**: NextAuth.js implements CSRF tokens to prevent cross-site request forgery attacks
+- **Data Protection**:
+  - Sensitive environment variables stored in Secrets Manager
+  - Data encryption at rest via RDS
+  - HTTPS for all communications
+- **Access Control**:
+  - Database access restricted to application
+  - Role-based permissions for application features
+- **API Security**:
+  - iPayroll and Jira API logging
