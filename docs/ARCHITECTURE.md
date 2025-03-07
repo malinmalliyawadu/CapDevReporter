@@ -28,12 +28,20 @@ erDiagram
     Team ||--o{ JiraBoard : "manages"
     JiraBoard ||--o{ Project : "contains"
     Project ||--o{ ProjectActivity : "has"
-    TimeType ||--o{ GeneralTimeAssignment : "used in"
+    GeneralTimeType ||--o{ GeneralTimeAssignment : "used in"
     Role ||--o{ Employee : "assigned to"
     Employee ||--o{ EmployeeAssignment : "has"
-    Employee ||--o{ TimeEntry : "logs"
-    TimeEntry }|--|| TimeEntryType : "categorized as"
+    Employee ||--o{ GeneralTimeAssignment : "has"
 ```
+
+Key entities:
+
+- **Team**: Represents departments or teams within the organization
+- **Project**: Represents projects tracked in Jira
+- **GeneralTimeType**: Categorizes different types of general time entries (e.g., development, meetings)
+- **Employee**: Represents employees of the organization
+- **EmployeeAssignment**: Associates employees with teams
+- **GeneralTimeAssignment**: Defines expected time allocations for employees based on their role
 
 ## 🔄 Authentication Flow
 
