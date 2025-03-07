@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,7 +22,7 @@ import {
   addDays,
 } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 // Custom hook for debouncing values
 function useDebounce<T>(value: T, delay: number): T {
@@ -44,12 +44,16 @@ function useDebounce<T>(value: T, delay: number): T {
 interface TimeReportFiltersProps {
   teams: Array<{ id: string; name: string }>;
   roles: Array<{ id: string; name: string }>;
+  onFilterUpdate: (params: URLSearchParams) => void;
 }
 
-export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
-  const router = useRouter();
-  const pathname = usePathname();
+export function TimeReportFilters({
+  teams,
+  roles,
+  onFilterUpdate,
+}: TimeReportFiltersProps) {
   const searchParams = useSearchParams();
+  const params = new URLSearchParams(searchParams.toString());
 
   // Initialize state from URL params
   const defaultStartDate = startOfYear(new Date());
@@ -107,32 +111,30 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
     },
   ];
 
-  // Update URL for non-search filters (immediate)
   const updateFilters = (key: string, value: string | undefined | null) => {
-    const params = new URLSearchParams(searchParams.toString());
     if (value) {
       params.set(key, value);
     } else {
       params.delete(key);
     }
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+
+    onFilterUpdate(params);
   };
 
   // Apply debounced search
-  useEffect(() => {
-    // Update URL for search (debounced)
-    const updateSearch = (value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (value) {
-        params.set("search", value);
+  useEffect(
+    () => {
+      if (debouncedSearch) {
+        params.set("search", debouncedSearch);
       } else {
         params.delete("search");
       }
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    };
 
-    updateSearch(debouncedSearch);
-  }, [debouncedSearch, pathname, router, searchParams]);
+      onFilterUpdate(params);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [debouncedSearch, onFilterUpdate]
+  );
 
   // Handle date range changes
   const handleDateRangeChange = (newRange: DateRange | undefined) => {
@@ -152,7 +154,7 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
       params.delete("to");
     }
 
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    onFilterUpdate(params);
   };
 
   return (

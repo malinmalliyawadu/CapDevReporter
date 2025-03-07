@@ -3,85 +3,76 @@
 import { TimeDistributionCharts } from "@/components/reports/TimeDistributionCharts";
 import { TimeReportTable } from "@/components/reports/TimeReportTable";
 import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
-import { useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState, useTransition, useRef } from "react";
+import { useCallback, useTransition } from "react";
 import { cn } from "@/lib/utils";
-import { fetchTimeReportData } from "@/app/actions/reports";
 import { TimeReportData } from "@/lib/timeReportService";
+import { TimeReportFilters } from "./TimeReportFilters";
 
 export function ReportDataDisplay({
   initialData,
 }: {
   initialData: TimeReportData;
 }) {
-  const [data, setData] = useState<TimeReportData>(initialData);
+  const router = useRouter();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
-  const searchParams = useSearchParams();
-  const isFirstMount = useRef(true);
-
-  // Fetch data when search params change
-  useEffect(() => {
-    // Skip the initial fetch since we already have the data
-    if (isFirstMount.current) {
-      isFirstMount.current = false;
-      return;
-    }
-
-    // Convert searchParams to a plain object
-    const paramsObject: Record<string, string> = {};
-    searchParams.forEach((value, key) => {
-      paramsObject[key] = value;
-    });
-
-    startTransition(async () => {
-      try {
-        const newData = await fetchTimeReportData(paramsObject);
-        setData(newData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    });
-  }, [searchParams]);
+  const onFilterUpdate = useCallback(
+    (params: URLSearchParams) => {
+      startTransition(() => {
+        router.replace(`${pathname}?${params.toString()}`, {
+          scroll: false,
+        });
+        router.refresh();
+      });
+    },
+    [pathname, router]
+  );
 
   return (
-    <div className="space-y-8 relative" data-testid="report-data-display">
-      <div
-        className={cn(
-          "absolute inset-0 bg-background/50 flex items-center justify-center z-40",
-          "transition-all duration-200 ease-in-out",
-          isPending
-            ? "opacity-100 backdrop-blur-[1px]"
-            : "opacity-0 backdrop-blur-0 pointer-events-none"
-        )}
-      >
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-      <div
-        className={cn(
-          "transition-opacity duration-200 ease-in-out",
-          isPending ? "opacity-50 pointer-events-none" : "opacity-100"
-        )}
-      >
-        <TimeDistributionCharts
-          key={`time-distribution-${JSON.stringify(
-            data.timeReports.map((r) => r.id)
-          )}`}
-          timeReport={data.timeReports}
-          timeTypes={data.timeTypes}
-        />
-
-        <UtilizationIssues
-          timeReports={data.timeReports}
-          timeTypes={data.timeTypes}
-          generalTimeAssignments={data.generalAssignments}
-        />
-
-        <TimeReportTable
-          timeReports={data.timeReports}
-          timeTypes={data.timeTypes}
+    <>
+      <div className="sticky top-4 z-10">
+        <TimeReportFilters
+          teams={initialData.teams}
+          roles={initialData.roles}
+          onFilterUpdate={onFilterUpdate}
         />
       </div>
-    </div>
+
+      <div className="space-y-8 relative" data-testid="report-data-display">
+        <div
+          className={cn(
+            "absolute inset-0 bg-background/50 flex justify-center z-40 pt-12",
+            "transition-all duration-200 ease-in-out",
+            isPending
+              ? "opacity-100 backdrop-blur-[1px]"
+              : "opacity-0 backdrop-blur-0 pointer-events-none"
+          )}
+        >
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+        <div>
+          <TimeDistributionCharts
+            key={`time-distribution-${JSON.stringify(
+              initialData.timeReports.map((r) => r.id)
+            )}`}
+            timeReport={initialData.timeReports}
+            timeTypes={initialData.timeTypes}
+          />
+
+          <UtilizationIssues
+            timeReports={initialData.timeReports}
+            timeTypes={initialData.timeTypes}
+            generalTimeAssignments={initialData.generalAssignments}
+          />
+
+          <TimeReportTable
+            timeReports={initialData.timeReports}
+            timeTypes={initialData.timeTypes}
+          />
+        </div>
+      </div>
+    </>
   );
 }

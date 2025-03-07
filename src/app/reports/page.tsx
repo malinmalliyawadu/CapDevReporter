@@ -1,7 +1,6 @@
 import { BarChart } from "lucide-react";
 import { startOfYear } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
-import { TimeReportFilters } from "@/components/reports/TimeReportFilters";
 import { ReportDataDisplay } from "@/components/reports/ReportDataDisplay";
 import { getTimeReportData } from "@/lib/timeReportService";
 
@@ -61,10 +60,6 @@ export default async function ReportsPage({
         }
         description="View and analyze time tracking data."
       />
-
-      <div className="sticky top-4 z-10">
-        <TimeReportFilters teams={data.teams} roles={data.roles} />
-      </div>
 
       <ReportDataDisplay initialData={data} />
     </div>
