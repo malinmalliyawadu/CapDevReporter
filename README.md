@@ -42,10 +42,26 @@ npm run test:e2e:ui
 npm run test:e2e:debug
 ```
 
+## 🔐 Environment Variables
+
+You can copy the `.env.example` file as a starting point:
+
+```bash
+cp .env.example .env
+```
+
+Then update the values with your actual credentials.
+
 ## 💾 Database Management
 
 Initialize or reset the database:
 
 ```bash
 npm run db:reset
+```
+
+Database GUI:
+
+```bash
+npx prisma studio
 ```
