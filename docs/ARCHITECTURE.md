@@ -45,24 +45,6 @@ Key entities:
 
 ## 🔄 Authentication Flow
 
-The application uses Azure AD for authentication with JWT tokens:
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant App
-    participant AzureAD
-
-    User->>App: Access application
-    App->>User: Redirect to login
-    User->>AzureAD: Login with credentials
-    AzureAD->>App: Return JWT token
-    App->>User: Create session with JWT
-    User->>App: Access protected resources with JWT
-```
-
-## 🔄 Authentication Flow
-
 The application uses NextAuth.js with Azure AD for cookie-based authentication:
 
 ```mermaid
@@ -82,7 +64,7 @@ sequenceDiagram
     App->>NextAuth: Validate session cookie
 ```
 
-The authentication flow leverages NextAuth.js to handle the OAuth flow with Azure AD and manage secure, HTTP-only cookies for session persistence. This approach provides:
+The authentication flow leverages [NextAuth.js](https://next-auth.js.org/) to handle the OAuth flow with Azure AD and manage secure, HTTP-only cookies for session persistence. This approach provides:
 
 - **Security**: HTTP-only cookies protect against XSS attacks
 - **Seamless UX**: Users remain authenticated between page refreshes
