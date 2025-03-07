@@ -35,6 +35,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import packageInfo from "../../package.json";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 const data: { title: React.ReactNode; href: string; description: string }[] = [
   {
@@ -161,15 +168,24 @@ export function Navigation() {
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 dark:from-cyan-400/20 dark:to-blue-400/20 rounded-full blur-lg group-hover:scale-150 transition-transform duration-500 -z-10" />
             </div>
             <h1 className="text-2xl font-bold relative">
-              <Link href="/" className="relative inline-block">
-                <span className="bg-gradient-to-r from-cyan-700 via-cyan-600 to-blue-600 dark:from-cyan-400 dark:via-cyan-400 dark:to-blue-500 bg-clip-text text-transparent animate-slide-down transition-all duration-300">
-                  ***REMOVED***
-                </span>
-                <span className="text-zinc-600 dark:text-zinc-300 ml-2 animate-slide-down transition-all duration-300">
-                  Timesheet
-                </span>
-                <span className="absolute -bottom-0.5 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-700 via-cyan-600 to-blue-600 dark:from-cyan-400 dark:via-cyan-400 dark:to-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
-              </Link>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href="/" className="relative inline-block">
+                      <span className="bg-gradient-to-r from-cyan-700 via-cyan-600 to-blue-600 dark:from-cyan-400 dark:via-cyan-400 dark:to-blue-500 bg-clip-text text-transparent animate-slide-down transition-all duration-300">
+                        ***REMOVED***
+                      </span>
+                      <span className="text-zinc-600 dark:text-zinc-300 ml-2 animate-slide-down transition-all duration-300">
+                        Timesheet
+                      </span>
+                      <span className="absolute -bottom-0.5 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-700 via-cyan-600 to-blue-600 dark:from-cyan-400 dark:via-cyan-400 dark:to-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="font-normal">
+                    Version {packageInfo.version}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </h1>
           </div>
 
