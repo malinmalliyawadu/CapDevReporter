@@ -398,7 +398,7 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
                     }}
                     data-testid={`add-board-button-${team.name}`}
                   >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
