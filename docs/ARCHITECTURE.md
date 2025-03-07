@@ -13,67 +13,9 @@ graph TD
     WebApp -->|Manage Time| TimeEntry[Time Entry Service]
     WebApp -->|View Reports| Reports[lib/timeReportService.ts]
     TimeEntry -->|Stores Data| DB[(MySQL Database)]
-    TimeEntry -->|Syncs Time Entries| iPayroll[iPayroll API]
-    iPayroll -->|Provides Employee & Leave Data| TimeEntry
+    TimeEntry -->|Fetches Employee & Leave Data| iPayroll[iPayroll API]
     TimeEntry -->|Fetches Project Data| Jira[Jira API]
     Reports -->|Reads Data| DB
-```
-
-## 🏢 Application Architecture
-
-The application follows a modern Next.js architecture with the App Router pattern, leveraging server components and API routes.
-
-```mermaid
-graph TD
-    subgraph "Frontend"
-        Pages[Pages] --> Components[UI Components]
-        Pages --> Hooks[Custom Hooks]
-        Components --> Contexts[Context Providers]
-    end
-
-    subgraph "Backend"
-        AppRouter[App Router] --> ServerComponents[Server Components]
-        AppRouter --> APIRoutes[API Routes]
-        ServerComponents --> Actions[Server Actions]
-        APIRoutes --> Services[Services]
-        Actions --> Services
-    end
-
-    subgraph "Data Layer"
-        Services --> PrismaORM[Prisma ORM]
-        PrismaORM --> Database[(MySQL Database)]
-    end
-
-    subgraph "External Services"
-        Services --> iPayrollAPI[iPayroll API]
-        Services --> JiraAPI[Jira API]
-        Services --> AzureAD[Azure AD]
-    end
-```
-
-## 📁 Directory Structure
-
-The application follows a well-organized directory structure:
-
-```
-src/
-├── app/                  # Next.js App Router pages and API routes
-│   ├── actions/          # Server actions
-│   ├── api/              # API endpoints
-│   ├── login/            # Authentication pages
-│   ├── reports/          # Reporting pages
-│   └── ...               # Other page routes
-├── components/           # Reusable UI components
-├── contexts/             # React context providers
-├── hooks/                # Custom React hooks
-├── lib/                  # Core functionality and services
-│   ├── auth.ts           # Authentication logic
-│   ├── db.ts             # Database connection
-│   ├── prisma.ts         # Prisma client
-│   └── timeReportService.ts # Time reporting service
-├── store/                # State management
-├── types/                # TypeScript type definitions
-└── utils/                # Utility functions
 ```
 
 ## 🗄️ Data Model
@@ -92,14 +34,6 @@ erDiagram
     Employee ||--o{ TimeEntry : "logs"
     TimeEntry }|--|| TimeEntryType : "categorized as"
 ```
-
-Key entities:
-
-- **Team**: Represents departments or teams within the organization
-- **Project**: Represents projects tracked in Jira
-- **TimeType**: Categorizes different types of time entries (e.g., development, meetings)
-- **Employee**: Represents users of the system
-- **TimeEntry**: Records time spent on activities
 
 ## 🔄 Authentication Flow
 
