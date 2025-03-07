@@ -40,7 +40,7 @@
     "client-only": "^0.0.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
-    "copy-webpack-plugin": "^12.0.2",
+    "copy-webpack-plugin": "^13.0.0",
     "date-fns": "^4.1.0",
     "date-holidays": "^3.23.22",
     "jira-client": "^8.2.2",
