@@ -250,6 +250,14 @@ graph LR
     Deploy --> Prod[Production]
 ```
 
+### GitHub Actions Workflow Permissions
+
+The `deploy-ecs.yml` workflow uses AWS credentials to deploy the application to ECS. The workflow requires the following permissions:
+
+- **AWS Access**: Uses AWS access keys stored as GitHub secrets (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`) for the `timesheet-github-actions-ecr` user
+- **ECR Access**: Permissions to authenticate, build, and push Docker images to Amazon ECR (`AmazonEC2ContainerRegistryPowerUser` policy)
+- **ECS Deployment**: Permissions to update ECS services and force new deployments (Customer managed policy with `ecs:UpdateService` and `ecs:DescribeServices` for the ECS cluster)
+
 ## 🧪 Testing Strategy
 
 The application employs a comprehensive testing strategy:
@@ -278,10 +286,6 @@ graph TD
   - HTTPS for all communications
 - **Access Control**:
   - Database access restricted to application
-  - Role-based permissions for application features
+  - Office IP only access to the application
 - **API Security**:
   - iPayroll and Jira API logging
-
-```
-
-```
