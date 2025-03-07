@@ -109,3 +109,42 @@ export async function deleteAssignment(
     return { success: false, error: "Failed to delete assignment" };
   }
 }
+
+export async function updateAssignment(
+  id: string,
+  hoursPerWeek: number
+): Promise<CreateAssignmentResult> {
+  try {
+    // Validate input
+    if (!id || hoursPerWeek <= 0) {
+      return {
+        success: false,
+        error: "Assignment ID and hours per week are required",
+      };
+    }
+
+    // Check if assignment exists
+    const existingAssignment = await prisma.generalTimeAssignment.findUnique({
+      where: { id },
+    });
+
+    if (!existingAssignment) {
+      return { success: false, error: "Assignment not found" };
+    }
+
+    // Update assignment
+    const assignment = await prisma.generalTimeAssignment.update({
+      where: { id },
+      data: { hoursPerWeek },
+      include: {
+        timeType: true,
+      },
+    });
+
+    revalidatePath("/general-time-assignments");
+    return { success: true, data: assignment };
+  } catch (error) {
+    console.error("Failed to update assignment:", error);
+    return { success: false, error: "Failed to update assignment" };
+  }
+}

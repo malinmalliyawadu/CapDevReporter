@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Search,
   Filter,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +37,12 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
-import { createAssignment, deleteAssignment } from "./actions";
+import {
+  createAssignment,
+  deleteAssignment,
+  updateAssignment,
+} from "./actions";
+import { Label } from "@/components/ui/label";
 
 interface Role {
   id: string;
@@ -87,13 +93,17 @@ export function GeneralTimeAssignmentsTable({
   const [expandedRoles, setExpandedRoles] = useState<Set<string>>(new Set());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] =
+    useState<GeneralTimeAssignment | null>(null);
+  const [assignmentToEdit, setAssignmentToEdit] =
     useState<GeneralTimeAssignment | null>(null);
   const [newAssignment, setNewAssignment] = useState({
     roleId: "",
     timeTypeId: "",
     hoursPerWeek: 0,
   });
+  const [editedHours, setEditedHours] = useState(0);
 
   const toggleRole = (roleId: string) => {
     setExpandedRoles((prev) => {
@@ -115,6 +125,19 @@ export function GeneralTimeAssignmentsTable({
     ) {
       toast.error("Please fill in all fields correctly");
       return;
+    }
+
+    // Get the selected role's current total hours
+    const selectedRole = roles.find((role) => role.id === newAssignment.roleId);
+    if (selectedRole) {
+      const currentTotal = selectedRole.generalAssignments.reduce(
+        (sum, assignment) => sum + assignment.hoursPerWeek,
+        0
+      );
+      if (currentTotal + newAssignment.hoursPerWeek > 40) {
+        toast.error("Total hours cannot exceed 40 hours per week");
+        return;
+      }
     }
 
     const result = await createAssignment(newAssignment);
@@ -163,6 +186,83 @@ export function GeneralTimeAssignmentsTable({
     setIsDeleteDialogOpen(false);
     setAssignmentToDelete(null);
     toast.success("Assignment deleted successfully");
+  };
+
+  const handleUpdateAssignment = async () => {
+    if (!assignmentToEdit || editedHours <= 0) {
+      toast.error("Please enter valid hours");
+      return;
+    }
+
+    // Get the role's current total hours excluding the current assignment
+    const role = roles.find((r) =>
+      r.generalAssignments.some((a) => a.id === assignmentToEdit.id)
+    );
+    if (role) {
+      const currentTotal = role.generalAssignments.reduce(
+        (sum, assignment) =>
+          assignment.id === assignmentToEdit.id
+            ? sum
+            : sum + assignment.hoursPerWeek,
+        0
+      );
+      if (currentTotal + editedHours > 40) {
+        toast.error("Total hours cannot exceed 40 hours per week");
+        return;
+      }
+    }
+
+    const result = await updateAssignment(assignmentToEdit.id, editedHours);
+
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+
+    setRoles((prevRoles) =>
+      prevRoles.map((role) => ({
+        ...role,
+        generalAssignments: role.generalAssignments.map((assignment) =>
+          assignment.id === assignmentToEdit.id
+            ? { ...assignment, hoursPerWeek: editedHours }
+            : assignment
+        ),
+      }))
+    );
+
+    setIsEditDialogOpen(false);
+    setAssignmentToEdit(null);
+    setEditedHours(0);
+    toast.success("Assignment updated successfully");
+  };
+
+  const getRemainingHours = (roleId: string, excludeAssignmentId?: string) => {
+    const role = roles.find((r) => r.id === roleId);
+    if (!role) return 40;
+
+    const totalHours = role.generalAssignments.reduce(
+      (sum, assignment) =>
+        excludeAssignmentId && assignment.id === excludeAssignmentId
+          ? sum
+          : sum + assignment.hoursPerWeek,
+      0
+    );
+    return 40 - totalHours;
+  };
+
+  const isHoursValid = (
+    hours: number,
+    roleId: string,
+    excludeAssignmentId?: string
+  ) => {
+    if (hours <= 0) return false;
+    const remainingHours = getRemainingHours(roleId, excludeAssignmentId);
+    return (
+      hours <=
+      (excludeAssignmentId
+        ? remainingHours + (assignmentToEdit?.hoursPerWeek || 0)
+        : remainingHours)
+    );
   };
 
   const calculateTimeBreakdown = (
@@ -412,17 +512,30 @@ export function GeneralTimeAssignmentsTable({
                           </TableCell>
                           <TableCell>{assignment.hoursPerWeek}</TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setAssignmentToDelete(assignment);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                              className="hover:text-red-500"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setAssignmentToEdit(assignment);
+                                  setEditedHours(assignment.hoursPerWeek);
+                                  setIsEditDialogOpen(true);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setAssignmentToDelete(assignment);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                                className="hover:text-red-500"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -451,11 +564,18 @@ export function GeneralTimeAssignmentsTable({
                 <SelectValue placeholder="Select Role" />
               </SelectTrigger>
               <SelectContent>
-                {roles.map((role) => (
-                  <SelectItem key={role.id} value={role.id}>
-                    {role.name}
-                  </SelectItem>
-                ))}
+                {roles.map((role) => {
+                  const totalHours = role.generalAssignments.reduce(
+                    (sum, assignment) => sum + assignment.hoursPerWeek,
+                    0
+                  );
+                  const remainingHours = 40 - totalHours;
+                  return (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name} ({remainingHours} hours remaining)
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
 
@@ -477,18 +597,55 @@ export function GeneralTimeAssignmentsTable({
               </SelectContent>
             </Select>
 
-            <Input
-              type="number"
-              min={0}
-              value={newAssignment.hoursPerWeek || ""}
-              onChange={(e) =>
-                setNewAssignment({
-                  ...newAssignment,
-                  hoursPerWeek: parseFloat(e.target.value) || 0,
-                })
-              }
-              placeholder="Hours per week"
-            />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="hours">Hours per Week</Label>
+                {newAssignment.roleId && (
+                  <span
+                    className={`text-sm ${
+                      isHoursValid(
+                        newAssignment.hoursPerWeek,
+                        newAssignment.roleId
+                      )
+                        ? "text-muted-foreground"
+                        : "text-destructive"
+                    }`}
+                  >
+                    {getRemainingHours(newAssignment.roleId)} hours remaining
+                  </span>
+                )}
+              </div>
+              <Input
+                id="hours"
+                type="number"
+                min={0}
+                max={getRemainingHours(newAssignment.roleId)}
+                value={newAssignment.hoursPerWeek || ""}
+                onChange={(e) =>
+                  setNewAssignment({
+                    ...newAssignment,
+                    hoursPerWeek: parseFloat(e.target.value) || 0,
+                  })
+                }
+                className={
+                  newAssignment.roleId &&
+                  !isHoursValid(
+                    newAssignment.hoursPerWeek,
+                    newAssignment.roleId
+                  )
+                    ? "border-destructive"
+                    : ""
+                }
+                placeholder="Hours per week"
+              />
+              {newAssignment.roleId &&
+                newAssignment.hoursPerWeek >
+                  getRemainingHours(newAssignment.roleId) && (
+                  <p className="text-xs text-destructive">
+                    Hours exceed the remaining available time
+                  </p>
+                )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -551,6 +708,107 @@ export function GeneralTimeAssignmentsTable({
             >
               Delete Assignment
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Assignment Hours</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            {assignmentToEdit && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Time Type:</span>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                      assignmentToEdit.timeType.isCapDev
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200"
+                        : "bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-200"
+                    }`}
+                  >
+                    {assignmentToEdit.timeType.name}
+                  </span>
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="edit-hours">Hours per Week</Label>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-muted-foreground">
+                        Current: {assignmentToEdit.hoursPerWeek}h
+                      </span>
+                      <span
+                        className={`text-sm ${
+                          isHoursValid(
+                            editedHours,
+                            assignmentToEdit.roleId,
+                            assignmentToEdit.id
+                          )
+                            ? "text-muted-foreground"
+                            : "text-destructive"
+                        }`}
+                      >
+                        {getRemainingHours(
+                          assignmentToEdit.roleId,
+                          assignmentToEdit.id
+                        )}{" "}
+                        hours remaining
+                      </span>
+                    </div>
+                  </div>
+                  <Input
+                    id="edit-hours"
+                    type="number"
+                    min={0}
+                    max={
+                      getRemainingHours(
+                        assignmentToEdit.roleId,
+                        assignmentToEdit.id
+                      ) + assignmentToEdit.hoursPerWeek
+                    }
+                    value={editedHours || ""}
+                    onChange={(e) =>
+                      setEditedHours(parseFloat(e.target.value) || 0)
+                    }
+                    className={
+                      !isHoursValid(
+                        editedHours,
+                        assignmentToEdit.roleId,
+                        assignmentToEdit.id
+                      )
+                        ? "border-destructive"
+                        : ""
+                    }
+                    placeholder="Hours per week"
+                  />
+                  {editedHours >
+                    getRemainingHours(
+                      assignmentToEdit.roleId,
+                      assignmentToEdit.id
+                    ) +
+                      assignmentToEdit.hoursPerWeek && (
+                    <p className="text-xs text-destructive">
+                      Hours exceed the remaining available time
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditDialogOpen(false);
+                setAssignmentToEdit(null);
+                setEditedHours(0);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateAssignment}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
