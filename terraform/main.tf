@@ -510,17 +510,17 @@ resource "aws_lb_target_group" "app" {
   
   health_check {
     enabled             = true
-    interval            = 30
+    interval            = 15
     path                = "/api/health"
     port                = "traffic-port"
     healthy_threshold   = 2
     unhealthy_threshold = 3
-    timeout             = 10
+    timeout             = 5
     protocol            = "HTTP"
     matcher             = "200-399"
   }
 
-  deregistration_delay = 0
+  deregistration_delay = 30
 
   stickiness {
     enabled = false
@@ -564,12 +564,12 @@ resource "aws_ecs_service" "app" {
   name            = "timesheet-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
-  desired_count   = 1
+  desired_count   = 2
   launch_type     = "FARGATE"
   force_new_deployment = true
   wait_for_steady_state = true
   
-  deployment_minimum_healthy_percent = 0
+  deployment_minimum_healthy_percent = 100
   deployment_maximum_percent = 200
   
   network_configuration {
