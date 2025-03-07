@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Suspense } from "react";
 import { Drama } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { prisma } from "@/lib/prisma";
 import { RolesTable } from "./RolesTable";

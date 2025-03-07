@@ -1,11 +1,10 @@
 import * as React from "react";
 import { Suspense } from "react";
 import { ClipboardList } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { ProjectsTableSkeleton } from "./loading";
 import { ProjectsTable } from "./ProjectsTable";
-import { getProjects } from "./actions";
+import { getProjects, getBoards } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +12,8 @@ export interface ProjectsPageQueryString {
   page?: string;
   size?: string;
   search?: string;
-  sync?: string;
   projectId?: string;
+  sync?: string;
 }
 
 export default async function ProjectsPage({
@@ -25,11 +24,14 @@ export default async function ProjectsPage({
   const params = await searchParams;
 
   // Fetch initial data on the server
-  const { projects, total } = await getProjects({
-    page: Number(params.page) || 1,
-    size: Number(params.size) || 10,
-    search: params.search,
-  });
+  const [{ projects, total }, boards] = await Promise.all([
+    getProjects({
+      page: Number(params.page) || 1,
+      size: Number(params.size) || 10,
+      search: params.search,
+    }),
+    getBoards(),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -47,20 +49,14 @@ export default async function ProjectsPage({
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Projects</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Suspense fallback={<ProjectsTableSkeleton />}>
-            <ProjectsTable
-              initialProjects={projects}
-              totalProjects={total}
-              searchParams={params}
-            />
-          </Suspense>
-        </CardContent>
-      </Card>
+      <Suspense fallback={<ProjectsTableSkeleton />}>
+        <ProjectsTable
+          initialProjects={projects}
+          totalProjects={total}
+          searchParams={params}
+          availableBoards={boards}
+        />
+      </Suspense>
     </div>
   );
 }

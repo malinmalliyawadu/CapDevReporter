@@ -64,7 +64,6 @@ import {
 import {
   getProjects,
   deleteProject,
-  getBoards,
   type Project,
   type JiraBoard,
 } from "./actions";
@@ -73,19 +72,27 @@ interface ProjectsTableProps {
   initialProjects: Project[];
   totalProjects: number;
   searchParams: ProjectsPageQueryString;
+  availableBoards: JiraBoard[];
 }
 
 export function ProjectsTable({
   initialProjects,
   totalProjects,
   searchParams,
+  availableBoards,
 }: ProjectsTableProps) {
   const { toast } = useToast();
   const { openFromEvent: openSyncDialogFromEvent } = useSyncDialog();
   const router = useRouter();
   const pathname = usePathname();
-  const [projects, setProjects] = useState(initialProjects);
-  const [projectsCount, setProjectsCount] = useState(totalProjects);
+
+  // Group related state together
+  const [tableState, setTableState] = useState({
+    projects: initialProjects,
+    projectsCount: totalProjects,
+    page: Number(searchParams.page) || 1,
+  });
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
@@ -93,70 +100,46 @@ export function ProjectsTable({
   const debouncedSearch = useDebounce(searchQuery, 500);
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
-  const [page, setPage] = useState(Number(searchParams.page) || 1);
-  const [availableBoards, setAvailableBoards] = useState<JiraBoard[]>([]);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
+  // Memoize unique teams from availableBoards instead of projects
   const uniqueTeams = useMemo(() => {
-    const teams = new Set(projects.map((p) => p.board.team.name));
+    const teams = new Set(availableBoards.map((board) => board.team.name));
     return Array.from(teams).sort();
-  }, [projects]);
+  }, [availableBoards]);
 
   // Effect to handle automatic row expansion when projectId is present
   useEffect(() => {
     if (searchParams.projectId) {
-      const projectToExpand = projects.find(
+      const projectToExpand = tableState.projects.find(
         (p) => p.id === searchParams.projectId
       );
       if (projectToExpand) {
         setExpanded({ [searchParams.projectId]: true });
       }
     }
-  }, [searchParams.projectId, projects]);
+  }, [searchParams.projectId, tableState.projects]);
 
   // Effect to handle automatic row expansion when jira: search is present
   useEffect(() => {
     if (debouncedSearch.toLowerCase().startsWith("jira:")) {
       const jiraId = debouncedSearch.slice(5).trim();
-      const projectToExpand = projects.find((p) => p.jiraId === jiraId);
+      const projectToExpand = tableState.projects.find(
+        (p) => p.jiraId === jiraId
+      );
       if (projectToExpand) {
         setExpanded({ [projectToExpand.id]: true });
       }
     }
-  }, [debouncedSearch, projects]);
+  }, [debouncedSearch, tableState.projects]);
 
-  // Helper function to format search query
-  const formatSearchQuery = (query: string) => {
+  // Memoize formatSearchQuery
+  const formatSearchQuery = useCallback((query: string) => {
     if (query.toLowerCase().startsWith("jira:")) {
-      // Remove any spaces after the colon
       return query.replace(/^jira:\s*/i, "jira:");
     }
     return query;
-  };
-
-  // Reset page when search changes
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  // Update URL for pagination and search
-  useEffect(() => {
-    const params = new URLSearchParams();
-    params.set("page", String(page));
-    if (searchParams.size) {
-      params.set("size", searchParams.size);
-    }
-    if (debouncedSearch) {
-      params.set("search", formatSearchQuery(debouncedSearch));
-    }
-
-    const newQueryString = params.toString();
-    const currentQueryString = window.location.search.slice(1);
-
-    if (newQueryString !== currentQueryString) {
-      router.push(`${pathname}?${newQueryString}`, { scroll: false });
-    }
-  }, [page, debouncedSearch, searchParams.size, router, pathname]);
+  }, []);
 
   // Apply local filters
   useEffect(() => {
@@ -181,27 +164,6 @@ export function ProjectsTable({
     setColumnFilters(filters);
   }, [selectedTeam, selectedType]);
 
-  // Update the boards fetching effect
-  useEffect(() => {
-    const fetchBoards = async () => {
-      if (availableBoards.length === 0) {
-        try {
-          const data = await getBoards();
-          setAvailableBoards(data);
-        } catch (error) {
-          console.error("Failed to fetch boards:", error);
-          toast({
-            title: "Error",
-            description: "Failed to fetch available boards",
-            variant: "destructive",
-          });
-        }
-      }
-    };
-
-    fetchBoards();
-  }, [availableBoards.length, toast]);
-
   // Effect to handle sync parameter
   useEffect(() => {
     if (searchParams.sync === "true") {
@@ -213,312 +175,346 @@ export function ProjectsTable({
     }
   }, [searchParams.sync, router, pathname, openSyncDialogFromEvent]);
 
-  // Update handleDeleteProject
-  const handleDeleteProject = async (project: Project) => {
-    if (!project?.id) {
-      toast({
-        title: "Error",
-        description: "Invalid project data",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await deleteProject(project.id);
-
-      // Update local state
-      setProjects((prev) => prev.filter((p) => p.id !== project.id));
-      setProjectsCount((prev) => prev - 1);
-
-      toast({
-        title: "Project deleted",
-        description: `Project ${project.name} has been deleted successfully.`,
-      });
-
-      // Force a refresh of the data
+  // Combine URL update and data fetching into a single effect
+  useEffect(() => {
+    const updateUrlAndFetchData = async () => {
       const params = new URLSearchParams();
-      params.set("page", String(page));
+      params.set("page", String(tableState.page));
       if (searchParams.size) {
         params.set("size", searchParams.size);
       }
       if (debouncedSearch) {
         params.set("search", formatSearchQuery(debouncedSearch));
       }
-      await fetchProjectsData(params);
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete project. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setProjectToDelete(null);
-    }
-  };
 
-  // Update fetchProjectsData
-  const fetchProjectsData = useCallback(
-    async (params: URLSearchParams) => {
+      const newQueryString = params.toString();
+      const currentQueryString = window.location.search.slice(1);
+
+      // Only update URL if it's different
+      if (newQueryString !== currentQueryString) {
+        await router.push(`${pathname}?${newQueryString}`, { scroll: false });
+      }
+
+      // Fetch data
       try {
         const result = await getProjects({
-          page: Number(params.get("page")) || 1,
-          size: Number(params.get("size")) || 10,
-          search: params.get("search") || undefined,
+          page: tableState.page,
+          size: Number(searchParams.size) || 10,
+          search: debouncedSearch
+            ? formatSearchQuery(debouncedSearch)
+            : undefined,
         });
 
-        setProjects(result.projects);
-        setProjectsCount(result.total);
+        setTableState((prev) => ({
+          ...prev,
+          projects: result.projects,
+          projectsCount: result.total,
+        }));
       } catch (error) {
         console.error("Error fetching projects:", error);
+      }
+    };
+
+    updateUrlAndFetchData();
+  }, [
+    tableState.page,
+    debouncedSearch,
+    searchParams.size,
+    router,
+    pathname,
+    formatSearchQuery,
+  ]);
+
+  // Reset page when search changes - keep this separate to avoid race conditions
+  useEffect(() => {
+    setTableState((prev) => {
+      if (prev.page === 1) return prev; // Avoid unnecessary updates
+      return { ...prev, page: 1 };
+    });
+  }, [debouncedSearch]);
+
+  // Memoize handleDeleteProject with fewer dependencies
+  const handleDeleteProject = useCallback(
+    async (project: Project) => {
+      if (!project?.id) {
         toast({
           title: "Error",
-          description: "Failed to fetch projects",
+          description: "Invalid project data",
           variant: "destructive",
         });
+        return;
+      }
+
+      try {
+        await deleteProject(project.id);
+        toast({
+          title: "Project deleted",
+          description: `Project ${project.name} has been deleted successfully.`,
+        });
+
+        // Instead of updating state directly and then fetching, just trigger a re-fetch
+        // by updating the page number to itself, which will trigger the main effect
+        setTableState((prev) => ({ ...prev, page: prev.page }));
+      } catch (error) {
+        console.error("Error deleting project:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete project. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setProjectToDelete(null);
       }
     },
     [toast]
   );
 
-  const columns: ColumnDef<Project>[] = [
-    {
-      id: "expander",
-      header: () => null,
-      cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => row.toggleExpanded()}
-        >
-          {row.getIsExpanded() ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-        </Button>
-      ),
-    },
-    {
-      accessorKey: "jiraId",
-      header: "Jira ID",
-      cell: ({ row }) => (
-        <a
-          href={`${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${row.original.jiraId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block whitespace-nowrap"
-        >
-          <Badge
-            variant="outline"
-            className="hover:bg-accent hover:text-accent-foreground transition-colors whitespace-nowrap max-w-[120px] overflow-hidden text-ellipsis"
-          >
-            {row.original.jiraId}
-          </Badge>
-        </a>
-      ),
-    },
-    {
-      accessorKey: "name",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="group"
-          data-testid="sort-button-name"
-        >
-          Project Name
-          {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-name" />
-          ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-name" />
-          ) : (
-            <ArrowUpDown
-              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
-              data-testid="sort-icon-name"
-            />
-          )}
-        </Button>
-      ),
-      filterFn: (row, id, value) => {
-        return row.getValue<string>(id).toLowerCase().includes(value);
-      },
-    },
-    {
-      accessorKey: "description",
-      header: "Description",
-      cell: ({ row }) => (
-        <div className="max-w-[300px]">
-          <p className="text-muted-foreground text-sm truncate">
-            {row.original.description || "—"}
-          </p>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "board.team.name",
-      id: "teamName",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="group"
-          data-testid="sort-button-team"
-        >
-          Team
-          {column.getIsSorted() === "asc" ? (
-            <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-team" />
-          ) : column.getIsSorted() === "desc" ? (
-            <ArrowDown className="ml-2 h-4 w-4" data-testid="sort-icon-team" />
-          ) : (
-            <ArrowUpDown
-              className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
-              data-testid="sort-icon-team"
-            />
-          )}
-        </Button>
-      ),
-    },
-    {
-      accessorKey: "isCapDev",
-      header: "Type",
-      cell: ({ row }) => (
-        <span
-          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-            row.original.isCapDev
-              ? "bg-blue-100 text-blue-700"
-              : "bg-gray-100 text-gray-700"
-          }`}
-        >
-          {row.original.isCapDev ? "CapDev" : "Non-CapDev"}
-        </span>
-      ),
-    },
-    {
-      id: "sync",
-      cell: ({ row }) => {
-        const project = row.original;
-        return (
+  // Memoize columns
+  const columns = useMemo<ColumnDef<Project>[]>(
+    () => [
+      {
+        id: "expander",
+        header: () => null,
+        cell: ({ row }) => (
           <Button
             variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={openSyncDialogFromEvent({
-              defaultIssueKey: project.jiraId,
-            })}
-            title="Sync this project"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => row.toggleExpanded()}
           >
-            <RefreshCw className="h-4 w-4" />
+            {row.getIsExpanded() ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
           </Button>
-        );
+        ),
       },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => {
-        const project = row.original;
-        return (
-          <div className="flex items-center gap-2">
+      {
+        accessorKey: "jiraId",
+        header: "Jira ID",
+        cell: ({ row }) => (
+          <a
+            href={`${process.env.NEXT_PUBLIC_JIRA_URL}/browse/${row.original.jiraId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block whitespace-nowrap"
+          >
+            <Badge
+              variant="outline"
+              className="hover:bg-accent hover:text-accent-foreground transition-colors whitespace-nowrap max-w-[120px] overflow-hidden text-ellipsis"
+            >
+              {row.original.jiraId}
+            </Badge>
+          </a>
+        ),
+      },
+      {
+        accessorKey: "name",
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="group"
+            data-testid="sort-button-name"
+          >
+            Project Name
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-name" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown
+                className="ml-2 h-4 w-4"
+                data-testid="sort-icon-name"
+              />
+            ) : (
+              <ArrowUpDown
+                className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+                data-testid="sort-icon-name"
+              />
+            )}
+          </Button>
+        ),
+        filterFn: (row, id, value) => {
+          return row.getValue<string>(id).toLowerCase().includes(value);
+        },
+      },
+      {
+        accessorKey: "description",
+        header: "Description",
+        cell: ({ row }) => (
+          <div className="max-w-[300px]">
+            <p className="text-muted-foreground text-sm truncate">
+              {row.original.description || "—"}
+            </p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "board.team.name",
+        id: "teamName",
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="group"
+            data-testid="sort-button-team"
+          >
+            Team
+            {column.getIsSorted() === "asc" ? (
+              <ArrowUp className="ml-2 h-4 w-4" data-testid="sort-icon-team" />
+            ) : column.getIsSorted() === "desc" ? (
+              <ArrowDown
+                className="ml-2 h-4 w-4"
+                data-testid="sort-icon-team"
+              />
+            ) : (
+              <ArrowUpDown
+                className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100"
+                data-testid="sort-icon-team"
+              />
+            )}
+          </Button>
+        ),
+      },
+      {
+        accessorKey: "isCapDev",
+        header: "Type",
+        cell: ({ row }) => (
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+              row.original.isCapDev
+                ? "bg-blue-100 text-blue-700"
+                : "bg-gray-100 text-gray-700"
+            }`}
+          >
+            {row.original.isCapDev ? "CapDev" : "Non-CapDev"}
+          </span>
+        ),
+      },
+      {
+        id: "sync",
+        cell: ({ row }) => {
+          const project = row.original;
+          return (
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setProjectToDelete(project)}
-              title="Delete project"
-              data-testid={`delete-project-${project.id}`}
+              className="h-8 w-8"
+              onClick={openSyncDialogFromEvent({
+                defaultIssueKey: project.jiraId,
+              })}
+              title="Sync this project"
             >
-              <Trash2 className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4" />
             </Button>
-          </div>
-        );
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
       },
-      enableSorting: false,
-      enableHiding: false,
+      {
+        id: "actions",
+        cell: ({ row }) => {
+          const project = row.original;
+          return (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setProjectToDelete(project)}
+                title="Delete project"
+                data-testid={`delete-project-${project.id}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+      },
+    ],
+    [openSyncDialogFromEvent]
+  ); // Only depend on openSyncDialogFromEvent since it's used in the sync column
+
+  // Memoize renderSubRow
+  const renderSubRow = useCallback(
+    (row: Project) => {
+      if (!row.activities) return null;
+
+      const sortedActivities = [...row.activities].sort(
+        (a, b) =>
+          new Date(b.activityDate).getTime() -
+          new Date(a.activityDate).getTime()
+      );
+
+      return (
+        <TableRow key={`${row.id}-expanded`} className="bg-muted/50">
+          <TableCell colSpan={columns.length} className="p-4">
+            <div className="text-sm">
+              <div className="font-medium mb-2">Activity Dates</div>
+              {sortedActivities.length > 0 ? (
+                <div className="space-y-1">
+                  {sortedActivities.map((activity, index) => (
+                    <div key={index} className="text-muted-foreground">
+                      {format(new Date(activity.activityDate), "dd MMM yyyy")}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No activity recorded</p>
+              )}
+            </div>
+          </TableCell>
+        </TableRow>
+      );
     },
-  ];
+    [columns.length]
+  );
 
-  const renderSubRow = (row: Project) => {
-    if (!row.activities) return null;
-
-    const sortedActivities = [...row.activities].sort(
-      (a, b) =>
-        new Date(b.activityDate).getTime() - new Date(a.activityDate).getTime()
-    );
-
-    return (
-      <TableRow key={`${row.id}-expanded`} className="bg-muted/50">
-        <TableCell colSpan={columns.length} className="p-4">
-          <div className="text-sm">
-            <div className="font-medium mb-2">Activity Dates</div>
-            {sortedActivities.length > 0 ? (
-              <div className="space-y-1">
-                {sortedActivities.map((activity, index) => (
-                  <div key={index} className="text-muted-foreground">
-                    {format(new Date(activity.activityDate), "dd MMM yyyy")}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">No activity recorded</p>
-            )}
-          </div>
-        </TableCell>
-      </TableRow>
-    );
-  };
-
-  const table = useReactTable({
-    data: projects,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    onExpandedChange: setExpanded,
-    state: {
+  // Memoize table configuration
+  const tableConfig = useMemo(
+    () => ({
+      data: tableState.projects,
+      columns,
+      getCoreRowModel: getCoreRowModel(),
+      onSortingChange: setSorting,
+      getSortedRowModel: getSortedRowModel(),
+      onColumnFiltersChange: setColumnFilters,
+      getFilteredRowModel: getFilteredRowModel(),
+      getExpandedRowModel: getExpandedRowModel(),
+      onExpandedChange: setExpanded,
+      state: {
+        sorting,
+        columnFilters,
+        expanded,
+        pagination: {
+          pageIndex: tableState.page - 1,
+          pageSize: Number(searchParams.size) || 10,
+        },
+      },
+      manualPagination: true,
+      pageCount: Math.ceil(
+        tableState.projectsCount / (Number(searchParams.size) || 10)
+      ),
+      enableExpanding: true,
+      getRowId: (row: Project) => row.id,
+    }),
+    [
+      tableState.projects,
+      tableState.projectsCount,
+      tableState.page,
+      columns,
       sorting,
       columnFilters,
       expanded,
-      pagination: {
-        pageIndex: page - 1,
-        pageSize: Number(searchParams.size) || 10,
-      },
-    },
-    manualPagination: true,
-    pageCount: Math.ceil(projectsCount / (Number(searchParams.size) || 10)),
-    enableExpanding: true,
-    getRowId: (row) => row.id,
-  });
+      searchParams.size,
+    ]
+  );
 
-  // Effect to update projects when search changes
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (debouncedSearch) {
-      params.set("search", formatSearchQuery(debouncedSearch));
-    }
-    params.set("page", "1"); // Reset to first page on search
-    params.set("size", String(Number(searchParams.size) || 10));
-
-    fetchProjectsData(params);
-  }, [debouncedSearch, searchParams.size, fetchProjectsData]);
-
-  // Effect to update projects when page changes
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (debouncedSearch) {
-      params.set("search", formatSearchQuery(debouncedSearch));
-    }
-    params.set("page", String(page));
-    params.set("size", String(Number(searchParams.size) || 10));
-
-    fetchProjectsData(params);
-  }, [page, searchParams.size, debouncedSearch, fetchProjectsData]);
+  // Use the table hook at the top level with memoized config
+  const table = useReactTable(tableConfig);
 
   return (
     <div>
@@ -659,14 +655,20 @@ export function ProjectsTable({
       </div>
       <div className="flex items-center justify-between py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          Showing {table.getRowModel().rows.length} of {projectsCount} projects
+          Showing {table.getRowModel().rows.length} of{" "}
+          {tableState.projectsCount} projects
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
+            onClick={() =>
+              setTableState((prev) => ({
+                ...prev,
+                page: Math.max(1, prev.page - 1),
+              }))
+            }
+            disabled={tableState.page <= 1}
             className="h-8 w-8 p-0 hover:bg-muted"
             data-testid="previous-page-button"
           >
@@ -674,23 +676,37 @@ export function ProjectsTable({
           </Button>
           <div className="flex items-center gap-1">
             <div className="text-sm font-medium" data-testid="current-page">
-              {page}
+              {tableState.page}
             </div>
             <div className="text-sm text-muted-foreground">/</div>
             <div
               className="text-sm text-muted-foreground"
               data-testid="total-pages"
             >
-              {Math.ceil(projectsCount / (Number(searchParams.size) || 10))}
+              {Math.ceil(
+                tableState.projectsCount / (Number(searchParams.size) || 10)
+              )}
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() =>
+              setTableState((prev) => ({
+                ...prev,
+                page: Math.min(
+                  Math.ceil(
+                    prev.projectsCount / (Number(searchParams.size) || 10)
+                  ),
+                  prev.page + 1
+                ),
+              }))
+            }
             disabled={
-              page >=
-              Math.ceil(projectsCount / (Number(searchParams.size) || 10))
+              tableState.page >=
+              Math.ceil(
+                tableState.projectsCount / (Number(searchParams.size) || 10)
+              )
             }
             className="h-8 w-8 p-0 hover:bg-muted"
             data-testid="next-page-button"
