@@ -88,6 +88,7 @@ export function RolesTable({ initialRoles }: RolesTableProps) {
       toast({
         title: "Success",
         description: "Role created successfully",
+        variant: "success",
       });
     } catch (error) {
       console.error(error);
@@ -118,6 +119,7 @@ export function RolesTable({ initialRoles }: RolesTableProps) {
       toast({
         title: "Success",
         description: "Role deleted successfully",
+        variant: "success",
       });
     } catch (error) {
       console.error(error);

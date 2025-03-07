@@ -6,14 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 export function EmployeeSyncClient() {
   const { toast } = useToast();
 
-  const handleSuccess = (message: string) => {
-    toast({
-      title: "Success",
-      description: message,
-      variant: "default",
-    });
-  };
-
   const handleError = (message: string) => {
     toast({
       title: "Error",
@@ -22,11 +14,5 @@ export function EmployeeSyncClient() {
     });
   };
 
-  return (
-    <IPayrollSyncButton
-      type="employees"
-      onSuccess={handleSuccess}
-      onError={handleError}
-    />
-  );
+  return <IPayrollSyncButton type="employees" onError={handleError} />;
 }

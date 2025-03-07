@@ -14,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 interface IPayrollSyncButtonProps {
   type: "employees" | "leave";
   className?: string;
-  onSuccess?: (message: string) => void;
   onError?: (message: string) => void;
 }
 
@@ -29,7 +28,6 @@ type SyncState =
 export function IPayrollSyncButton({
   type,
   className,
-  onSuccess,
   onError,
 }: IPayrollSyncButtonProps) {
   const [syncState, setSyncState] = useState<SyncState>("checking_auth");
@@ -140,9 +138,9 @@ export function IPayrollSyncButton({
       toast({
         title: "Sync Successful",
         description: successMessage,
+        variant: "success",
       });
 
-      onSuccess?.(successMessage);
       console.log(`[IPayrollSync] Success callback called for ${type}`);
 
       // Reset to idle after showing success state

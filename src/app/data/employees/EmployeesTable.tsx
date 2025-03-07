@@ -242,6 +242,7 @@ export function EmployeesTable({
       toast({
         title: "Success",
         description: "Hours updated successfully",
+        variant: "success",
       });
     } catch (error) {
       console.error(error);

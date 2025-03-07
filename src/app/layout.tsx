@@ -1,5 +1,5 @@
 import { Inter } from "next/font/google";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Navigation } from "@/components/Navigation";
 import { SyncDialogWrapper } from "@/components/providers/sync-dialog-provider";
@@ -32,17 +32,15 @@ export default async function RootLayout({
         >
           <AuthProvider>
             <SyncDialogWrapper>
-              <div className="min-h-screen">
-                {isAuthenticated && <Navigation />}
-                <main
-                  className={`container mx-auto ${
-                    isAuthenticated ? "px-8 py-12" : "p-0"
-                  }`}
-                >
-                  {children}
-                </main>
-                <Toaster />
-              </div>
+              {isAuthenticated && <Navigation />}
+              <main
+                className={`container mx-auto ${
+                  isAuthenticated ? "px-8 py-12" : "p-0"
+                }`}
+              >
+                {children}
+              </main>
+              <Toaster closeButton richColors />
             </SyncDialogWrapper>
           </AuthProvider>
         </ThemeProvider>

@@ -6,7 +6,6 @@ import { PageHeader } from "@/components/ui/page-header";
 import { LeaveTable } from "./LeaveTable";
 import { LeaveTableSkeleton } from "./loading";
 import { getLeaveRecords } from "./actions";
-import { Toaster } from "@/components/ui/toaster";
 import { LeaveSyncClient } from "./LeaveSyncClient";
 
 export default async function LeavePage() {
@@ -39,7 +38,6 @@ export default async function LeavePage() {
           </Suspense>
         </CardContent>
       </Card>
-      <Toaster />
     </div>
   );
 }

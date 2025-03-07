@@ -334,6 +334,7 @@ export function TeamsTable({ initialTeams }: TeamsTableProps) {
         toast({
           title: "Success",
           description: "Board deleted successfully",
+          variant: "success",
         });
         router.refresh();
       } catch (error) {
