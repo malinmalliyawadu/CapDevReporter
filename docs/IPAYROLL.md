@@ -34,16 +34,18 @@ IPAYROLL_CLIENT_SECRET="your-client-secret"
 
 Note: Replace the placeholder values with your actual credentials.
 
-## OAuth Flow
+## OAuth Flow and Token Management
 
-1. **Data Sync Request**: When the application needs to sync data from iPayroll, it first checks if it has a valid token.
-2. **Token Acquisition**: If no valid token exists, the server action returns an `authUrl` that can be used to initiate the OAuth flow.
-3. **Authorization**: The user is redirected to iPayroll's authorization page where they log in and grant permissions. The authorization request includes the scopes configured for your API user.
-4. **Callback**: After authorization, iPayroll redirects back to the application's callback URL (`/api/ipayroll/auth/callback`) with an authorization code.
-5. **Token Exchange**: The application exchanges the authorization code for access and refresh tokens. The access token will be limited to the scopes granted to your API user.
-6. **Token Storage**: The tokens are securely stored in server-side memory (or a more persistent storage in production).
-7. **Redirect**: The user is redirected back to the original page that initiated the sync.
-8. **Data Sync Completion**: The application can now complete the data sync using the acquired token.
+1. **Data Sync Request**: When the application needs to sync data from iPayroll, it first checks if it needs to initiate the OAuth flow.
+2. **State Management**: The application generates a unique state parameter to protect against CSRF attacks and associates it with the current session.
+3. **Authorization Initiation**: The server action returns an `authUrl` that can be used to initiate the OAuth flow, including the state parameter.
+4. **Authorization**: The user is redirected to iPayroll's authorization page where they log in and grant permissions. The authorization request includes the scopes configured for your API user.
+5. **Callback**: After authorization, iPayroll redirects back to the application's callback URL (`/api/ipayroll/auth/callback`) with an authorization code and the state parameter.
+6. **State Verification**: The application verifies that the returned state matches the one sent in the original request to prevent CSRF attacks.
+7. **Token Exchange**: The application exchanges the authorization code for access and refresh tokens. The access token will be limited to the scopes granted to your API user.
+8. **Stateless Token Usage**: The application does not store tokens persistently. Instead, it uses the tokens immediately for the current data synchronization operation and then discards them.
+9. **Redirect**: The user is redirected back to the original page that initiated the sync.
+10. **Data Sync Completion**: The application completes the data sync using the acquired token for the current session only.
 
 ## API Endpoints
 
@@ -61,7 +63,7 @@ This endpoint initiates the OAuth flow and redirects the user to iPayroll's auth
 GET /api/ipayroll/auth/callback
 ```
 
-This endpoint handles the callback from iPayroll after the user has authorized the application. It exchanges the authorization code for tokens, stores them, and redirects the user back to the original page.
+This endpoint handles the callback from iPayroll after the user has authorized the application. It exchanges the authorization code for tokens, uses them for the immediate data sync operation, and redirects the user back to the original page.
 
 ## Data Synchronization
 
@@ -70,7 +72,7 @@ The application provides server actions to sync data from iPayroll to the local 
 1. `syncEmployees()`: Syncs employee data from iPayroll (requires `employees` scope)
 2. `syncLeaveRecords()`: Syncs leave records from iPayroll (requires `leaverequests` scope)
 
-These functions check for a valid token and handle the OAuth flow if needed:
+These functions handle the OAuth flow if needed:
 
 ```typescript
 // Example usage in a component
