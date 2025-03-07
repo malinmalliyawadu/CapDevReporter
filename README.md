@@ -11,6 +11,19 @@ Automated timesheet app for ***REMOVED*** employees.
 - [Playwright](https://playwright.dev/) (E2E Testing)
 - [Recharts](https://recharts.org/)
 
+## 📋 Pre-requisites
+
+Before you begin, ensure you have the following installed:
+
+- [Node.js](https://nodejs.org/) (v18 or later)
+- [npm](https://www.npmjs.com/)
+- [MySQL](https://www.mysql.com/) (easiest option is to run in Docker)
+
+Optional tools:
+
+- [Docker](https://www.docker.com/) - for running as a container
+- [Terraform](https://www.terraform.io/) - for making changes to infrastructures
+
 ## 🏃‍♂️ Get Started
 
 1. Install dependencies:
@@ -19,7 +32,13 @@ Automated timesheet app for ***REMOVED*** employees.
 npm install
 ```
 
-2. Start the development server:
+2. Setup the database with seed data:
+
+```bash
+npx prisma migrate dev
+```
+
+3. Start the development server:
 
 ```bash
 npm run dev
@@ -38,9 +57,22 @@ npm run test:e2e
 # E2E tests with UI
 npm run test:e2e:ui
 
-# Tests in debug mode
-npm run test:e2e:debug
+# Unit tests
+npm run test
+
+# Unit tests with watch
+npm run test:watch
 ```
+
+## 🔐 Environment Variables
+
+You can copy the `.env.example` file as a starting point:
+
+```bash
+cp .env.example .env
+```
+
+Then update the values with your actual credentials.
 
 ## 💾 Database Management
 
@@ -49,3 +81,14 @@ Initialize or reset the database:
 ```bash
 npm run db:reset
 ```
+
+Database GUI:
+
+```bash
+npx prisma studio
+```
+
+## 📚 Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [iPayroll](docs/IPAYROLL.md)

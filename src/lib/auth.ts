@@ -2,10 +2,10 @@ import { getServerSession } from "next-auth";
 import { getAuthOptions } from "@/app/api/auth/[...nextauth]/auth.config";
 
 export async function getSession() {
-  if (process.env.IS_UNDER_TEST) {
+  if (process.env.DISABLE_AUTH) {
     return {
       user: {
-        name: "Test User",
+        name: "User",
       },
     };
   }

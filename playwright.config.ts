@@ -43,7 +43,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: "IS_UNDER_TEST=true npm run dev",
+    command: "IS_UNDER_TEST=true DISABLE_AUTH=true npm run dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
   },
