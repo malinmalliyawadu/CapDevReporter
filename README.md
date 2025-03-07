@@ -50,7 +50,7 @@ npm run dev
 
 Execute the test suite using the following commands:
 
-````bash
+```bash
 # Standard E2E tests
 npm run test:e2e
 
@@ -70,7 +70,7 @@ You can copy the `.env.example` file as a starting point:
 
 ```bash
 cp .env.example .env
-````
+```
 
 Then update the values with your actual credentials.
 
