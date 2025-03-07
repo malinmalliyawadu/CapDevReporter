@@ -156,6 +156,90 @@ graph TD
     ECS --> AzureAD[Azure AD]
 ```
 
+## ☁️ AWS Infrastructure
+
+The application is deployed on AWS using the following resources:
+
+### Networking
+
+- **VPC**: Dedicated Virtual Private Cloud with CIDR block 10.0.0.0/16
+- **Subnets**:
+  - 2 public subnets in different availability zones for the ECS cluster
+  - 2 private subnets in different availability zones for the RDS database
+- **Internet Gateway**: Provides internet access to the public subnets
+- **Route Tables**: Configured to route traffic appropriately between subnets
+
+### Compute & Container Services
+
+- **ECS Cluster**: Manages the containerized application
+- **ECS Task Definition**: Defines the container specifications, resource requirements, and environment variables
+- **ECS Service**: Ensures the desired number of tasks are running and handles load balancing
+- **ECR Repository**: Stores Docker images with lifecycle policies to manage image retention
+
+### Database
+
+- **RDS MySQL Instance**: Managed relational database for application data
+- **DB Subnet Group**: Spans multiple availability zones for high availability
+
+### Load Balancing & Networking
+
+- **Application Load Balancer (ALB)**: Distributes incoming traffic across ECS tasks
+- **Target Groups**: Routes requests to healthy ECS tasks
+- **Security Groups**: Controls inbound and outbound traffic for ECS, ALB, and RDS
+
+### Security & IAM
+
+- **IAM Roles**:
+  - ECS Task Execution Role: Allows ECS to pull images and write logs
+  - ECS Task Role: Provides permissions for the application to access AWS services
+- **Secrets Manager**: Securely stores sensitive configuration like database credentials
+- **ACM Certificate**: Manages SSL/TLS certificate for HTTPS connections
+
+### Monitoring & Logging
+
+- **CloudWatch Log Group**: Collects and stores application logs from containers
+
+```mermaid
+graph TD
+    subgraph "Networking"
+        VPC[VPC] --> PublicSubnets[Public Subnets]
+        VPC --> PrivateSubnets[Private Subnets]
+        PublicSubnets --> IGW[Internet Gateway]
+        PublicSubnets --> RouteTables[Route Tables]
+    end
+
+    subgraph "Compute"
+        ECS[ECS Cluster] --> TaskDef[Task Definition]
+        ECS --> Service[ECS Service]
+        Service --> Tasks[ECS Tasks]
+        ECR[ECR Repository] -.-> Tasks
+    end
+
+    subgraph "Database"
+        RDS[RDS MySQL] --> DBSubnetGroup[DB Subnet Group]
+    end
+
+    subgraph "Load Balancing"
+        ALB[Application Load Balancer] --> TargetGroups[Target Groups]
+        TargetGroups --> Tasks
+    end
+
+    subgraph "Security"
+        SecGroups[Security Groups] -.-> ALB
+        SecGroups -.-> Tasks
+        SecGroups -.-> RDS
+        IAMRoles[IAM Roles] -.-> Tasks
+        SecretsManager[Secrets Manager] -.-> Tasks
+        ACM[ACM Certificate] -.-> ALB
+    end
+
+    subgraph "Monitoring"
+        CloudWatch[CloudWatch Logs] <-.-> Tasks
+    end
+
+    Internet((Internet)) --> ALB
+```
+
 ## 🔄 CI/CD Pipeline
 
 ```mermaid
@@ -197,3 +281,7 @@ graph TD
   - Role-based permissions for application features
 - **API Security**:
   - iPayroll and Jira API logging
+
+```
+
+```
