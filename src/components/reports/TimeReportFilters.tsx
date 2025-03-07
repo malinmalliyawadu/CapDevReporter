@@ -115,7 +115,7 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
     } else {
       params.delete(key);
     }
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   // Apply debounced search
@@ -128,7 +128,7 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
       } else {
         params.delete("search");
       }
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     updateSearch(debouncedSearch);
@@ -152,7 +152,7 @@ export function TimeReportFilters({ teams, roles }: TimeReportFiltersProps) {
       params.delete("to");
     }
 
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   return (
