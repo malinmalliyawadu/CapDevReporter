@@ -53,14 +53,6 @@ GET /api/ipayroll/auth/callback
 
 This endpoint handles the callback from iPayroll after the user has authorized the application. It exchanges the authorization code for tokens, stores them, and redirects the user back to the original page.
 
-### 3. Logout
-
-```
-GET /api/auth/logout?redirectTo=/your-redirect-url
-```
-
-This endpoint clears the stored tokens and redirects to the specified URL.
-
 ## Data Synchronization
 
 The application provides server actions to sync data from iPayroll to the local database:
@@ -92,21 +84,6 @@ When developing locally, make sure to:
 
 1. Set up the environment variables in your `.env.local` file.
 2. Register `http://localhost:3000/api/ipayroll/auth/callback` as a redirect URI in your iPayroll developer account.
-3. Use HTTPS in production for secure token transmission.
-
-## Production Considerations
-
-1. Implement a more persistent token storage solution (e.g., database) instead of in-memory storage.
-2. Ensure all communication is over HTTPS.
-3. Regularly rotate your client secret.
-4. Monitor token usage and implement rate limiting if necessary.
-5. Implement proper error handling and logging.
-
-## Troubleshooting
-
-- **Invalid State Parameter**: This error occurs when the state parameter doesn't match, which could indicate a CSRF attack or an expired session. Try initiating the OAuth flow again.
-- **Access Denied**: The user denied permission or the client doesn't have the required scopes.
-- **Server Error**: There was an error on the iPayroll authorization server. Try again later or contact iPayroll support.
 
 ## Resources
 
