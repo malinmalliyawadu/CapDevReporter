@@ -1,18 +1,10 @@
 import * as React from "react";
 import { Suspense } from "react";
-import { PartyPopper, Calendar } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { PartyPopper } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { HolidaysTable } from "./HolidaysTable";
 import { HolidaysTableSkeleton } from "./loading";
 import Holidays from "date-holidays";
-import { format } from "date-fns";
 
 interface Holiday {
   date: string;
