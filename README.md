@@ -87,3 +87,8 @@ Database GUI:
 ```bash
 npx prisma studio
 ```
+
+## 📚 Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [iPayroll](docs/IPAYROLL.md)
