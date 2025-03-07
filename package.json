@@ -1,6 +1,6 @@
 {
   "name": "timesheet-next",
-  "version": "0.1.131",
+  "version": "0.1.132",
   "private": true,
   "scripts": {
     "dev": "cross-env DISABLE_AUTH=true next dev",
