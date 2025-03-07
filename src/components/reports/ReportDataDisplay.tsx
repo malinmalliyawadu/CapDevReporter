@@ -18,10 +18,16 @@ export function ReportDataDisplay({
   const [data, setData] = useState<TimeReportData>(initialData);
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
-  const initialFetchDone = useRef(false);
+  const isFirstMount = useRef(true);
 
-  // Fetch data on mount and when search params change
+  // Fetch data when search params change
   useEffect(() => {
+    // Skip the initial fetch since we already have the data
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+
     // Convert searchParams to a plain object
     const paramsObject: Record<string, string> = {};
     searchParams.forEach((value, key) => {
@@ -32,20 +38,11 @@ export function ReportDataDisplay({
       try {
         const newData = await fetchTimeReportData(paramsObject);
         setData(newData);
-        initialFetchDone.current = true;
       } catch (error) {
         console.error("Error fetching data:", error);
       }
     });
   }, [searchParams]);
-
-  if (!initialFetchDone.current) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-8 relative" data-testid="report-data-display">
