@@ -44,7 +44,7 @@
     "date-fns": "^4.1.0",
     "date-holidays": "^3.23.22",
     "jira-client": "^8.2.2",
-    "lucide-react": "^0.475.0",
+    "lucide-react": "^0.479.0",
     "next": "15.1.7",
     "next-auth": "^4.24.11",
     "next-themes": "^0.4.4",
