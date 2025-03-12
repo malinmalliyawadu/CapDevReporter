@@ -180,7 +180,7 @@ jobs:
 
           # Initialize variables
           STABLE=false
-          TIMEOUT=180  # 3 minutes
+          TIMEOUT=360  # 6 minutes
           START_TIME=$(date +%s)
           CHECK_INTERVAL=5
           CONSECUTIVE_STABLE_CHECKS=0
