@@ -92,3 +92,4 @@ npx prisma studio
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [iPayroll](docs/IPAYROLL.md)
+- [Time Report System](docs/TIME-REPORT-SYSTEM.md)
