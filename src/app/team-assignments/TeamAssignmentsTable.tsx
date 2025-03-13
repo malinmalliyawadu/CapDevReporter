@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { use, useState } from "react";
 import {
   Plus,
   Search,
@@ -73,9 +73,9 @@ interface Employee {
 }
 
 interface TeamAssignmentsTableProps {
-  initialEmployees: Employee[];
-  teams: Team[];
-  roles: Role[];
+  initialEmployeesPromise: Promise<Employee[]>;
+  teamsPromise: Promise<Team[]>;
+  rolesPromise: Promise<Role[]>;
 }
 
 interface EditingAssignment {
@@ -87,10 +87,13 @@ interface EditingAssignment {
 }
 
 export function TeamAssignmentsTable({
-  initialEmployees,
-  teams,
-  roles,
+  initialEmployeesPromise,
+  teamsPromise,
+  rolesPromise,
 }: TeamAssignmentsTableProps) {
+  const initialEmployees = use(initialEmployeesPromise);
+  const teams = use(teamsPromise);
+  const roles = use(rolesPromise);
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(
     new Set()

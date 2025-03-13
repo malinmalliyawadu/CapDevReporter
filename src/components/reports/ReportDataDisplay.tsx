@@ -5,7 +5,7 @@ import { TimeReportTable } from "@/components/reports/TimeReportTable";
 import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
 import { useRouter, usePathname } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { useCallback, useTransition } from "react";
+import { use, useCallback, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { TimeReportData } from "@/lib/timeReportService";
 import { TimeReportFilters } from "./TimeReportFilters";
@@ -13,7 +13,7 @@ import { TimeReportFilters } from "./TimeReportFilters";
 export function ReportDataDisplay({
   initialData,
 }: {
-  initialData: TimeReportData;
+  initialData: Promise<TimeReportData>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -28,13 +28,14 @@ export function ReportDataDisplay({
     },
     [pathname, router]
   );
+  const data = use(initialData);
 
   return (
     <>
       <div className="sticky top-4 z-10">
         <TimeReportFilters
-          teams={initialData.teams}
-          roles={initialData.roles}
+          teams={data.teams}
+          roles={data.roles}
           onFilterUpdate={onFilterUpdate}
         />
       </div>
@@ -54,21 +55,21 @@ export function ReportDataDisplay({
         <div>
           <TimeDistributionCharts
             key={`time-distribution-${JSON.stringify(
-              initialData.timeReports.map((r) => r.id)
+              data.timeReports.map((r) => r.id)
             )}`}
-            timeReport={initialData.timeReports}
-            timeTypes={initialData.timeTypes}
+            timeReport={data.timeReports}
+            timeTypes={data.timeTypes}
           />
 
           <UtilizationIssues
-            timeReports={initialData.timeReports}
-            timeTypes={initialData.timeTypes}
-            generalTimeAssignments={initialData.generalAssignments}
+            timeReports={data.timeReports}
+            timeTypes={data.timeTypes}
+            generalTimeAssignments={data.generalAssignments}
           />
 
           <TimeReportTable
-            timeReports={initialData.timeReports}
-            timeTypes={initialData.timeTypes}
+            timeReports={data.timeReports}
+            timeTypes={data.timeTypes}
           />
         </div>
       </div>

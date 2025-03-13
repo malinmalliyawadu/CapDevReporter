@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, use } from "react";
 import {
   RefreshCw,
   ArrowUpDown,
@@ -69,22 +69,24 @@ import {
 } from "./actions";
 
 interface ProjectsTableProps {
-  initialProjects: Project[];
-  totalProjects: number;
+  initialProjectsPromise: Promise<{ projects: Project[]; total: number }>;
   searchParams: ProjectsPageQueryString;
-  availableBoards: JiraBoard[];
+  availableBoardsPromise: Promise<JiraBoard[]>;
 }
 
 export function ProjectsTable({
-  initialProjects,
-  totalProjects,
+  initialProjectsPromise,
   searchParams,
-  availableBoards,
+  availableBoardsPromise,
 }: ProjectsTableProps) {
   const { toast } = useToast();
   const { openFromEvent: openSyncDialogFromEvent } = useSyncDialog();
   const router = useRouter();
   const pathname = usePathname();
+  const { projects: initialProjects, total: totalProjects } = use(
+    initialProjectsPromise
+  );
+  const availableBoards = use(availableBoardsPromise);
 
   // Group related state together
   const [tableState, setTableState] = useState({

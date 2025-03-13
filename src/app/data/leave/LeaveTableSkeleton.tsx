@@ -7,17 +7,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Header } from "./Header";
-
-export default function Loading() {
-  return (
-    <div className="space-y-8">
-      <Header />
-
-      <LeaveTableSkeleton />
-    </div>
-  );
-}
 
 export function LeaveTableSkeleton() {
   return (

@@ -2,7 +2,7 @@ import * as React from "react";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { TimeTypesTable } from "./TimeTypesTable";
-import { TimeTypesTableSkeleton } from "./loading";
+import { TimeTypesTableSkeleton } from "./TimeTypesTableSkeleton";
 import { Header } from "./Header";
 
 async function getTimeTypes() {
@@ -23,14 +23,12 @@ async function getTimeTypes() {
 }
 
 export default async function GeneralTimeTypesPage() {
-  const timeTypes = await getTimeTypes();
-
   return (
     <div className="space-y-8">
       <Header />
 
       <Suspense fallback={<TimeTypesTableSkeleton />}>
-        <TimeTypesTable initialTimeTypes={timeTypes} />
+        <TimeTypesTable initialTimeTypesPromise={getTimeTypes()} />
       </Suspense>
     </div>
   );

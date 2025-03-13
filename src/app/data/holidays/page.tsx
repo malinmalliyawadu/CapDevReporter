@@ -1,9 +1,5 @@
 import * as React from "react";
-import { Suspense } from "react";
-import { PartyPopper } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
 import { HolidaysTable } from "./HolidaysTable";
-import { HolidaysTableSkeleton } from "./loading";
 import Holidays from "date-holidays";
 import { Header } from "./Header";
 
@@ -47,9 +43,6 @@ async function getHolidays(): Promise<Holiday[]> {
 
 export default async function HolidaysPage() {
   const holidays = await getHolidays();
-  const currentDate = new Date();
-  const twelveMonthsAgo = new Date();
-  twelveMonthsAgo.setMonth(currentDate.getMonth() - 12);
 
   return (
     <div className="space-y-8">

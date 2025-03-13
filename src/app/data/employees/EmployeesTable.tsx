@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { use, useState } from "react";
 import {
   AlertCircle,
   Pencil,
@@ -65,15 +65,17 @@ interface Role {
 }
 
 interface EmployeesTableProps {
-  initialEmployees: Employee[];
-  roles: Role[];
+  initialEmployeesPromise: Promise<Employee[]>;
+  rolesPromise: Promise<Role[]>;
 }
 
 export function EmployeesTable({
-  initialEmployees,
-  roles,
+  initialEmployeesPromise,
+  rolesPromise,
 }: EmployeesTableProps) {
   const { toast } = useToast();
+  const initialEmployees = use(initialEmployeesPromise);
+  const roles = use(rolesPromise);
   const [employees, setEmployees] = useState(initialEmployees);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);

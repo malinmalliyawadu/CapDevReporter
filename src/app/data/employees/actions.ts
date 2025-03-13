@@ -6,17 +6,11 @@ import { getToken, hasValidToken } from "@/lib/session";
 import { fetchEmployees } from "@/utils/ipayroll";
 
 export async function getEmployees() {
-  try {
-    const employees = await prisma.employee.findMany({
-      include: {
-        role: true,
-      },
-    });
-    return { data: employees };
-  } catch (error) {
-    console.error(error);
-    return { error: "Failed to fetch employees" };
-  }
+  return prisma.employee.findMany({
+    include: {
+      role: true,
+    },
+  });
 }
 
 export async function syncEmployees() {

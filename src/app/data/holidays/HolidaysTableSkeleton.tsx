@@ -1,5 +1,3 @@
-import { PartyPopper } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -9,7 +7,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Header } from "./Header";
 
 export function HolidaysTableSkeleton() {
   return (
@@ -40,16 +37,6 @@ export function HolidaysTableSkeleton() {
           ))}
         </TableBody>
       </Table>
-    </div>
-  );
-}
-
-export default function Loading() {
-  return (
-    <div className="space-y-8">
-      <Header />
-
-      <HolidaysTableSkeleton />
     </div>
   );
 }

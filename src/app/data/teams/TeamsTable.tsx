@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useTransition } from "react";
+import { use, useState, useTransition } from "react";
 import { Pencil, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Table,
@@ -48,13 +48,14 @@ interface Team {
 }
 
 interface TeamsTableProps {
-  initialTeams: Team[];
+  initialTeamsPromise: Promise<Team[]>;
 }
 
-export function TeamsTable({ initialTeams }: TeamsTableProps) {
+export function TeamsTable({ initialTeamsPromise }: TeamsTableProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const initialTeams = use(initialTeamsPromise);
   const [teams, setTeams] = useState(initialTeams);
   const [newTeam, setNewTeam] = useState({
     name: "",

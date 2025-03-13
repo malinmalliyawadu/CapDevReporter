@@ -2,6 +2,8 @@ import { startOfYear } from "date-fns";
 import { ReportDataDisplay } from "@/components/reports/ReportDataDisplay";
 import { getTimeReportData } from "@/lib/timeReportService";
 import { Header } from "./Header";
+import { Suspense } from "react";
+import { ReportDataDisplayLoading } from "./ReportDataDisplayLoading";
 
 export default async function ReportsPage({
   searchParams,
@@ -36,7 +38,7 @@ export default async function ReportsPage({
   }
 
   // Fetch data using the service with parsed parameters
-  const data = await getTimeReportData({
+  const data = getTimeReportData({
     from: fromDate,
     to: toDate,
     team: teamId,
@@ -48,7 +50,9 @@ export default async function ReportsPage({
     <div className="space-y-8">
       <Header />
 
-      <ReportDataDisplay initialData={data} />
+      <Suspense fallback={<ReportDataDisplayLoading />}>
+        <ReportDataDisplay initialData={data} />
+      </Suspense>
     </div>
   );
 }

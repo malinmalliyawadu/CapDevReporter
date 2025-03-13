@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { use, useState } from "react";
 import {
   Table,
   TableBody,
@@ -47,11 +47,12 @@ interface Role {
 }
 
 interface RolesTableProps {
-  initialRoles: Role[];
+  initialRolesPromise: Promise<Role[]>;
 }
 
-export function RolesTable({ initialRoles }: RolesTableProps) {
+export function RolesTable({ initialRolesPromise }: RolesTableProps) {
   const { toast } = useToast();
+  const initialRoles = use(initialRolesPromise);
   const [roles, setRoles] = useState(initialRoles);
   const [newRoleName, setNewRoleName] = useState("");
   const [open, setOpen] = useState(false);

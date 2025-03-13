@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { use, useState } from "react";
 import { Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import {
   Table,
@@ -44,11 +44,11 @@ interface LeaveRecord {
 }
 
 interface LeaveTableProps {
-  initialLeaveRecords: LeaveRecord[];
+  initialLeaveRecordsPromise: Promise<LeaveRecord[]>;
 }
 
-export function LeaveTable({ initialLeaveRecords }: LeaveTableProps) {
-  const [leaveRecords] = useState(initialLeaveRecords);
+export function LeaveTable({ initialLeaveRecordsPromise }: LeaveTableProps) {
+  const leaveRecords = use(initialLeaveRecordsPromise);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);

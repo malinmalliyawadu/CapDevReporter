@@ -1,12 +1,9 @@
-import { TableLoading } from "@/components/loading/TableLoading";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Header } from "./Header";
+import { TableLoading } from "@/components/loading/TableLoading";
 
-export default function Loading() {
+export function ReportDataDisplayLoading() {
   return (
-    <div className="space-y-8">
-      <Header />
-
+    <>
       <div className="sticky top-4 z-10">
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-4">
@@ -50,6 +47,6 @@ export default function Loading() {
         {/* Time Report Table */}
         <TableLoading rows={8} cols={6} />
       </div>
-    </div>
+    </>
   );
 }

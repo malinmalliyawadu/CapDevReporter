@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { use, useState } from "react";
 import {
   Plus,
   Search,
@@ -63,12 +63,15 @@ interface TimeType {
 }
 
 interface TimeTypesTableProps {
-  initialTimeTypes: TimeType[];
+  initialTimeTypesPromise: Promise<TimeType[]>;
 }
 
-export function TimeTypesTable({ initialTimeTypes }: TimeTypesTableProps) {
+export function TimeTypesTable({
+  initialTimeTypesPromise,
+}: TimeTypesTableProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const initialTimeTypes = use(initialTimeTypesPromise);
   const [timeTypes, setTimeTypes] = useState(initialTimeTypes);
   const [newTypeName, setNewTypeName] = useState("");
   const [newTypeDescription, setNewTypeDescription] = useState("");

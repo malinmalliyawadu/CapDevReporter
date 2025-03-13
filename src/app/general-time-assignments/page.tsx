@@ -3,11 +3,11 @@ import { Suspense } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { GeneralTimeAssignmentsTable } from "./GeneralTimeAssignmentsTable";
-import { GeneralTimeAssignmentsTableSkeleton } from "./loading";
+import { GeneralTimeAssignmentsTableSkeleton } from "./GeneralTimeAssignmentsTableSkeleton";
 import { Header } from "./Header";
 
 async function getRoles() {
-  const roles = await prisma.role.findMany({
+  return prisma.role.findMany({
     select: {
       id: true,
       name: true,
@@ -36,11 +36,10 @@ async function getRoles() {
       },
     },
   });
-  return roles;
 }
 
 async function getTimeTypes() {
-  const timeTypes = await prisma.timeType.findMany({
+  return prisma.timeType.findMany({
     select: {
       id: true,
       name: true,
@@ -50,12 +49,9 @@ async function getTimeTypes() {
       updatedAt: true,
     },
   });
-  return timeTypes;
 }
 
 export default async function GeneralTimeAssignmentsPage() {
-  const [roles, timeTypes] = await Promise.all([getRoles(), getTimeTypes()]);
-
   return (
     <div className="space-y-8">
       <Header />
@@ -74,8 +70,8 @@ export default async function GeneralTimeAssignmentsPage() {
         <CardContent>
           <Suspense fallback={<GeneralTimeAssignmentsTableSkeleton />}>
             <GeneralTimeAssignmentsTable
-              initialRoles={roles}
-              timeTypes={timeTypes}
+              initialRolesPromise={getRoles()}
+              timeTypesPromise={getTimeTypes()}
             />
           </Suspense>
         </CardContent>

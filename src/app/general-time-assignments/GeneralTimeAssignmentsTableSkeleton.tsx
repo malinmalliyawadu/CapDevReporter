@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Table,
@@ -7,25 +8,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Header } from "./Header";
 
-export default function Loading() {
-  return (
-    <div className="space-y-8">
-      <Header />
-
-      <TeamsTableSkeleton />
-    </div>
-  );
-}
-
-export function TeamsTableSkeleton() {
+export function GeneralTimeAssignmentsTableSkeleton() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-[200px]" />
+          <Skeleton className="h-10 w-[180px]" />
         </div>
         <Skeleton className="h-10 w-[120px]" />
       </div>
@@ -42,7 +32,6 @@ export function TeamsTableSkeleton() {
                 <div className="flex gap-2">
                   <Skeleton className="h-9 w-9" />
                   <Skeleton className="h-9 w-9" />
-                  <Skeleton className="h-9 w-9" />
                 </div>
               </div>
             </CardHeader>
@@ -50,8 +39,8 @@ export function TeamsTableSkeleton() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Board Name</TableHead>
-                    <TableHead>Board ID</TableHead>
+                    <TableHead>Time Type</TableHead>
+                    <TableHead>Hours per Week</TableHead>
                     <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -59,10 +48,13 @@ export function TeamsTableSkeleton() {
                   {Array.from({ length: 3 }).map((_, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        <Skeleton className="h-4 w-[200px]" />
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-5 w-[100px] rounded-full" />
+                          <Skeleton className="h-4 w-[200px]" />
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <Skeleton className="h-4 w-[100px]" />
+                        <Skeleton className="h-4 w-[80px]" />
                       </TableCell>
                       <TableCell>
                         <Skeleton className="h-8 w-8" />

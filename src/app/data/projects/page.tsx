@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Suspense } from "react";
-import { ProjectsTableSkeleton } from "./loading";
+import { ProjectsTableSkeleton } from "./ProjectsTableSkeleton";
 import { ProjectsTable } from "./ProjectsTable";
 import { getProjects, getBoards } from "./actions";
 import { Header } from "./Header";
@@ -20,26 +20,19 @@ export default async function ProjectsPage({
 }) {
   const params = await searchParams;
 
-  // Fetch initial data on the server
-  const [{ projects, total }, boards] = await Promise.all([
-    getProjects({
-      page: Number(params.page) || 1,
-      size: Number(params.size) || 10,
-      search: params.search,
-    }),
-    getBoards(),
-  ]);
-
   return (
     <div className="space-y-8">
       <Header />
 
       <Suspense fallback={<ProjectsTableSkeleton />}>
         <ProjectsTable
-          initialProjects={projects}
-          totalProjects={total}
+          initialProjectsPromise={getProjects({
+            page: Number(params.page) || 1,
+            size: Number(params.size) || 10,
+            search: params.search,
+          })}
           searchParams={params}
-          availableBoards={boards}
+          availableBoardsPromise={getBoards()}
         />
       </Suspense>
     </div>

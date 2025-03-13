@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { use, useState } from "react";
 import {
   Plus,
   Trash2,
@@ -79,14 +79,16 @@ interface TimeBreakdown {
 }
 
 interface GeneralTimeAssignmentsTableProps {
-  initialRoles: Role[];
-  timeTypes: TimeType[];
+  initialRolesPromise: Promise<Role[]>;
+  timeTypesPromise: Promise<TimeType[]>;
 }
 
 export function GeneralTimeAssignmentsTable({
-  initialRoles,
-  timeTypes,
+  initialRolesPromise,
+  timeTypesPromise,
 }: GeneralTimeAssignmentsTableProps) {
+  const initialRoles = use(initialRolesPromise);
+  const timeTypes = use(timeTypesPromise);
   const [roles, setRoles] = useState(initialRoles);
   const [searchQuery, setSearchQuery] = useState("");
   const [timeTypeFilter, setTimeTypeFilter] = useState<string>("all");

@@ -1,16 +1,4 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Header } from "./Header";
-
-export default function Loading() {
-  return (
-    <div className="space-y-8">
-      <Header />
-
-      <TeamAssignmentsTableSkeleton />
-    </div>
-  );
-}
 
 export function TeamAssignmentsTableSkeleton() {
   return (

@@ -1,15 +1,12 @@
 import * as React from "react";
 import { Suspense } from "react";
-import { LayoutGrid } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { PageHeader } from "@/components/ui/page-header";
 import { prisma } from "@/lib/prisma";
 import { TeamAssignmentsTable } from "./TeamAssignmentsTable";
-import { TeamAssignmentsTableSkeleton } from "./loading";
+import { TeamAssignmentsTableSkeleton } from "./TeamAssignmentsTableSkeleton";
 import { Header } from "./Header";
 
 async function getEmployees() {
-  const employees = await prisma.employee.findMany({
+  return prisma.employee.findMany({
     select: {
       id: true,
       name: true,
@@ -52,11 +49,10 @@ async function getEmployees() {
       },
     },
   });
-  return employees;
 }
 
 async function getTeams() {
-  const teams = await prisma.team.findMany({
+  return prisma.team.findMany({
     select: {
       id: true,
       name: true,
@@ -65,11 +61,10 @@ async function getTeams() {
       updatedAt: true,
     },
   });
-  return teams;
 }
 
 async function getRoles() {
-  const roles = await prisma.role.findMany({
+  return prisma.role.findMany({
     select: {
       id: true,
       name: true,
@@ -78,25 +73,18 @@ async function getRoles() {
       updatedAt: true,
     },
   });
-  return roles;
 }
 
 export default async function TeamAssignmentsPage() {
-  const [employees, teams, roles] = await Promise.all([
-    getEmployees(),
-    getTeams(),
-    getRoles(),
-  ]);
-
   return (
     <div className="space-y-8">
       <Header />
 
       <Suspense fallback={<TeamAssignmentsTableSkeleton />}>
         <TeamAssignmentsTable
-          initialEmployees={employees}
-          teams={teams}
-          roles={roles}
+          initialEmployeesPromise={getEmployees()}
+          teamsPromise={getTeams()}
+          rolesPromise={getRoles()}
         />
       </Suspense>
     </div>
