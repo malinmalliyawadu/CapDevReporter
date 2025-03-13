@@ -51,7 +51,7 @@ npm run dev
 > npm run dev:auth
 > ```
 >
-> You will need to set the `AZURE_AD_\*` environment variables with your Azure AD tenant details
+> You will need to set the `AZURE_AD_*` environment variables with your Azure AD tenant details
 
 3. Navigate to [http://localhost:3000](http://localhost:3000) to access the application.
 
