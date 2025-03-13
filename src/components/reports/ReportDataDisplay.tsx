@@ -5,7 +5,7 @@ import { TimeReportTable } from "@/components/reports/TimeReportTable";
 import { UtilizationIssues } from "@/components/reports/UtilizationIssues";
 import { useRouter, usePathname } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { use, useCallback, useTransition } from "react";
+import { use, useCallback, useRef, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { TimeReportData } from "@/lib/timeReportService";
 import { TimeReportFilters } from "./TimeReportFilters";
@@ -15,18 +15,24 @@ export function ReportDataDisplay({
 }: {
   initialData: Promise<TimeReportData>;
 }) {
+  const initialLoad = useRef(true);
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const onFilterUpdate = useCallback(
     (params: URLSearchParams) => {
+      if (initialLoad.current) {
+        initialLoad.current = false;
+        return;
+      }
+
       startTransition(() => {
         router.replace(`${pathname}?${params.toString()}`, {
           scroll: false,
         });
       });
     },
-    [pathname, router]
+    [pathname, router, initialLoad]
   );
   const data = use(initialData);
 
