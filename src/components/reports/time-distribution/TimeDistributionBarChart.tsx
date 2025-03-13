@@ -82,6 +82,7 @@ export function TimeDistributionBarChart({
                 tick={false}
               />
               <Tooltip
+                isAnimationActive={false}
                 content={({ payload }) => {
                   if (!payload?.length) return null;
                   const data = payload[0].payload;

@@ -73,6 +73,7 @@ export function TimeDistributionPieChart({
                 ))}
               </Pie>
               <Tooltip
+                isAnimationActive={false}
                 content={({ payload }) => {
                   if (!payload?.length) return null;
                   const data = payload[0].payload;
