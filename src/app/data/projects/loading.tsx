@@ -7,26 +7,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ClipboardList } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
+import { Header } from "./Header";
 
 export default function Loading() {
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <PageHeader
-          title={
-            <span className="flex items-center gap-2">
-              <ClipboardList className="h-7 w-7 text-indigo-500" />
-              <span className="bg-gradient-to-r from-indigo-500 to-blue-500 bg-clip-text text-transparent">
-                Projects
-              </span>
-            </span>
-          }
-          description="Manage and view all projects"
-        />
-      </div>
-
+      <Header />
       <ProjectsTableSkeleton />
     </div>
   );

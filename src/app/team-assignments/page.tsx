@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { prisma } from "@/lib/prisma";
 import { TeamAssignmentsTable } from "./TeamAssignmentsTable";
 import { TeamAssignmentsTableSkeleton } from "./loading";
+import { Header } from "./Header";
 
 async function getEmployees() {
   const employees = await prisma.employee.findMany({
@@ -89,42 +90,15 @@ export default async function TeamAssignmentsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <PageHeader
-          title={
-            <span className="flex items-center gap-2">
-              <LayoutGrid className="h-7 w-7 text-orange-500" />
-              <span className="bg-gradient-to-r from-orange-500 to-yellow-500 bg-clip-text text-transparent">
-                Team Assignments
-              </span>
-            </span>
-          }
-          description="Track and manage employee team assignments across your organization."
-        />
-      </div>
+      <Header />
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold">Employee Assignments</h3>
-              <p className="text-sm text-muted-foreground">
-                View current team assignments and assignment history for each
-                employee
-              </p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Suspense fallback={<TeamAssignmentsTableSkeleton />}>
-            <TeamAssignmentsTable
-              initialEmployees={employees}
-              teams={teams}
-              roles={roles}
-            />
-          </Suspense>
-        </CardContent>
-      </Card>
+      <Suspense fallback={<TeamAssignmentsTableSkeleton />}>
+        <TeamAssignmentsTable
+          initialEmployees={employees}
+          teams={teams}
+          roles={roles}
+        />
+      </Suspense>
     </div>
   );
 }

@@ -7,25 +7,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Drama } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
+import { Header } from "./Header";
 
 export default function Loading() {
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <PageHeader
-          title={
-            <span className="flex items-center gap-2">
-              <Drama className="h-7 w-7 text-purple-500" />
-              <span className="bg-gradient-to-r from-purple-500 to-fuchsia-500 bg-clip-text text-transparent">
-                Roles
-              </span>
-            </span>
-          }
-          description="View and manage employee roles."
-        />
-      </div>
+      <Header />
 
       <RolesTableSkeleton />
     </div>

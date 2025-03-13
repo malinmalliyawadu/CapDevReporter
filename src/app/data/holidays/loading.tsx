@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Header } from "./Header";
 
 export function HolidaysTableSkeleton() {
   return (
@@ -45,18 +46,8 @@ export function HolidaysTableSkeleton() {
 
 export default function Loading() {
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <PartyPopper className="h-7 w-7 text-pink-500" />
-            <span className="bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent">
-              Holidays
-            </span>
-          </span>
-        }
-        description="View and manage public holidays."
-      />
+    <div className="space-y-8">
+      <Header />
 
       <HolidaysTableSkeleton />
     </div>

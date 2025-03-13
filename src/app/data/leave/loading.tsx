@@ -7,25 +7,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Palmtree } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
+import { Header } from "./Header";
 
 export default function Loading() {
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <PageHeader
-          title={
-            <span className="flex items-center gap-2">
-              <Palmtree className="h-8 w-8 text-teal-500" />
-              <span className="bg-gradient-to-r from-teal-500 to-cyan-500 bg-clip-text text-transparent text-3xl font-bold">
-                Leave
-              </span>
-            </span>
-          }
-          description="View and manage employee leave records"
-        />
-      </div>
+      <Header />
 
       <LeaveTableSkeleton />
     </div>

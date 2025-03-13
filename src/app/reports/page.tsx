@@ -1,8 +1,7 @@
-import { BarChart } from "lucide-react";
 import { startOfYear } from "date-fns";
-import { PageHeader } from "@/components/ui/page-header";
 import { ReportDataDisplay } from "@/components/reports/ReportDataDisplay";
 import { getTimeReportData } from "@/lib/timeReportService";
+import { Header } from "./Header";
 
 export default async function ReportsPage({
   searchParams,
@@ -47,17 +46,7 @@ export default async function ReportsPage({
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <BarChart className="h-7 w-7 text-rose-500" />
-            <span className="bg-gradient-to-r from-rose-500 to-red-500 bg-clip-text text-transparent">
-              Time Reports
-            </span>
-          </span>
-        }
-        description="View and analyze time tracking data."
-      />
+      <Header />
 
       <ReportDataDisplay initialData={data} />
     </div>
