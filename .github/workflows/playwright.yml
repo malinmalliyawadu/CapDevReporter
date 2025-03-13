@@ -43,7 +43,7 @@ jobs:
 
       - name: 🗃️ Initialize database
         run: |
-          mv .env.example .env
+          mv .env.local.example .env.local
           npx prisma generate
           npx prisma migrate reset --force
 

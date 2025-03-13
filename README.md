@@ -75,10 +75,10 @@ npm run test:watch
 
 ## 🔐 Environment Variables
 
-You can copy the `.env.example` file as a starting point:
+You can copy the `.env.local.example` file as a starting point:
 
 ```bash
-cp .env.example .env
+cp .env.local.example .env.local
 ```
 
 Then update the values with your actual credentials.
