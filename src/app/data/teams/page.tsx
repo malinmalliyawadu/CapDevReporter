@@ -5,8 +5,6 @@ import { TeamsTableSkeleton } from "./loading";
 import { TeamsTable } from "./TeamsTable";
 import { Header } from "./Header";
 
-export const dynamic = "force-dynamic";
-
 async function getTeams() {
   const teams = await prisma.team.findMany({
     include: {

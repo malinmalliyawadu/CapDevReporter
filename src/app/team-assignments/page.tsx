@@ -7,8 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { TeamAssignmentsTable } from "./TeamAssignmentsTable";
 import { TeamAssignmentsTableSkeleton } from "./loading";
 
-export const dynamic = "force-dynamic";
-
 async function getEmployees() {
   const employees = await prisma.employee.findMany({
     select: {

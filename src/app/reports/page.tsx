@@ -4,8 +4,6 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ReportDataDisplay } from "@/components/reports/ReportDataDisplay";
 import { getTimeReportData } from "@/lib/timeReportService";
 
-export const dynamic = "force-dynamic";
-
 export default async function ReportsPage({
   searchParams,
 }: {

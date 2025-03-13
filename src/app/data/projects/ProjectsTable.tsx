@@ -246,27 +246,53 @@ export function ProjectsTable({
       }
 
       try {
-        await deleteProject(project.id);
-        toast({
-          title: "Project deleted",
-          description: `Project ${project.name} has been deleted successfully.`,
-        });
+        const success = await deleteProject(project.id);
+        if (success) {
+          toast({
+            variant: "success",
+            title: "Success",
+            description: "Project deleted successfully",
+          });
 
-        // Instead of updating state directly and then fetching, just trigger a re-fetch
-        // by updating the page number to itself, which will trigger the main effect
-        setTableState((prev) => ({ ...prev, page: prev.page }));
+          // Refresh the table data
+          const result = await getProjects({
+            page: tableState.page,
+            size: Number(searchParams.size) || 10,
+            search: debouncedSearch
+              ? formatSearchQuery(debouncedSearch)
+              : undefined,
+          });
+
+          setTableState((prev) => ({
+            ...prev,
+            projects: result.projects,
+            projectsCount: result.total,
+          }));
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to delete project",
+            variant: "destructive",
+          });
+        }
       } catch (error) {
         console.error("Error deleting project:", error);
         toast({
           title: "Error",
-          description: "Failed to delete project. Please try again.",
+          description: "Failed to delete project",
           variant: "destructive",
         });
       } finally {
         setProjectToDelete(null);
       }
     },
-    [toast]
+    [
+      tableState.page,
+      searchParams.size,
+      debouncedSearch,
+      formatSearchQuery,
+      toast,
+    ]
   );
 
   // Memoize columns

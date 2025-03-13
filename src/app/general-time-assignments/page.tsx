@@ -7,8 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { GeneralTimeAssignmentsTable } from "./GeneralTimeAssignmentsTable";
 import { GeneralTimeAssignmentsTableSkeleton } from "./loading";
 
-export const dynamic = "force-dynamic";
-
 async function getRoles() {
   const roles = await prisma.role.findMany({
     select: {

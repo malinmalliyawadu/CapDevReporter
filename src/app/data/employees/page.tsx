@@ -8,8 +8,6 @@ import { EmployeesTableSkeleton } from "./loading";
 import { getEmployees } from "./actions";
 import { EmployeeSyncClient } from "./EmployeeSyncClient";
 
-export const dynamic = "force-dynamic";
-
 async function getRoles() {
   const roles = await prisma.role.findMany();
   return roles;

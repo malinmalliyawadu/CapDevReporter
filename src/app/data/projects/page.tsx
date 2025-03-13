@@ -6,8 +6,6 @@ import { ProjectsTableSkeleton } from "./loading";
 import { ProjectsTable } from "./ProjectsTable";
 import { getProjects, getBoards } from "./actions";
 
-export const dynamic = "force-dynamic";
-
 export interface ProjectsPageQueryString {
   page?: string;
   size?: string;
