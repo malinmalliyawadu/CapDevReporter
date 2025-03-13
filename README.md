@@ -44,6 +44,15 @@ npx prisma migrate dev
 npm run dev
 ```
 
+> [!NOTE]
+> By default, the app is running without authentication. To enable authentication, run:
+>
+> ```bash
+> npm run dev:auth
+> ```
+>
+> You will need to set the AZURE_AD\* environment variables with your Azure AD tenant details
+
 3. Navigate to [http://localhost:3000](http://localhost:3000) to access the application.
 
 ## 🧪 Testing
