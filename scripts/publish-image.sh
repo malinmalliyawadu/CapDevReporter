@@ -4,7 +4,7 @@ set -e
 # Configuration
 AWS_REGION="ap-southeast-2"
 ECR_REGISTRY="1234.dkr.ecr.${AWS_REGION}.amazonaws.com"
-REPOSITORY_NAME="***REMOVED***/timesheet"
+REPOSITORY_NAME="***REMOVED***/capdevreporter"
 IMAGE_TAG="latest"
 
 echo "🚀 Publishing image to ECR..."

@@ -17,7 +17,7 @@ provider "aws" {
   default_tags {
     tags = {
       Account     = "***REMOVED***-dev"
-      Description = "Timesheet App"
+      Description = "CapDevReporter App"
       Terraform   = "true"
       Owner = "Malin Malliya Wadu"
     }
@@ -31,7 +31,7 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
 
   tags = {
-    Name = "timesheet-vpc"
+    Name = "capdevreporter-vpc"
   }
 }
 
@@ -39,7 +39,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "timesheet-igw"
+    Name = "capdevreporter-igw"
   }
 }
 
@@ -51,7 +51,7 @@ resource "aws_subnet" "main" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "timesheet-subnet-a"
+    Name = "capdevreporter-subnet-a"
   }
 }
 
@@ -62,7 +62,7 @@ resource "aws_subnet" "secondary" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "timesheet-subnet-b"
+    Name = "capdevreporter-subnet-b"
   }
 }
 
@@ -73,7 +73,7 @@ resource "aws_subnet" "private_a" {
   availability_zone = "${var.aws_region}a"
 
   tags = {
-    Name = "timesheet-private-subnet-a"
+    Name = "capdevreporter-private-subnet-a"
   }
 }
 
@@ -83,7 +83,7 @@ resource "aws_subnet" "private_b" {
   availability_zone = "${var.aws_region}b"
 
   tags = {
-    Name = "timesheet-private-subnet-b"
+    Name = "capdevreporter-private-subnet-b"
   }
 }
 
@@ -96,7 +96,7 @@ resource "aws_route_table" "main" {
   }
 
   tags = {
-    Name = "timesheet-route-table"
+    Name = "capdevreporter-route-table"
   }
 }
 
@@ -112,8 +112,8 @@ resource "aws_route_table_association" "secondary" {
 
 # Security Group for ECS Fargate Tasks
 resource "aws_security_group" "ecs" {
-  name        = "timesheet-ecs-sg"
-  description = "Security group for Timesheet ECS service"
+  name        = "capdevreporter-ecs-sg"
+  description = "Security group for CapDevReporter ECS service"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -141,14 +141,14 @@ resource "aws_security_group" "ecs" {
   }
 
   tags = {
-    Name = "timesheet-ecs-sg"
+    Name = "capdevreporter-ecs-sg"
   }
 }
 
 # Security Group for ALB
 resource "aws_security_group" "alb" {
-  name        = "timesheet-alb-sg"
-  description = "Security group for Timesheet ALB"
+  name        = "capdevreporter-alb-sg"
+  description = "Security group for CapDevReporter ALB"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -175,14 +175,14 @@ resource "aws_security_group" "alb" {
   }
 
   tags = {
-    Name = "timesheet-alb-sg"
+    Name = "capdevreporter-alb-sg"
   }
 }
 
 # Security Group for RDS
 resource "aws_security_group" "rds" {
-  name        = "timesheet-rds-sg"
-  description = "Security group for Timesheet RDS instance"
+  name        = "capdevreporter-rds-sg"
+  description = "Security group for CapDevReporter RDS instance"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -201,30 +201,30 @@ resource "aws_security_group" "rds" {
   }
 
   tags = {
-    Name = "timesheet-rds-sg"
+    Name = "capdevreporter-rds-sg"
   }
 }
 
 # RDS Subnet Group
 resource "aws_db_subnet_group" "main" {
-  name       = "timesheet-db-subnet-group"
+  name       = "capdevreporter-db-subnet-group"
   subnet_ids = [aws_subnet.private_a.id, aws_subnet.private_b.id]
 
   tags = {
-    Name = "Timesheet DB Subnet Group"
+    Name = "CapDevReporter DB Subnet Group"
   }
 }
 
 # RDS MySQL Instance
 resource "aws_db_instance" "main" {
-  identifier             = "timesheet-db"
+  identifier             = "capdevreporter-db"
   engine                 = "mysql"
   engine_version         = "8.0"
   instance_class         = "db.t4g.micro"
   allocated_storage      = 20
   storage_type           = "gp3"
-  db_name                = "timesheet"
-  username               = "timesheet_admin"
+  db_name                = "capdevreporter"
+  username               = "capdevreporter_admin"
   password               = var.db_password
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.rds.id]
@@ -233,13 +233,13 @@ resource "aws_db_instance" "main" {
   multi_az               = false
   
   tags = {
-    Name = "timesheet-db"
+    Name = "capdevreporter-db"
   }
 }
 
 # IAM Role for ECS Task Execution
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "timesheet-ecs-task-execution-role"
+  name = "capdevreporter-ecs-task-execution-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -262,7 +262,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
 
 # Add Secrets Manager access to ECS Task Execution Role
 resource "aws_iam_role_policy" "ecs_task_execution_secrets_policy" {
-  name = "timesheet-ecs-task-execution-secrets-policy"
+  name = "capdevreporter-ecs-task-execution-secrets-policy"
   role = aws_iam_role.ecs_task_execution_role.id
 
   policy = jsonencode({
@@ -274,7 +274,7 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets_policy" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = [
-          "${aws_secretsmanager_secret.timesheet_secrets.arn}*"
+          "${aws_secretsmanager_secret.capdevreporter_secrets.arn}*"
         ]
       }
     ]
@@ -283,7 +283,7 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets_policy" {
 
 # IAM Role for ECS Task
 resource "aws_iam_role" "ecs_task_role" {
-  name = "timesheet-ecs-task-role"
+  name = "capdevreporter-ecs-task-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -301,7 +301,7 @@ resource "aws_iam_role" "ecs_task_role" {
 
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
-  name = "timesheet-cluster"
+  name = "capdevreporter-cluster"
   
   setting {
     name  = "containerInsights"
@@ -311,24 +311,24 @@ resource "aws_ecs_cluster" "main" {
 
 # CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "app" {
-  name              = "/ecs/timesheet-app"
+  name              = "/ecs/capdevreporter-app"
   retention_in_days = 30
 }
 
 # Create AWS Secrets Manager secret
-resource "aws_secretsmanager_secret" "timesheet_secrets" {
-  name = "timesheet-app"
+resource "aws_secretsmanager_secret" "capdevreporter_secrets" {
+  name = "capdevreporter-app"
   
   tags = {
-    Name = "timesheet-app-secrets"
-    Description = "Secrets for Timesheet App"
+    Name = "capdevreporter-app-secrets"
+    Description = "Secrets for CapDevReporter App"
   }
 }
 
-resource "aws_secretsmanager_secret_version" "timesheet_secrets" {
-  secret_id = aws_secretsmanager_secret.timesheet_secrets.id
+resource "aws_secretsmanager_secret_version" "capdevreporter_secrets" {
+  secret_id = aws_secretsmanager_secret.capdevreporter_secrets.id
   secret_string = jsonencode({
-    DATABASE_URL           = "mysql://timesheet_admin:${var.db_password}@${replace(aws_db_instance.main.endpoint, ":3306", "")}/timesheet"
+    DATABASE_URL           = "mysql://capdevreporter_admin:${var.db_password}@${replace(aws_db_instance.main.endpoint, ":3306", "")}/capdevreporter"
     JIRA_API_TOKEN         = var.jira_api_token
     JIRA_USER_EMAIL        = var.jira_user_email
     IPAYROLL_CLIENT_ID     = var.ipayroll_client_id
@@ -342,7 +342,7 @@ resource "aws_secretsmanager_secret_version" "timesheet_secrets" {
 
 # Add Secrets Manager access to ECS Task Role
 resource "aws_iam_role_policy" "ecs_task_secrets_policy" {
-  name = "timesheet-ecs-task-secrets-policy"
+  name = "capdevreporter-ecs-task-secrets-policy"
   role = aws_iam_role.ecs_task_role.id
 
   policy = jsonencode({
@@ -354,7 +354,7 @@ resource "aws_iam_role_policy" "ecs_task_secrets_policy" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = [
-          aws_secretsmanager_secret.timesheet_secrets.arn
+          aws_secretsmanager_secret.capdevreporter_secrets.arn
         ]
       }
     ]
@@ -363,7 +363,7 @@ resource "aws_iam_role_policy" "ecs_task_secrets_policy" {
 
 # Update ECS Task Definition to include all secrets
 resource "aws_ecs_task_definition" "app" {
-  family                   = "timesheet-app"
+  family                   = "capdevreporter-app"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "1024"
@@ -373,8 +373,8 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([
     {
-      name      = "timesheet-app"
-      image     = "1234.dkr.ecr.${var.aws_region}.amazonaws.com/***REMOVED***/timesheet:latest"
+      name      = "capdevreporter-app"
+      image     = "1234.dkr.ecr.${var.aws_region}.amazonaws.com/***REMOVED***/capdevreporter:latest"
       essential = true
       
       portMappings = [
@@ -415,39 +415,39 @@ resource "aws_ecs_task_definition" "app" {
       secrets = [
         {
           name      = "DATABASE_URL"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:DATABASE_URL::"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:DATABASE_URL::"
         },
         {
           name      = "JIRA_API_TOKEN"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:JIRA_API_TOKEN::"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:JIRA_API_TOKEN::"
         },
         {
           name      = "JIRA_USER_EMAIL"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:JIRA_USER_EMAIL::"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:JIRA_USER_EMAIL::"
         },
         {
           name      = "IPAYROLL_CLIENT_ID"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:IPAYROLL_CLIENT_ID::"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:IPAYROLL_CLIENT_ID::"
         },
         {
           name      = "IPAYROLL_CLIENT_SECRET"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:IPAYROLL_CLIENT_SECRET::"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:IPAYROLL_CLIENT_SECRET::"
         },
         {
           name      = "AZURE_AD_CLIENT_ID"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:AZURE_AD_CLIENT_ID::"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:AZURE_AD_CLIENT_ID::"
         },
         {
           name      = "AZURE_AD_CLIENT_SECRET"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:AZURE_AD_CLIENT_SECRET::"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:AZURE_AD_CLIENT_SECRET::"
         },
         {
           name      = "AZURE_AD_TENANT_ID"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:AZURE_AD_TENANT_ID::"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:AZURE_AD_TENANT_ID::"
         },
         {
           name      = "NEXTAUTH_SECRET"
-          valueFrom = "${aws_secretsmanager_secret.timesheet_secrets.arn}:NEXTAUTH_SECRET::"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:NEXTAUTH_SECRET::"
         }
       ]
       
@@ -456,7 +456,7 @@ resource "aws_ecs_task_definition" "app" {
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.app.name
           "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "timesheet"
+          "awslogs-stream-prefix" = "capdevreporter"
         }
       }
     }
@@ -473,7 +473,7 @@ resource "tls_self_signed_cert" "alb" {
 
   subject {
     common_name  = "*.elb.amazonaws.com"
-    organization = "Timesheet App"
+    organization = "CapDevReporter App"
   }
 
   validity_period_hours = 8760 # 1 year
@@ -492,7 +492,7 @@ resource "aws_acm_certificate" "app" {
 
 # Application Load Balancer
 resource "aws_lb" "app" {
-  name               = "timesheet-alb"
+  name               = "capdevreporter-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
@@ -502,7 +502,7 @@ resource "aws_lb" "app" {
 }
 
 resource "aws_lb_target_group" "app" {
-  name        = "timesheet-tg"
+  name        = "capdevreporter-tg"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
@@ -561,7 +561,7 @@ resource "aws_lb_listener" "https" {
 
 # ECS Service
 resource "aws_ecs_service" "app" {
-  name            = "timesheet-service"
+  name            = "capdevreporter-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 2
@@ -580,7 +580,7 @@ resource "aws_ecs_service" "app" {
   
   load_balancer {
     target_group_arn = aws_lb_target_group.app.arn
-    container_name   = "timesheet-app"
+    container_name   = "capdevreporter-app"
     container_port   = 3000
   }
 

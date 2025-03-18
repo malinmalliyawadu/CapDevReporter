@@ -1,6 +1,6 @@
-# 🕒 ***REMOVED*** Timesheet
+# 🕒 CapDev Reporter
 
-Automated timesheet app for ***REMOVED*** employees.
+Automated CapDev Reporting for ***REMOVED***.
 
 ## 🚀 Technology Stack
 

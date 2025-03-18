@@ -5,7 +5,7 @@ import { LoginForm } from "./login-form";
 import AuthError from "./error";
 
 export const metadata: Metadata = {
-  title: "Login | Timesheet",
+  title: "Login | CapDev Reporter",
   description: "Login to your account",
 };
 
@@ -58,7 +58,7 @@ export default async function LoginPage() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 text-gray-500 dark:text-gray-400 bg-gradient-to-br from-white via-gray-50 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-                ***REMOVED*** Timesheet System
+                ***REMOVED*** CapDev Reporter
               </span>
             </div>
           </div>

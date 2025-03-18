@@ -10,8 +10,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Timesheet",
-  description: "Track your time with ease",
+  title: "CapDev Reporter",
+  description: "Automated CapDev Reporting for ***REMOVED***",
 };
 
 export default async function RootLayout({
