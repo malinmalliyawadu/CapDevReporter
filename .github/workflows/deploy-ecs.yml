@@ -21,6 +21,7 @@ jobs:
       # ECS deployment config
       ECS_CLUSTER: capdevreporter-cluster
       ECS_SERVICE: capdevreporter-service
+      ECS_MIGRATION_SERVICE: capdevreporter-migration-service
 
     services:
       mysql:
@@ -166,111 +167,17 @@ jobs:
           docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} --format 'Repository: {{.RepoTags}}\nSize: {{.Size}} bytes\nLayers: {{len .RootFS.Layers}}'
           echo "::endgroup::"
 
-      - name: 🚀 Force new ECS deployment
-        run: |
-          echo "::group::🔄 Forcing new deployment of ECS service..."
-          aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment
-          echo "::endgroup::"
-          echo "✅ Deployment triggered, waiting for it to start..."
+      - name: 🚀 Deploy database migrations
+        uses: ./.github/actions/deploy-ecs
+        with:
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.ECS_MIGRATION_SERVICE }}
 
-          # Wait a moment for the deployment to register in AWS
-          sleep 30
-
-          echo "👀 Monitoring deployment status..."
-
-          # Initialize variables
-          STABLE=false
-          TIMEOUT=360  # 6 minutes
-          START_TIME=$(date +%s)
-          CHECK_INTERVAL=5
-          CONSECUTIVE_STABLE_CHECKS=0
-          REQUIRED_STABLE_CHECKS=3
-          ATTEMPT=1
-
-          while [ "$STABLE" != "true" ]; do
-            echo "::group::🔍 Deployment Check Attempt #$ATTEMPT"
-            # Get current time and calculate elapsed time
-            CURRENT_TIME=$(date +%s)
-            ELAPSED=$((CURRENT_TIME - START_TIME))
-            
-            # Check if we've exceeded the timeout
-            if [ $ELAPSED -gt $TIMEOUT ]; then
-              echo "::error::Deployment timed out after $(($TIMEOUT / 60)) minutes"
-              echo "::endgroup::"
-              exit 1
-            fi
-            
-            # Get deployment status
-            DEPLOYMENT_INFO=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].deployments')
-            
-            # Count number of deployments
-            DEPLOYMENT_COUNT=$(echo "$DEPLOYMENT_INFO" | jq 'length')
-            echo "📊 Current deployment count: $DEPLOYMENT_COUNT"
-            
-            # Extract primary deployment details
-            PRIMARY_DEPLOYMENT=$(echo "$DEPLOYMENT_INFO" | jq '.[] | select(.status == "PRIMARY")')
-            DESIRED_COUNT=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.desiredCount')
-            RUNNING_COUNT=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.runningCount')
-            PENDING_COUNT=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.pendingCount')
-            FAILED_TASKS=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.failedTasks')
-            DEPLOYMENT_ID=$(echo "$PRIMARY_DEPLOYMENT" | jq -r '.id')
-            
-            # Get deployment status from events (last 5 events)
-            RECENT_EVENTS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].events[0:5]')
-            LATEST_EVENT=$(echo "$RECENT_EVENTS" | jq -r '.[0].message')
-            
-            # Print status update
-            echo "⏱️ Deployment status after $((ELAPSED / 60))m $((ELAPSED % 60))s:"
-            echo "🔄 Deployment ID: $DEPLOYMENT_ID"
-            echo "🔢 Tasks: $RUNNING_COUNT running, $PENDING_COUNT pending, $FAILED_TASKS failed (of $DESIRED_COUNT desired)"
-            echo "📝 Latest event: $LATEST_EVENT"
-            
-            # Check if there are any active previous deployments
-            PREVIOUS_DEPLOYMENTS=$(echo "$DEPLOYMENT_INFO" | jq '[.[] | select(.status != "PRIMARY")] | length')
-            echo "🔍 Previous deployments still active: $PREVIOUS_DEPLOYMENTS"
-            
-            # Check if deployment is stable (all desired tasks are running, no pending tasks, and no previous deployments)
-            if [ "$RUNNING_COUNT" -eq "$DESIRED_COUNT" ] && [ "$PENDING_COUNT" -eq 0 ] && [ "$PREVIOUS_DEPLOYMENTS" -eq 0 ]; then
-              # Check if service is stable by checking the deployment status
-              SERVICE_STATUS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].status' --output text)
-              
-              if [ "$SERVICE_STATUS" = "ACTIVE" ]; then
-                CONSECUTIVE_STABLE_CHECKS=$((CONSECUTIVE_STABLE_CHECKS + 1))
-                echo "✅ Service appears stable ($CONSECUTIVE_STABLE_CHECKS/$REQUIRED_STABLE_CHECKS consecutive checks)"
-                
-                if [ $CONSECUTIVE_STABLE_CHECKS -ge $REQUIRED_STABLE_CHECKS ]; then
-                  STABLE=true
-                  echo "✅ Deployment stabilized successfully after $REQUIRED_STABLE_CHECKS consecutive stable checks!"
-                  echo "::endgroup::"
-                else
-                  echo "⏳ Waiting for additional confirmation... (checking again in ${CHECK_INTERVAL}s)"
-                  echo "::endgroup::"
-                  sleep $CHECK_INTERVAL
-                fi
-              else
-                CONSECUTIVE_STABLE_CHECKS=0
-                echo "⚠️ Service appears stable but status is $SERVICE_STATUS. Continuing to monitor..."
-                echo "::endgroup::"
-                sleep $CHECK_INTERVAL
-              fi
-            else
-              CONSECUTIVE_STABLE_CHECKS=0
-              echo "⏳ Waiting for deployment to stabilize... (checking again in ${CHECK_INTERVAL}s)"
-              echo "::endgroup::"
-              sleep $CHECK_INTERVAL
-            fi
-            
-            # Increment attempt counter for the next iteration
-            ATTEMPT=$((ATTEMPT + 1))
-          done
-
-          echo "✅ Deployment completed successfully!"
-
-          # Show final deployment details
-          echo "📊 Final deployment summary:"
-          aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} \
-            --query 'services[0].{Status:status,TaskDefinition:taskDefinition,DesiredCount:desiredCount,RunningCount:runningCount,PendingCount:pendingCount,ServiceName:serviceName}' \
-            --output table
+      - name: 🚀 Deploy application service
+        uses: ./.github/actions/deploy-ecs
+        with:
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.ECS_SERVICE }}
 
       - name: 📝 Create GitHub Release
         env:
