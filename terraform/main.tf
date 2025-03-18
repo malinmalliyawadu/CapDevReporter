@@ -370,7 +370,52 @@ resource "aws_iam_role_policy" "ecs_task_secrets_policy" {
   })
 }
 
-# Update ECS Task Definition to include all secrets
+# Create a migration task definition
+resource "aws_ecs_task_definition" "migration" {
+  family                   = "capdevreporter-migration"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "1024"
+  memory                   = "2048"
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "capdevreporter-migration"
+      image     = "1234.dkr.ecr.${var.aws_region}.amazonaws.com/***REMOVED***/capdevreporter:latest"
+      essential = true
+      
+      command = ["sh", "-c", "cd /app && npx prisma migrate deploy"]
+      workingDirectory = "/app",
+      
+      environment = [
+        {
+          name  = "NODE_ENV",
+          value = "production"
+        }
+      ]
+      
+      secrets = [
+        {
+          name      = "DATABASE_URL"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:DATABASE_URL::"
+        }
+      ]
+      
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.app.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "migration"
+        }
+      }
+    }
+  ])
+}
+
+# Update the main task definition to include healthcheck
 resource "aws_ecs_task_definition" "app" {
   family                   = "capdevreporter-app"
   network_mode             = "awsvpc"
@@ -393,6 +438,14 @@ resource "aws_ecs_task_definition" "app" {
           protocol      = "tcp"
         }
       ]
+      
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
+      }
       
       environment = [
         {
@@ -568,8 +621,51 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# ECS Service
+# Create a migration ECS service for running migrations on every deployment
+resource "aws_ecs_service" "migration" {
+  name            = "capdevreporter-migration-service"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.migration.arn
+  desired_count   = 0  # We don't want this service to keep tasks running
+  launch_type     = "FARGATE"
+  
+  network_configuration {
+    subnets          = [aws_subnet.main.id, aws_subnet.secondary.id]
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = true
+  }
+
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+}
+
+# Create a null_resource to run the migration task each time the task definition changes
+resource "null_resource" "db_migration" {
+  triggers = {
+    task_definition_revision = aws_ecs_task_definition.migration.revision
+    app_image               = jsonencode(jsondecode(aws_ecs_task_definition.migration.container_definitions)[0].image)
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      $taskArn = $(aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration awsvpcConfiguration={subnets=[${aws_subnet.main.id}],securityGroups=[${aws_security_group.ecs.id}],assignPublicIp=ENABLED} --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region} --query 'tasks[0].taskArn' --output text)
+      Write-Host "Migration task started: $taskArn"
+      Write-Host "Waiting for migration task to complete..."
+      aws ecs wait tasks-stopped --cluster ${aws_ecs_cluster.main.name} --tasks $taskArn --profile ***REMOVED***-dev-sso --region ${var.aws_region}
+      $status = $(aws ecs describe-tasks --cluster ${aws_ecs_cluster.main.name} --tasks $taskArn --profile ***REMOVED***-dev-sso --region ${var.aws_region} --query 'tasks[0].containers[0].exitCode' --output text)
+      if ($status -ne 0) {
+        Write-Host "Migration failed with exit code: $status"
+        exit 1
+      }
+      Write-Host "Migration completed successfully"
+    EOT
+  }
+}
+
+# Make the main app service depend on the migration task
 resource "aws_ecs_service" "app" {
+  depends_on       = [null_resource.db_migration]
   name            = "capdevreporter-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
@@ -613,4 +709,10 @@ output "aurora_cluster_endpoint" {
 output "aurora_reader_endpoint" {
   value = aws_rds_cluster.main.reader_endpoint
   description = "The reader endpoint for the Aurora cluster"
+}
+
+# Add a new output for executing the migration
+output "run_migration_command" {
+  value       = "aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration '{\"awsvpcConfiguration\":{\"subnets\":[\"${aws_subnet.main.id}\"],\"securityGroups\":[\"${aws_security_group.ecs.id}\"],\"assignPublicIp\":\"ENABLED\"}}' --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region}"
+  description = "Command to run the database migration task"
 } 
