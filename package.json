@@ -1,5 +1,5 @@
 {
-  "name": "timesheet-next",
+  "name": "capdev-reporter",
   "version": "0.1.154",
   "private": true,
   "scripts": {
@@ -13,7 +13,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test": "jest",
     "test:watch": "jest --watch",
-    "db:reset": "echo 'DROP DATABASE IF EXISTS timesheet_dev;' | prisma db execute --stdin && prisma migrate dev"
+    "db:reset": "echo 'DROP DATABASE IF EXISTS capdevreporter_dev;' | prisma db execute --stdin && prisma migrate dev"
   },
   "dependencies": {
     "@million/lint": "^1.0.14",

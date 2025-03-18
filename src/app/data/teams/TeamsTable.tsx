@@ -315,7 +315,7 @@ export function TeamsTable({ initialTeamsPromise }: TeamsTableProps) {
               variant: "destructive",
               title: "Error",
               description:
-                "Cannot delete board: It has associated projects or timesheets. Please delete or reassign them first.",
+                "Cannot delete board: It has associated projects. Please delete or reassign them first.",
             });
           } else {
             toast({

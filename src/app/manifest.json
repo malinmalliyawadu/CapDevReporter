@@ -1,6 +1,6 @@
 {
-  "name": "Timesheet",
-  "short_name": "Timesheet",
+  "name": "CapDev Reporter",
+  "short_name": "CapDev Reporter",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

@@ -1,9 +1,14 @@
-data "aws_ecr_repository" "timesheet" {
-  name = "***REMOVED***/timesheet"
+resource "aws_ecr_repository" "capdevreporter" {
+  name = "***REMOVED***/capdevreporter"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
 }
 
-resource "aws_ecr_repository_policy" "timesheet_policy" {
-  repository = data.aws_ecr_repository.timesheet.name
+resource "aws_ecr_repository_policy" "capdevreporter_policy" {
+  repository = aws_ecr_repository.capdevreporter.name
   policy     = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -24,8 +29,8 @@ resource "aws_ecr_repository_policy" "timesheet_policy" {
 }
 
 # ECR Lifecycle Policy to limit image count
-resource "aws_ecr_lifecycle_policy" "timesheet_lifecycle" {
-  repository = data.aws_ecr_repository.timesheet.name
+resource "aws_ecr_lifecycle_policy" "capdevreporter_lifecycle" {
+  repository = aws_ecr_repository.capdevreporter.name
 
   policy = jsonencode({
     rules = [

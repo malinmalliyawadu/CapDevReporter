@@ -1,10 +1,10 @@
-# 🏗️ ***REMOVED*** Timesheet Architecture
+# 🏗️ Architecture
 
-This document outlines the architecture of the ***REMOVED*** Timesheet application, providing an overview of its components, data flow, and deployment strategy.
+This document outlines the architecture of the CapDev Reporter application, providing an overview of its components, data flow, and deployment strategy.
 
 ## 📊 System Overview
 
-The ***REMOVED*** Timesheet application is a Next.js-based web application that allows ***REMOVED*** employees to track and manage their time entries. It integrates with iPayroll for payroll processing and Jira for project tracking.
+The CapDev Reporter application is a Next.js-based web application that allows ***REMOVED*** employees to track and manage their time entries. It integrates with iPayroll for payroll processing and Jira for project tracking.
 
 ```mermaid
 graph TD
@@ -92,7 +92,9 @@ The application is deployed on AWS using the following resources:
 
 ### Database
 
-- **RDS MySQL Instance**: Managed relational database for application data
+- **Aurora MySQL Cluster**: Managed, highly available MySQL-compatible database cluster
+  - Writer endpoint for write operations
+  - Reader endpoint for read operations (scalable read replicas)
 - **DB Subnet Group**: Spans multiple availability zones for high availability
 
 ### Load Balancing & Networking
@@ -130,7 +132,9 @@ graph TD
     end
 
     subgraph "Database"
-        RDS[RDS MySQL] --> DBSubnetGroup[DB Subnet Group]
+        AuroraCluster[Aurora MySQL Cluster] --> DBSubnetGroup[DB Subnet Group]
+        AuroraCluster --> WriterEndpoint[Writer Endpoint]
+        AuroraCluster --> ReaderEndpoint[Reader Endpoint]
     end
 
     subgraph "Load Balancing"
@@ -141,7 +145,7 @@ graph TD
     subgraph "Security"
         SecGroups[Security Groups] -.-> ALB
         SecGroups -.-> Tasks
-        SecGroups -.-> RDS
+        SecGroups -.-> AuroraCluster
         IAMRoles[IAM Roles] -.-> Tasks
         SecretsManager[Secrets Manager] -.-> Tasks
         ACM[ACM Certificate] -.-> ALB
@@ -168,7 +172,7 @@ graph LR
 
 The `deploy-ecs.yml` workflow uses AWS credentials to deploy the application to ECS. The workflow requires the following permissions:
 
-- **AWS Access**: Uses AWS access keys stored as GitHub secrets (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`) for the `timesheet-github-actions-ecr` user
+- **AWS Access**: Uses AWS access keys stored as GitHub secrets (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`) for the `capdevreporter-github-actions-ecr` user
 - **ECR Access**: Permissions to authenticate, build, and push Docker images to Amazon ECR (`AmazonEC2ContainerRegistryPowerUser` policy)
 - **ECS Deployment**: Permissions to update ECS services and force new deployments (Customer managed policy with `ecs:UpdateService` and `ecs:DescribeServices` for the ECS cluster)
 

@@ -17,17 +17,17 @@ jobs:
     env:
       NEXT_PUBLIC_JIRA_URL: https://***REMOVED***.atlassian.net
       # Build-time database config for MySQL service container
-      DATABASE_URL: mysql://root:password@localhost:3306/timesheet
+      DATABASE_URL: mysql://root:password@localhost:3306/capdevreporter
       # ECS deployment config
-      ECS_CLUSTER: timesheet-cluster
-      ECS_SERVICE: timesheet-service
+      ECS_CLUSTER: capdevreporter-cluster
+      ECS_SERVICE: capdevreporter-service
 
     services:
       mysql:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: timesheet
+          MYSQL_DATABASE: capdevreporter
         ports:
           - 3306:3306
         options: >-
@@ -123,7 +123,7 @@ jobs:
       - name: 🏗️ Build and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ***REMOVED***/timesheet
+          ECR_REPOSITORY: ***REMOVED***/capdevreporter
           VERSION: ${{ steps.package_version.outputs.version }}
           RELEASE_TAG: ${{ steps.package_version.outputs.release_tag }}
         run: |
