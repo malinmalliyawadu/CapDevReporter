@@ -167,7 +167,7 @@ jobs:
           docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:${RELEASE_TAG} --format 'Repository: {{.RepoTags}}\nSize: {{.Size}} bytes\nLayers: {{len .RootFS.Layers}}'
           echo "::endgroup::"
 
-      - name: 🚀 Deploy database migrations
+      - name: 💾 Deploy database migrations
         uses: ./.github/actions/deploy-ecs
         with:
           cluster: ${{ env.ECS_CLUSTER }}
