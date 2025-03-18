@@ -386,7 +386,7 @@ resource "aws_ecs_task_definition" "migration" {
       image     = "1234.dkr.ecr.${var.aws_region}.amazonaws.com/***REMOVED***/capdevreporter:latest"
       essential = true
       
-      command = ["sh", "-c", "cd /app && npx prisma migrate deploy"]
+      command = ["sh", "-c", "npx prisma migrate deploy"]
       workingDirectory = "/app",
       
       environment = [
@@ -438,14 +438,6 @@ resource "aws_ecs_task_definition" "app" {
           protocol      = "tcp"
         }
       ]
-      
-      healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
-      }
       
       environment = [
         {
@@ -570,18 +562,6 @@ resource "aws_lb_target_group" "app" {
   vpc_id      = aws_vpc.main.id
   target_type = "ip"
   
-  health_check {
-    enabled             = true
-    interval            = 15
-    path                = "/api/health"
-    port                = "traffic-port"
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-    timeout             = 5
-    protocol            = "HTTP"
-    matcher             = "200-399"
-  }
-
   deregistration_delay = 30
 
   stickiness {
@@ -648,18 +628,7 @@ resource "null_resource" "db_migration" {
   }
 
   provisioner "local-exec" {
-    command = <<-EOT
-      $taskArn = $(aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration awsvpcConfiguration={subnets=[${aws_subnet.main.id}],securityGroups=[${aws_security_group.ecs.id}],assignPublicIp=ENABLED} --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region} --query 'tasks[0].taskArn' --output text)
-      Write-Host "Migration task started: $taskArn"
-      Write-Host "Waiting for migration task to complete..."
-      aws ecs wait tasks-stopped --cluster ${aws_ecs_cluster.main.name} --tasks $taskArn --profile ***REMOVED***-dev-sso --region ${var.aws_region}
-      $status = $(aws ecs describe-tasks --cluster ${aws_ecs_cluster.main.name} --tasks $taskArn --profile ***REMOVED***-dev-sso --region ${var.aws_region} --query 'tasks[0].containers[0].exitCode' --output text)
-      if ($status -ne 0) {
-        Write-Host "Migration failed with exit code: $status"
-        exit 1
-      }
-      Write-Host "Migration completed successfully"
-    EOT
+    command = "aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration awsvpcConfiguration={subnets=[${aws_subnet.main.id}],securityGroups=[${aws_security_group.ecs.id}],assignPublicIp=ENABLED} --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region}"
   }
 }
 
