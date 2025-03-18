@@ -92,7 +92,9 @@ The application is deployed on AWS using the following resources:
 
 ### Database
 
-- **RDS MySQL Instance**: Managed relational database for application data
+- **Aurora MySQL Cluster**: Managed, highly available MySQL-compatible database cluster
+  - Writer endpoint for write operations
+  - Reader endpoint for read operations (scalable read replicas)
 - **DB Subnet Group**: Spans multiple availability zones for high availability
 
 ### Load Balancing & Networking
@@ -130,7 +132,9 @@ graph TD
     end
 
     subgraph "Database"
-        RDS[RDS MySQL] --> DBSubnetGroup[DB Subnet Group]
+        AuroraCluster[Aurora MySQL Cluster] --> DBSubnetGroup[DB Subnet Group]
+        AuroraCluster --> WriterEndpoint[Writer Endpoint]
+        AuroraCluster --> ReaderEndpoint[Reader Endpoint]
     end
 
     subgraph "Load Balancing"
@@ -141,7 +145,7 @@ graph TD
     subgraph "Security"
         SecGroups[Security Groups] -.-> ALB
         SecGroups -.-> Tasks
-        SecGroups -.-> RDS
+        SecGroups -.-> AuroraCluster
         IAMRoles[IAM Roles] -.-> Tasks
         SecretsManager[Secrets Manager] -.-> Tasks
         ACM[ACM Certificate] -.-> ALB

@@ -215,25 +215,34 @@ resource "aws_db_subnet_group" "main" {
   }
 }
 
-# RDS MySQL Instance
-resource "aws_db_instance" "main" {
-  identifier             = "capdevreporter-db"
-  engine                 = "mysql"
-  engine_version         = "8.0"
-  instance_class         = "db.t4g.micro"
-  allocated_storage      = 20
-  storage_type           = "gp3"
-  db_name                = "capdevreporter"
-  username               = "capdevreporter_admin"
-  password               = var.db_password
-  db_subnet_group_name   = aws_db_subnet_group.main.name
+# Aurora MySQL Cluster
+resource "aws_rds_cluster" "main" {
+  cluster_identifier     = "capdevreporter-cluster"
+  engine                = "aurora-mysql"
+  engine_version        = "8.0"
+  database_name         = "capdevreporter"
+  master_username       = "capdevreporter_admin"
+  master_password       = var.db_password
+  db_subnet_group_name  = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.rds.id]
-  skip_final_snapshot    = true
-  publicly_accessible    = false
-  multi_az               = false
+  skip_final_snapshot   = true
   
   tags = {
-    Name = "capdevreporter-db"
+    Name = "capdevreporter-aurora-cluster"
+  }
+}
+
+# Aurora MySQL Instance
+resource "aws_rds_cluster_instance" "main" {
+  count               = 1
+  identifier          = "capdevreporter-instance-${count.index}"
+  cluster_identifier  = aws_rds_cluster.main.id
+  instance_class      = "db.t4g.medium"
+  engine              = aws_rds_cluster.main.engine
+  engine_version      = aws_rds_cluster.main.engine_version
+  
+  tags = {
+    Name = "capdevreporter-aurora-instance-${count.index}"
   }
 }
 
@@ -328,7 +337,7 @@ resource "aws_secretsmanager_secret" "capdevreporter_secrets" {
 resource "aws_secretsmanager_secret_version" "capdevreporter_secrets" {
   secret_id = aws_secretsmanager_secret.capdevreporter_secrets.id
   secret_string = jsonencode({
-    DATABASE_URL           = "mysql://capdevreporter_admin:${var.db_password}@${replace(aws_db_instance.main.endpoint, ":3306", "")}/capdevreporter"
+    DATABASE_URL           = "mysql://${aws_rds_cluster.main.master_username}:${var.db_password}@${aws_rds_cluster.main.endpoint}/${aws_rds_cluster.main.database_name}"
     JIRA_API_TOKEN         = var.jira_api_token
     JIRA_USER_EMAIL        = var.jira_user_email
     IPAYROLL_CLIENT_ID     = var.ipayroll_client_id
@@ -596,7 +605,12 @@ output "alb_dns_name" {
   description = "The DNS name of the load balancer"
 }
 
-output "rds_endpoint" {
-  value = aws_db_instance.main.endpoint
-  description = "The connection endpoint for the RDS database"
+output "aurora_cluster_endpoint" {
+  value = aws_rds_cluster.main.endpoint
+  description = "The connection endpoint for the Aurora cluster"
+}
+
+output "aurora_reader_endpoint" {
+  value = aws_rds_cluster.main.reader_endpoint
+  description = "The reader endpoint for the Aurora cluster"
 } 
