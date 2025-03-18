@@ -386,7 +386,8 @@ resource "aws_ecs_task_definition" "migration" {
       image     = "1234.dkr.ecr.${var.aws_region}.amazonaws.com/***REMOVED***/capdevreporter:latest"
       essential = true
       
-      command = ["npx", "prisma", "migrate", "deploy"]
+      command = ["sh", "-c", "cd /app && npx prisma migrate deploy"]
+      workingDirectory = "/app",
       
       environment = [
         {
@@ -647,7 +648,18 @@ resource "null_resource" "db_migration" {
   }
 
   provisioner "local-exec" {
-    command = "aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration \"awsvpcConfiguration={subnets=[${aws_subnet.main.id}],securityGroups=[${aws_security_group.ecs.id}],assignPublicIp=ENABLED}\" --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region} && sleep 60"
+    command = <<-EOT
+      $taskArn = $(aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration awsvpcConfiguration={subnets=[${aws_subnet.main.id}],securityGroups=[${aws_security_group.ecs.id}],assignPublicIp=ENABLED} --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region} --query 'tasks[0].taskArn' --output text)
+      Write-Host "Migration task started: $taskArn"
+      Write-Host "Waiting for migration task to complete..."
+      aws ecs wait tasks-stopped --cluster ${aws_ecs_cluster.main.name} --tasks $taskArn --profile ***REMOVED***-dev-sso --region ${var.aws_region}
+      $status = $(aws ecs describe-tasks --cluster ${aws_ecs_cluster.main.name} --tasks $taskArn --profile ***REMOVED***-dev-sso --region ${var.aws_region} --query 'tasks[0].containers[0].exitCode' --output text)
+      if ($status -ne 0) {
+        Write-Host "Migration failed with exit code: $status"
+        exit 1
+      }
+      Write-Host "Migration completed successfully"
+    EOT
   }
 }
 
@@ -701,6 +713,6 @@ output "aurora_reader_endpoint" {
 
 # Add a new output for executing the migration
 output "run_migration_command" {
-  value = "aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration \"awsvpcConfiguration={subnets=[${aws_subnet.main.id}],securityGroups=[${aws_security_group.ecs.id}],assignPublicIp=ENABLED}\" --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region}"
+  value       = "aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration '{\"awsvpcConfiguration\":{\"subnets\":[\"${aws_subnet.main.id}\"],\"securityGroups\":[\"${aws_security_group.ecs.id}\"],\"assignPublicIp\":\"ENABLED\"}}' --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region}"
   description = "Command to run the database migration task"
 } 
