@@ -42,34 +42,24 @@ export function DeleteBoardDialog({
 
   useEffect(() => {
     if (isOpen && boardToDelete) {
+      const fetchBoardDetails = async (boardId: string) => {
+        setIsFetchingProjects(true);
+
+        try {
+          const result = await getBoardDetails(boardId);
+          if (result.success && result.board) {
+            setBoardProjects(result.board.projects);
+          }
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setIsFetchingProjects(false);
+        }
+      };
+
       fetchBoardDetails(boardToDelete.boardId);
     }
   }, [isOpen, boardToDelete]);
-
-  const fetchBoardDetails = async (boardId: string) => {
-    setIsFetchingProjects(true);
-    try {
-      const result = await getBoardDetails(boardId);
-      if (result.success && result.board) {
-        setBoardProjects(result.board.projects);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to fetch board details",
-        });
-      }
-    } catch (error) {
-      console.error(error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to fetch board details",
-      });
-    } finally {
-      setIsFetchingProjects(false);
-    }
-  };
 
   const handleOpenChange = (open: boolean) => {
     onOpenChange(open);

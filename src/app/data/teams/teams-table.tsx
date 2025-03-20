@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { useRouter } from "next/navigation";
 import { AddTeamDialog } from "./dialogs/add-team-dialog";
 import { AddBoardDialog } from "./dialogs/add-board-dialog";
 import { DeleteTeamDialog } from "./dialogs/delete-team-dialog";
