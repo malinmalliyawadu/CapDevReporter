@@ -62,7 +62,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@playwright/test": "^1.51.0",
+    "@playwright/test": "^1.51.1",
     "@testing-library/jest-dom": "^6.4.2",
     "@types/canvas-confetti": "^1.9.0",
     "@types/jest": "^29.5.12",
