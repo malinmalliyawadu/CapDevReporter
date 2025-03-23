@@ -67,7 +67,7 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/jest": "^29.5.12",
     "@types/jira-client": "^7.1.9",
-    "@types/node": "^22.13.10",
+    "@types/node": "^22.13.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "c8": "^10.1.3",
