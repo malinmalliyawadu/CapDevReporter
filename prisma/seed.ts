@@ -49,6 +49,42 @@ async function main() {
     },
   });
 
+  // Add new roles
+  const financeManagerRole = await prisma.role.upsert({
+    where: { name: "Finance Manager" },
+    update: {
+      description: "Manages financial operations and budgeting",
+    },
+    create: {
+      name: "Finance Manager",
+      description: "Manages financial operations and budgeting",
+    },
+  });
+
+  const systemsEngineerRole = await prisma.role.upsert({
+    where: { name: "Systems Engineer" },
+    update: {
+      description: "Designs and implements complex systems and infrastructure",
+    },
+    create: {
+      name: "Systems Engineer",
+      description: "Designs and implements complex systems and infrastructure",
+    },
+  });
+
+  const solutionsArchitectRole = await prisma.role.upsert({
+    where: { name: "Solutions Architect" },
+    update: {
+      description:
+        "Designs high-level system architecture and technical solutions",
+    },
+    create: {
+      name: "Solutions Architect",
+      description:
+        "Designs high-level system architecture and technical solutions",
+    },
+  });
+
   // Create teams
   const frontendTeam = await prisma.team.create({
     data: {
@@ -197,6 +233,31 @@ async function main() {
         hoursPerWeek: 0, // Unset state
       },
     }),
+    // Add new employees
+    prisma.employee.create({
+      data: {
+        name: "Emily Taylor",
+        payrollId: "EMP007",
+        roleId: financeManagerRole.id,
+        hoursPerWeek: 40,
+      },
+    }),
+    prisma.employee.create({
+      data: {
+        name: "Frank Rodriguez",
+        payrollId: "EMP008",
+        roleId: systemsEngineerRole.id,
+        hoursPerWeek: 40,
+      },
+    }),
+    prisma.employee.create({
+      data: {
+        name: "Grace Kim",
+        payrollId: "EMP009",
+        roleId: solutionsArchitectRole.id,
+        hoursPerWeek: 40,
+      },
+    }),
   ]);
 
   // Create team assignments
@@ -207,6 +268,9 @@ async function main() {
     bobWilson,
     charlieGreen,
     dianaBrown,
+    emilyTaylor,
+    frankRodriguez,
+    graceKim,
   ] = employees;
 
   await Promise.all([
@@ -262,6 +326,21 @@ async function main() {
         employeeId: dianaBrown.id,
         teamId: frontendTeam.id,
         startDate: new Date("2024-03-01"),
+      },
+    }),
+    // New employee assignments
+    prisma.employeeAssignment.create({
+      data: {
+        employeeId: frankRodriguez.id,
+        teamId: platformTeam.id,
+        startDate: new Date("2024-01-15"),
+      },
+    }),
+    prisma.employeeAssignment.create({
+      data: {
+        employeeId: graceKim.id,
+        teamId: backendTeam.id,
+        startDate: new Date("2024-02-01"),
       },
     }),
   ]);
@@ -469,6 +548,21 @@ async function main() {
       timeTypeId: generalAdmin.id,
       hoursPerWeek: 5,
     },
+    {
+      roleId: financeManagerRole.id,
+      timeTypeId: generalAdmin.id,
+      hoursPerWeek: 8,
+    },
+    {
+      roleId: systemsEngineerRole.id,
+      timeTypeId: generalAdmin.id,
+      hoursPerWeek: 5,
+    },
+    {
+      roleId: solutionsArchitectRole.id,
+      timeTypeId: generalAdmin.id,
+      hoursPerWeek: 5,
+    },
     // Friday Update for all roles
     {
       roleId: developerRole.id,
@@ -487,6 +581,21 @@ async function main() {
     },
     {
       roleId: managerRole.id,
+      timeTypeId: fridayUpdate.id,
+      hoursPerWeek: 1,
+    },
+    {
+      roleId: financeManagerRole.id,
+      timeTypeId: fridayUpdate.id,
+      hoursPerWeek: 1,
+    },
+    {
+      roleId: systemsEngineerRole.id,
+      timeTypeId: fridayUpdate.id,
+      hoursPerWeek: 1,
+    },
+    {
+      roleId: solutionsArchitectRole.id,
       timeTypeId: fridayUpdate.id,
       hoursPerWeek: 1,
     },
@@ -511,6 +620,21 @@ async function main() {
       timeTypeId: personalDev.id,
       hoursPerWeek: 4,
     },
+    {
+      roleId: financeManagerRole.id,
+      timeTypeId: personalDev.id,
+      hoursPerWeek: 2,
+    },
+    {
+      roleId: systemsEngineerRole.id,
+      timeTypeId: personalDev.id,
+      hoursPerWeek: 4,
+    },
+    {
+      roleId: solutionsArchitectRole.id,
+      timeTypeId: personalDev.id,
+      hoursPerWeek: 4,
+    },
     // Tech Debt for devs only
     {
       roleId: developerRole.id,
@@ -522,6 +646,16 @@ async function main() {
       timeTypeId: techDebt.id,
       hoursPerWeek: 4,
     },
+    {
+      roleId: systemsEngineerRole.id,
+      timeTypeId: techDebt.id,
+      hoursPerWeek: 4,
+    },
+    {
+      roleId: solutionsArchitectRole.id,
+      timeTypeId: techDebt.id,
+      hoursPerWeek: 6,
+    },
     // Agile Ceremonies for devs only
     {
       roleId: developerRole.id,
@@ -530,6 +664,16 @@ async function main() {
     },
     {
       roleId: seniorDevRole.id,
+      timeTypeId: agileCeremonies.id,
+      hoursPerWeek: 2,
+    },
+    {
+      roleId: systemsEngineerRole.id,
+      timeTypeId: agileCeremonies.id,
+      hoursPerWeek: 2,
+    },
+    {
+      roleId: solutionsArchitectRole.id,
       timeTypeId: agileCeremonies.id,
       hoursPerWeek: 2,
     },
@@ -602,6 +746,30 @@ async function main() {
       status: "APPROVED",
       duration: 2,
       employeeId: dianaBrown.id,
+    },
+    // Emily Taylor's leave
+    {
+      date: addDays(today, 7),
+      type: "Annual Leave",
+      status: "APPROVED",
+      duration: 3,
+      employeeId: emilyTaylor.id,
+    },
+    // Frank Rodriguez's leave
+    {
+      date: subDays(today, 7),
+      type: "Sick Leave",
+      status: "TAKEN",
+      duration: 1,
+      employeeId: frankRodriguez.id,
+    },
+    // Grace Kim's leave
+    {
+      date: addDays(today, 14),
+      type: "Annual Leave",
+      status: "APPROVED",
+      duration: 5,
+      employeeId: graceKim.id,
     },
   ];
 
