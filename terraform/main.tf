@@ -370,55 +370,6 @@ resource "aws_iam_role_policy" "ecs_task_secrets_policy" {
   })
 }
 
-# Create a migration task definition
-resource "aws_ecs_task_definition" "migration" {
-  family                   = "capdevreporter-migration"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "1024"
-  memory                   = "2048"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
-
-  container_definitions = jsonencode([
-    {
-      name      = "capdevreporter-migration"
-      image     = "1234.dkr.ecr.${var.aws_region}.amazonaws.com/***REMOVED***/capdevreporter:latest"
-      essential = true
-      
-      command = ["sh", "-c", "npx prisma migrate deploy"]
-      workingDirectory = "/app",
-      
-      environment = [
-        {
-          name  = "NODE_ENV",
-          value = "production"
-        },
-        {
-          name  = "DISABLE_AUTH",
-          value = var.disable_auth
-        }
-      ]
-      
-      secrets = [
-        {
-          name      = "DATABASE_URL"
-          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:DATABASE_URL::"
-        }
-      ]
-      
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.app.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "migration"
-        }
-      }
-    }
-  ])
-}
-
 # Update the main task definition to include healthcheck
 resource "aws_ecs_task_definition" "app" {
   family                   = "capdevreporter-app"
@@ -609,7 +560,56 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# Create a migration ECS service for running migrations on every deployment
+# Create a migration task definition
+resource "aws_ecs_task_definition" "migration" {
+  family                   = "capdevreporter-migration"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "1024"
+  memory                   = "2048"
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "capdevreporter-migration"
+      image     = "1234.dkr.ecr.${var.aws_region}.amazonaws.com/***REMOVED***/capdevreporter:latest"
+      essential = true
+      
+      command = ["sh", "-c", "npx prisma migrate deploy"]
+      workingDirectory = "/app",
+      
+      environment = [
+        {
+          name  = "NODE_ENV",
+          value = "production"
+        },
+        {
+          name  = "DISABLE_AUTH",
+          value = var.disable_auth
+        }
+      ]
+      
+      secrets = [
+        {
+          name      = "DATABASE_URL"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:DATABASE_URL::"
+        }
+      ]
+      
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.app.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "migration"
+        }
+      }
+    }
+  ])
+}
+
+# Create a migration ECS service for GitHub Actions deployments
 resource "aws_ecs_service" "migration" {
   name            = "capdevreporter-migration-service"
   cluster         = aws_ecs_cluster.main.id
@@ -624,25 +624,80 @@ resource "aws_ecs_service" "migration" {
   }
 
   lifecycle {
-    ignore_changes = [desired_count]
+    ignore_changes = [desired_count, task_definition]  # Ignore changes since GH Actions will update these
   }
 }
 
-# Create a null_resource to run the migration task each time the task definition changes
-resource "null_resource" "db_migration" {
-  triggers = {
-    task_definition_revision = aws_ecs_task_definition.migration.revision
-    app_image               = jsonencode(jsondecode(aws_ecs_task_definition.migration.container_definitions)[0].image)
+# Create a db reset task definition
+resource "aws_ecs_task_definition" "db_reset" {
+  family                   = "capdevreporter-db-reset"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "1024"
+  memory                   = "2048"
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "capdevreporter-db-reset"
+      image     = "1234.dkr.ecr.${var.aws_region}.amazonaws.com/***REMOVED***/capdevreporter:latest"
+      essential = true
+      
+      command = ["sh", "-c", "npm install && echo 'DROP DATABASE IF EXISTS capdevreporter;' | npx prisma db execute --stdin && npx prisma migrate deploy && npx prisma db seed"]
+      workingDirectory = "/app",
+      
+      environment = [
+        {
+          name  = "NODE_ENV",
+          value = "production"
+        },
+        {
+          name  = "DISABLE_AUTH",
+          value = var.disable_auth
+        }
+      ]
+      
+      secrets = [
+        {
+          name      = "DATABASE_URL"
+          valueFrom = "${aws_secretsmanager_secret.capdevreporter_secrets.arn}:DATABASE_URL::"
+        }
+      ]
+      
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.app.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "db-reset"
+        }
+      }
+    }
+  ])
+}
+
+# Create a db reset service for manual triggering
+resource "aws_ecs_service" "db_reset" {
+  name            = "capdevreporter-db-reset-service"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.db_reset.arn
+  desired_count   = 0  # We don't want this service to keep tasks running
+  launch_type     = "FARGATE"
+  
+  network_configuration {
+    subnets          = [aws_subnet.main.id, aws_subnet.secondary.id]
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = true
   }
 
-  provisioner "local-exec" {
-    command = "aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration awsvpcConfiguration={subnets=[${aws_subnet.main.id}],securityGroups=[${aws_security_group.ecs.id}],assignPublicIp=ENABLED} --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region}"
+  lifecycle {
+    ignore_changes = [desired_count, task_definition]  # Ignore changes since workflow will update these
   }
 }
 
 # Make the main app service depend on the migration task
 resource "aws_ecs_service" "app" {
-  depends_on       = [null_resource.db_migration]
   name            = "capdevreporter-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
@@ -690,6 +745,11 @@ output "aurora_reader_endpoint" {
 
 # Add a new output for executing the migration
 output "run_migration_command" {
-  value       = "aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration '{\"awsvpcConfiguration\":{\"subnets\":[\"${aws_subnet.main.id}\"],\"securityGroups\":[\"${aws_security_group.ecs.id}\"],\"assignPublicIp\":\"ENABLED\"}}' --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region}"
+  value       = "aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration awsvpcConfiguration={subnets=[${aws_subnet.main.id}],securityGroups=[${aws_security_group.ecs.id}],assignPublicIp=ENABLED} --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region}"
   description = "Command to run the database migration task"
+}
+
+output "run_db_reset_command" {
+  value       = "aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.db_reset.family}:${aws_ecs_task_definition.db_reset.revision} --network-configuration awsvpcConfiguration={subnets=[${aws_subnet.main.id}],securityGroups=[${aws_security_group.ecs.id}],assignPublicIp=ENABLED} --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region}"
+  description = "Command to run the database reset task"
 } 

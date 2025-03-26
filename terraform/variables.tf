@@ -89,4 +89,10 @@ variable "disable_auth" {
   description = "Flag to disable authentication (true/false)"
   type        = string
   default     = "false"
+}
+
+variable "run_db_reset" {
+  description = "Flag to run database reset during apply (true/false)"
+  type        = bool
+  default     = false
 } 
