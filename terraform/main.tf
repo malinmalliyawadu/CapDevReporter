@@ -644,7 +644,7 @@ resource "aws_ecs_task_definition" "db_reset" {
       image     = "1234.dkr.ecr.${var.aws_region}.amazonaws.com/***REMOVED***/capdevreporter:latest"
       essential = true
       
-      command = ["sh", "-c", "npm install && echo 'DROP DATABASE IF EXISTS capdevreporter;' | npx prisma db execute --stdin && npx prisma migrate deploy && npx prisma db seed"]
+      command = ["sh", "-c", "echo 'DROP DATABASE IF EXISTS capdevreporter;' | npx prisma db execute --stdin && npx prisma migrate deploy && npx prisma db seed"]
       workingDirectory = "/app",
       
       environment = [
