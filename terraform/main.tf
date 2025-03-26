@@ -393,6 +393,10 @@ resource "aws_ecs_task_definition" "migration" {
         {
           name  = "NODE_ENV",
           value = "production"
+        },
+        {
+          name  = "DISABLE_AUTH",
+          value = var.disable_auth
         }
       ]
       
@@ -463,6 +467,10 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "IPAYROLL_API_URL",
           value = "https://demo.ipayroll.co.nz"
+        },
+        {
+          name  = "DISABLE_AUTH",
+          value = var.disable_auth
         }
       ]
       

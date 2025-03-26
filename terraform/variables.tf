@@ -83,4 +83,10 @@ variable "database_url" {
   description = "Database URL"
   type        = string
   sensitive   = true
+}
+
+variable "disable_auth" {
+  description = "Flag to disable authentication (true/false)"
+  type        = string
+  default     = "false"
 } 
