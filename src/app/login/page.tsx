@@ -58,7 +58,7 @@ export default async function LoginPage() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 text-gray-500 dark:text-gray-400 bg-gradient-to-br from-white via-gray-50 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-                ***REMOVED*** CapDev Reporter
+                CapDev Reporter
               </span>
             </div>
           </div>

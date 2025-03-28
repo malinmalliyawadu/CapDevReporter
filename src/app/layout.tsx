@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "CapDev Reporter",
-  description: "Automated CapDev Reporting for ***REMOVED***",
+  description: "Automated CapDev Reporting",
 };
 
 export default async function RootLayout({

@@ -4,7 +4,7 @@ This document outlines the architecture of the CapDev Reporter application, prov
 
 ## 📊 System Overview
 
-The CapDev Reporter application is a Next.js-based web application that allows ***REMOVED*** employees to track and manage their time entries. It integrates with iPayroll for payroll processing and Jira for project tracking.
+The CapDev Reporter application is a Next.js-based web application that allows employees to track and manage their time entries. It integrates with iPayroll for payroll processing and Jira for project tracking.
 
 ```mermaid
 graph TD

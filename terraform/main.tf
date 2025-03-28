@@ -12,14 +12,14 @@ terraform {
 }
 
 provider "aws" {
-  profile = "***REMOVED***-dev-sso"
+  profile = ""
   region  = "ap-southeast-2"
   default_tags {
     tags = {
-      Account     = "***REMOVED***-dev"
+      Account     = ""
       Description = "CapDevReporter App"
       Terraform   = "true"
-      Owner = "Malin Malliya Wadu"
+      Owner = ""
     }
   }
 }
@@ -742,14 +742,3 @@ output "aurora_reader_endpoint" {
   value = aws_rds_cluster.main.reader_endpoint
   description = "The reader endpoint for the Aurora cluster"
 }
-
-# Add a new output for executing the migration
-output "run_migration_command" {
-  value       = "aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.migration.family}:${aws_ecs_task_definition.migration.revision} --network-configuration awsvpcConfiguration={subnets=[${aws_subnet.main.id}],securityGroups=[${aws_security_group.ecs.id}],assignPublicIp=ENABLED} --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region}"
-  description = "Command to run the database migration task"
-}
-
-output "run_db_reset_command" {
-  value       = "aws ecs run-task --cluster ${aws_ecs_cluster.main.name} --task-definition ${aws_ecs_task_definition.db_reset.family}:${aws_ecs_task_definition.db_reset.revision} --network-configuration awsvpcConfiguration={subnets=[${aws_subnet.main.id}],securityGroups=[${aws_security_group.ecs.id}],assignPublicIp=ENABLED} --launch-type FARGATE --profile ***REMOVED***-dev-sso --region ${var.aws_region}"
-  description = "Command to run the database reset task"
-} 

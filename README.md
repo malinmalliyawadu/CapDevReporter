@@ -1,6 +1,6 @@
 # 🕒 CapDev Reporter
 
-Automated CapDev Reporting for ***REMOVED***.
+Automated CapDev Reporting.
 
 ## 🚀 Technology Stack
 
