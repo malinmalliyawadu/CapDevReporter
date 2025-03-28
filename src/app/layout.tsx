@@ -6,6 +6,7 @@ import { SyncDialogWrapper } from "@/components/providers/sync-dialog-provider";
 import { AuthProvider } from "@/components/providers/session-provider";
 import { auth } from "@/lib/auth";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,6 +45,7 @@ export default async function RootLayout({
             </SyncDialogWrapper>
           </AuthProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
