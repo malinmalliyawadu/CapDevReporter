@@ -3,6 +3,8 @@
   "version": "0.1.164",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "dev": "cross-env DISABLE_AUTH=true next dev",
     "dev:auth": "next dev",
     "build": "next build",
