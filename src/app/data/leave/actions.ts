@@ -11,7 +11,7 @@ export async function getLeaveRecords() {
       employee: true,
     },
   });
-  return leaveRecords.map((record) => ({
+  return leaveRecords.map((record: typeof leaveRecords[number]) => ({
     ...record,
     date: record.date.toISOString(),
     createdAt: record.createdAt.toISOString(),
@@ -57,7 +57,7 @@ export async function syncLeaveRecords() {
 
     // Create a map of payrollId to internal id
     const employeeMap = new Map(
-      employees.map((emp) => [emp.payrollId, emp.id])
+      employees.map((emp: typeof employees[number]) => [emp.payrollId, emp.id])
     );
 
     // Update or create leave records from iPayroll

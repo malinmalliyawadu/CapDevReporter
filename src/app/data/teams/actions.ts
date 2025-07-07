@@ -1,17 +1,36 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-type TeamWithBoards = Prisma.TeamGetPayload<{
-  include: { jiraBoards: true };
-}>;
+type TeamWithBoards = {
+  id: string;
+  name: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  jiraBoards: {
+    id: string;
+    name: string;
+    boardId: string;
+    teamId: string;
+  }[];
+};
 
-type BoardWithProjects = Prisma.JiraBoardGetPayload<{
-  include: { projects: true };
-}>;
+type BoardWithProjects = {
+  id: string;
+  name: string;
+  boardId: string;
+  teamId: string;
+  projects: {
+    id: string;
+    name: string;
+    description: string | null;
+    jiraId: string;
+  }[];
+};
 
 interface ActionResponse {
   success: boolean;
@@ -34,7 +53,10 @@ async function getTeams(): Promise<TeamWithBoards[]> {
 }
 
 export async function createTeam(
-  data: Prisma.TeamCreateInput
+  data: {
+    name: string;
+    description?: string;
+  }
 ): Promise<ActionResponse> {
   try {
     await prisma.team.create({
@@ -55,7 +77,10 @@ export async function createTeam(
 
 export async function updateTeam(
   id: string,
-  data: Prisma.TeamUpdateInput
+  data: {
+    name?: string;
+    description?: string;
+  }
 ): Promise<ActionResponse> {
   try {
     await prisma.team.update({
@@ -88,7 +113,11 @@ export async function deleteTeam(id: string): Promise<ActionResponse> {
 }
 
 export async function addJiraBoard(
-  data: Prisma.JiraBoardCreateInput
+  data: {
+    name: string;
+    boardId: string;
+    teamId: string;
+  }
 ): Promise<ActionResponse> {
   try {
     await prisma.jiraBoard.create({

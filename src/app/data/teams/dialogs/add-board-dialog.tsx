@@ -58,11 +58,7 @@ export function AddBoardDialog({
         const result = await addJiraBoard({
           name: newBoard.name,
           boardId: newBoard.boardId,
-          team: {
-            connect: {
-              id: newBoard.teamId,
-            },
-          },
+          teamId: newBoard.teamId,
         });
 
         if (!result.success) {
