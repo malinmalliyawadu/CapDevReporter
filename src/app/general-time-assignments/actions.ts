@@ -7,9 +7,17 @@ import { revalidatePath } from "next/cache";
 type CreateAssignmentResult =
   | {
       success: true;
-      data: Prisma.GeneralTimeAssignmentGetPayload<{
-        include: { timeType: true };
-      }>;
+      data: {
+        id: string;
+        roleId: string;
+        timeTypeId: string;
+        hoursPerWeek: number;
+        timeType: {
+          id: string;
+          name: string;
+          description: string | null;
+        };
+      };
     }
   | { success: false; error: string };
 

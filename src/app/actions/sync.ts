@@ -304,7 +304,7 @@ export async function syncProjects(config: {
       });
 
       const existingProjectMap = new Map(
-        existingProjects.map((p) => [p.jiraId, p.id])
+        existingProjects.map((p: { jiraId: string | null; id: string }) => [p.jiraId, p.id])
       );
 
       const totalBoards = dbBoards.length;

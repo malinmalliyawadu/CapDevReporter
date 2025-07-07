@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import type { PrismaClient } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 export interface Project {
@@ -52,7 +53,7 @@ export async function deleteProject(projectId: string): Promise<boolean> {
     }
 
     // Use a transaction to ensure all related records are deleted
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: PrismaClient) => {
       // Delete all activities first
       if (projectExists.activities.length > 0) {
         await tx.projectActivity.deleteMany({

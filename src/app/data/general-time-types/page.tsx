@@ -15,7 +15,7 @@ async function getTimeTypes() {
       },
     },
   });
-  return timeTypes.map((type) => ({
+  return timeTypes.map((type: typeof timeTypes[number]) => ({
     ...type,
     createdAt: type.createdAt.toISOString(),
     updatedAt: type.updatedAt.toISOString(),
