@@ -1,4 +1,3 @@
-import MillionLint from "@million/lint";
 import type { NextConfig } from "next";
 import CopyWebpackPlugin from "copy-webpack-plugin";
 
@@ -22,9 +21,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default process.env.IS_UNDER_TEST
-  ? nextConfig
-  : MillionLint.next({
-      enabled: true,
-      rsc: true,
-    })(nextConfig);
+export default nextConfig;
